@@ -7,6 +7,7 @@ import OpenAI from 'openai';
 import sharp from 'sharp';
 
 export const maxDuration = 60; // Increase timeout for long AI generation
+const GENERATIONS_TABLE = 'a4_generations';
 
 export async function POST(request: NextRequest) {
   const isProduction = process.env.NODE_ENV === 'production';
@@ -14,7 +15,6 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const image = formData.get('image') as File;
     const name = formData.get('name') as string;
-    const designation = formData.get('designation') as string;
     const customPrompt = formData.get('customPrompt') as string | null;
 
     if (!image) {
@@ -191,14 +191,14 @@ export async function POST(request: NextRequest) {
 
     // Merge with background
     // Pass the /tmp path for processing
-    const finalImagePath = await mergeImages(tempGeneratedFile, timestamp.toString(), name, designation);
+    const finalImagePath = await mergeImages(tempGeneratedFile, timestamp.toString(), name);
 
     // Save metadata to Supabase database
     const { data: dbData, error: dbError } = await supabase
-      .from('generations')
+      .from(GENERATIONS_TABLE)
       .insert({
         name: name || 'Unknown',
-        designation: designation || 'Unknown',
+        designation: 'N/A',
         image_url: finalImagePath
       })
       .select()

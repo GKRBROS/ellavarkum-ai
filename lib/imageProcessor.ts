@@ -7,6 +7,9 @@ import { createCanvas, registerFont } from 'canvas';
 
 let fontsRegistered = false;
 
+const A4_WIDTH_PX = 2480;
+const A4_HEIGHT_PX = 3508;
+
 const registerCanvasFonts = () => {
   if (fontsRegistered) return;
 
@@ -30,13 +33,12 @@ const registerCanvasFonts = () => {
 export async function mergeImages(
   generatedImagePath: string,
   timestamp: string,
-  name?: string,
-  designation?: string
+  name?: string
 ): Promise<string> {
   try {
     console.log('--- MERGE IMAGES DEBUG START ---');
     console.log('generatedImagePath:', generatedImagePath);
-    console.log('Text Overlay:', { name, designation });
+    console.log('Text Overlay:', { name });
     console.log('Node Env:', process.env.NODE_ENV);
 
     // Create output directory
@@ -74,7 +76,7 @@ export async function mergeImages(
     // regardless of input aspect ratio.
     const charWidth = layerWidth;
     const charHeight = Math.floor(layerHeight * 0.60); // Auto-fit height set to 60%
-    const charTopOffset = 350; // Moved up slightly as requested
+    const charTopOffset = Math.floor(layerHeight * 0.155);
     const charLeftOffset = 0;
 
     const layerWithCharacter = await sharp(layerPath)
@@ -94,11 +96,11 @@ export async function mergeImages(
       ])
       .toBuffer();
 
-    // STEP 2: Create Text Overlay if name/designation provided
+    // STEP 2: Create Text Overlay (name only)
     let finalCompositeLayers: any[] = [
       {
         input: await sharp(layerWithCharacter)
-          .resize(bgWidth, bgHeight, {
+          .resize(A4_WIDTH_PX, A4_HEIGHT_PX, {
             fit: 'cover'
           })
           .toBuffer(),
@@ -107,33 +109,25 @@ export async function mergeImages(
       }
     ];
 
-    if (name || designation) {
+    if (name) {
       // Create text overlay using Canvas (better than SVG for text rendering)
-      const canvasWidth = bgWidth;
-      const canvasHeight = bgHeight;
+      const canvasWidth = A4_WIDTH_PX;
+      const canvasHeight = A4_HEIGHT_PX;
 
       const nameText = name ? name.toUpperCase() : '';
-      const desText = designation ? designation.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase()) : '';
 
-      // Auto-scaling logic
-      const maxWidth = 900;
-      const baseNameSize = 64;
-      const baseDesSize = 36;
+      // Auto-scaling logic (large and bold look, fitted to footer width)
+      const maxWidth = Math.floor(canvasWidth * 0.95);
+      const maxNameSize = Math.floor(canvasWidth * 0.12);
+      const minNameSize = Math.floor(canvasWidth * 0.045);
+      const estimatedWidthPerChar = 0.52;
+      const desiredFillRatio = 0.96;
+      let nameFontSize = Math.floor(maxWidth / (Math.max(nameText.length, 1) * estimatedWidthPerChar));
+      nameFontSize = Math.max(minNameSize, Math.min(maxNameSize, nameFontSize));
 
-      const nameEstimatedWidth = nameText.length * (baseNameSize * 0.6);
-      const nameFontSize = nameEstimatedWidth > maxWidth
-        ? Math.floor(baseNameSize * (maxWidth / nameEstimatedWidth))
-        : baseNameSize;
+      const nameY = Math.floor(canvasHeight * 0.845);
 
-      const desEstimatedWidth = desText.length * (baseDesSize * 0.5);
-      const desFontSize = desEstimatedWidth > maxWidth
-        ? Math.floor(baseDesSize * (maxWidth / desEstimatedWidth))
-        : baseDesSize;
-
-      const nameY = Math.floor(canvasHeight * 0.742);
-      const desY = Math.floor(canvasHeight * 0.774);
-
-      console.log('Text overlay:', { nameText, desText, nameFontSize, desFontSize, nameY, desY });
+      console.log('Text overlay:', { nameText, nameFontSize, nameY, maxWidth });
 
       // Create canvas with text using node-canvas
       try {
@@ -147,15 +141,23 @@ export async function mergeImages(
           y: number,
           font: string,
           color: string,
-          letterSpacingPx = 0
+          letterSpacingPx = 0,
+          strokeWidthPx = 0
         ) => {
           ctx.font = font;
           ctx.fillStyle = color;
+          if (strokeWidthPx > 0) {
+            ctx.strokeStyle = color;
+            ctx.lineWidth = strokeWidthPx;
+          }
           ctx.textAlign = 'left';
           ctx.textBaseline = 'middle';
 
           if (!letterSpacingPx) {
             const textWidth = ctx.measureText(text).width;
+            if (strokeWidthPx > 0) {
+              ctx.strokeText(text, x - textWidth / 2, y);
+            }
             ctx.fillText(text, x - textWidth / 2, y);
             return;
           }
@@ -168,34 +170,47 @@ export async function mergeImages(
 
           let currentX = x - totalWidth / 2;
           for (const char of text) {
+            if (strokeWidthPx > 0) {
+              ctx.strokeText(char, currentX, y);
+            }
             ctx.fillText(char, currentX, y);
             currentX += ctx.measureText(char).width + letterSpacingPx;
           }
         };
 
-        // Draw name text (Cal Sans, size 64 max)
+        // Draw name text (Cal Sans, larger and bolder)
         if (nameText) {
-          const fontSize = Math.max(nameFontSize, 24);
+          let fittedNameSize = Math.max(nameFontSize, minNameSize);
+          ctx.font = `700 ${fittedNameSize}px "Cal Sans", Arial, sans-serif`;
+
+          while (fittedNameSize > minNameSize && ctx.measureText(nameText).width > maxWidth) {
+            fittedNameSize -= 2;
+            ctx.font = `700 ${fittedNameSize}px "Cal Sans", Arial, sans-serif`;
+          }
+
+          while (fittedNameSize < maxNameSize && ctx.measureText(nameText).width < maxWidth * desiredFillRatio) {
+            fittedNameSize += 2;
+            ctx.font = `700 ${fittedNameSize}px "Cal Sans", Arial, sans-serif`;
+          }
+
+          const fontSize = Math.max(fittedNameSize, 24);
+          const measuredNameWidth = ctx.measureText(nameText).width;
+          const gaps = Math.max(nameText.length - 1, 1);
+          let letterSpacingPx = 0;
+          if (nameText.length > 1 && measuredNameWidth < maxWidth * 0.99) {
+            letterSpacingPx = (maxWidth - measuredNameWidth) / gaps;
+            letterSpacingPx = Math.max(0, Math.min(letterSpacingPx, Math.floor(fontSize * 0.06)));
+          }
+          const strokeWidthPx = Math.max(2, Math.floor(fontSize * 0.035));
+          nameFontSize = fontSize;
           drawTextWithKerning(
             nameText,
             Math.floor(canvasWidth / 2),
             nameY,
-            `600 ${fontSize}px "Cal Sans", Arial, sans-serif`,
-            '#000000'
-          );
-        }
-
-        // Draw designation text (Geist, size 36 max, kerning -4%)
-        if (desText) {
-          const fontSize = Math.max(desFontSize, 18);
-          const letterSpacingPx = -0.04 * fontSize;
-          drawTextWithKerning(
-            desText,
-            Math.floor(canvasWidth / 2),
-            desY,
-            `400 ${fontSize}px "Geist", Arial, sans-serif`,
-            '#222222',
-            letterSpacingPx
+            `700 ${fontSize}px "Cal Sans", Arial, sans-serif`,
+            '#FFFFFF',
+            letterSpacingPx,
+            strokeWidthPx
           );
         }
 
@@ -211,16 +226,14 @@ export async function mergeImages(
       } catch (canvasErr) {
         console.warn('Canvas text rendering failed, falling back to SVG:', canvasErr);
         // Fallback to SVG if canvas fails
-        const svgWidth = bgWidth;
-        const svgHeight = bgHeight;
+        const svgWidth = A4_WIDTH_PX;
+        const svgHeight = A4_HEIGHT_PX;
         let svgContent = `<svg width="${svgWidth}" height="${svgHeight}" xmlns="http://www.w3.org/2000/svg"><defs><style>text { font-family: Arial, sans-serif; }</style></defs>`;
         
         if (nameText) {
-          svgContent += `<text x="${Math.floor(svgWidth / 2)}" y="${nameY}" fill="#000000" font-size="${Math.max(nameFontSize, 24)}" font-weight="600" font-family="Cal Sans, Arial, sans-serif" text-anchor="middle" dominant-baseline="middle">${nameText}</text>`;
-        }
-        
-        if (desText) {
-          svgContent += `<text x="${Math.floor(svgWidth / 2)}" y="${desY}" fill="#222222" font-size="${Math.max(desFontSize, 18)}" font-weight="400" font-family="Geist, Arial, sans-serif" letter-spacing="-0.04em" text-anchor="middle" dominant-baseline="middle">${desText}</text>`;
+          const fontSize = Math.max(nameFontSize, 24);
+          const strokeWidth = Math.max(2, Math.floor(fontSize * 0.035));
+          svgContent += `<text x="${Math.floor(svgWidth / 2)}" y="${nameY}" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="${strokeWidth}" font-size="${fontSize}" font-weight="700" font-family="Cal Sans, Arial, sans-serif" text-anchor="middle" dominant-baseline="middle">${nameText}</text>`;
         }
         
         svgContent += `</svg>`;
@@ -235,7 +248,10 @@ export async function mergeImages(
     }
 
     const finalBuffer = await sharp(backgroundPath)
-      .resize(bgWidth, bgHeight)
+      .resize(A4_WIDTH_PX, A4_HEIGHT_PX, {
+        fit: 'cover',
+        position: 'center'
+      })
       .composite(finalCompositeLayers)
       .png()
       .toBuffer();

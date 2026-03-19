@@ -7,7 +7,6 @@ import ImagePreview from "./ImagePreview";
 
 export default function ImageGenerator() {
   const [name, setName] = useState("");
-  const [designation, setDesignation] = useState("");
   const [customPrompt, setCustomPrompt] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadedImagePreview, setUploadedImagePreview] = useState<string | null>(null);
@@ -31,10 +30,6 @@ export default function ImageGenerator() {
       setError("Please enter a name");
       return;
     }
-    if (!designation.trim()) {
-      setError("Please enter a designation");
-      return;
-    }
     if (!selectedFile) {
       setError("Please upload an image first");
       return;
@@ -53,7 +48,6 @@ export default function ImageGenerator() {
       const formData = new FormData();
       formData.append("image", selectedFile);
       formData.append("name", name);
-      formData.append("designation", designation);
       formData.append("customPrompt", customPrompt);
 
       const response = await fetch("/api/generate", {
@@ -98,13 +92,13 @@ export default function ImageGenerator() {
     setCustomPrompt("");
   };
 
-  const isFormValid = name.trim() !== "" && designation.trim() !== "" && selectedFile !== null && customPrompt !== "";
+  const isFormValid = name.trim() !== "" && selectedFile !== null && customPrompt !== "";
 
   return (
     <div className="bg-gray-800/40 backdrop-blur-md rounded-3xl p-6 md:p-10 shadow-3xl border border-white/10 transition-all duration-300">
       {!finalImage ? (
         <div className="space-y-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-6">
             <div className="space-y-2">
               <label className="text-sm font-medium text-blue-300 uppercase tracking-wider">Full Name</label>
               <input
@@ -113,16 +107,6 @@ export default function ImageGenerator() {
                 className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-blue-300 uppercase tracking-wider">Designation</label>
-              <input
-                type="text"
-                placeholder="e.g. Actor & Producer"
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all"
-                value={designation}
-                onChange={(e) => setDesignation(e.target.value)}
               />
             </div>
           </div>

@@ -59,7 +59,7 @@ npm run dev
 
 Generate an image and check:
 - ✅ Image appears in Supabase Storage (`generated-images` bucket)
-- ✅ Metadata saved in `generations` table
+- ✅ Metadata saved in `a4_generations` table
 
 ### 6. Deploy to Railway/Render
 
@@ -88,11 +88,14 @@ Generate an image and check:
 
 ## 📊 Database Schema
 
-**Table: `generations`**
+**Table: `a4_generations`**
 - `id` (UUID) - Auto-generated
 - `name` (TEXT) - Person's name
 - `designation` (TEXT) - Person's designation
 - `image_url` (TEXT) - Final image URL
+- `output_format` (TEXT) - Output type (`A4`)
+- `output_width` (INTEGER) - Output width (`2480`)
+- `output_height` (INTEGER) - Output height (`3508`)
 - `created_at` (TIMESTAMP) - Auto-generated
 
 ## 🔍 Troubleshooting
@@ -105,7 +108,7 @@ Generate an image and check:
 **Database insert failing?**
 - Run the SQL setup script again
 - Check RLS policies are enabled
-- Verify table name is `generations`
+- Verify table name is `a4_generations`
 
 ---
 
