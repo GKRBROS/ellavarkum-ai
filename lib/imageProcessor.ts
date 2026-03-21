@@ -58,7 +58,6 @@ export async function mergeImages(
     const layerPath = join(process.cwd(), 'public', 'layer.png');
     console.log('Paths:', { backgroundPath, layerPath });
 
-    // Load images and metadata
     const [bgMetadata, layerMetadata] = await Promise.all([
       sharp(backgroundPath).metadata(),
       sharp(layerPath).metadata(),
@@ -72,11 +71,10 @@ export async function mergeImages(
     console.log(`Dimensions - BG: ${bgWidth}x${bgHeight}, Layer: ${layerWidth}x${layerHeight}`);
 
     // STEP 1: Composite generated image BEHIND layer.png
-    // Fill the layer strongly (like reference final.jpeg) so the subject
-    // occupies the full hero area with confident framing.
+    // Fill full width and keep the generated portrait anchored to the bottom.
     const charWidth = layerWidth;
-    const charHeight = Math.floor(layerHeight * 0.66);
-    const charTopOffset = Math.floor(layerHeight * 0.14);
+    const charHeight = Math.floor(layerHeight * 0.76);
+    const charTopOffset = layerHeight - charHeight;
     const charLeftOffset = 0;
 
     const layerWithCharacter = await sharp(layerPath)
@@ -86,7 +84,7 @@ export async function mergeImages(
           input: await sharp(generatedImagePath)
             .resize(charWidth, charHeight, {
               fit: 'cover',
-              position: 'top'
+              position: 'center'
             })
             .toBuffer(),
           blend: 'dest-over',
