@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import ImageUpload from "./ImageUpload";
 import ImagePreview from "./ImagePreview";
@@ -10,9 +10,12 @@ type GenderOption = "neutral" | "male" | "female";
 
 export default function ImageGenerator() {
   const [name, setName] = useState("");
-  const [gender, setGender] = useState<GenderOption>("neutral");
+  const [gender, setGender] = useState<GenderOption | null>("neutral");
   const [useCustomPrompt, setUseCustomPrompt] = useState(false);
-  const [customPrompt, setCustomPrompt] = useState("");
+  const [customPromptInput, setCustomPromptInput] = useState("");
+  const [appliedCustomPrompt, setAppliedCustomPrompt] = useState<string | null>(
+    null,
+  );
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadedImagePreview, setUploadedImagePreview] = useState<
     string | null
@@ -21,10 +24,6 @@ export default function ImageGenerator() {
   const [finalImage, setFinalImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    setCustomPrompt(PROMPTS[gender]);
-  }, [gender]);
 
   const handleFileSelect = (file: File) => {
     setSelectedFile(file);
@@ -37,7 +36,9 @@ export default function ImageGenerator() {
   };
 
   const handleGenerate = async () => {
-    const effectivePrompt = useCustomPrompt ? customPrompt : PROMPTS[gender];
+    const effectivePrompt = useCustomPrompt
+      ? (appliedCustomPrompt ?? "")
+      : PROMPTS[gender ?? "neutral"];
 
     if (!name.trim()) {
       setError("Please enter a name");
@@ -45,6 +46,10 @@ export default function ImageGenerator() {
     }
     if (!selectedFile) {
       setError("Please upload an image first");
+      return;
+    }
+    if (useCustomPrompt && !appliedCustomPrompt?.trim()) {
+      setError("Paste your prompt and click 'Apply this prompt' first");
       return;
     }
     if (!effectivePrompt.trim()) {
@@ -61,7 +66,7 @@ export default function ImageGenerator() {
       const formData = new FormData();
       formData.append("image", selectedFile);
       formData.append("name", name);
-      formData.append("gender", gender);
+      formData.append("gender", gender ?? "neutral");
       formData.append("useCustomPrompt", String(useCustomPrompt));
       formData.append("customPrompt", effectivePrompt);
 
@@ -99,6 +104,16 @@ export default function ImageGenerator() {
     }
   };
 
+  const handleApplyPrompt = () => {
+    const trimmedPrompt = customPromptInput.trim();
+    if (!trimmedPrompt) {
+      setError("Please paste a prompt before applying");
+      return;
+    }
+    setAppliedCustomPrompt(trimmedPrompt);
+    setError(null);
+  };
+
   const handleReset = () => {
     setSelectedFile(null);
     setUploadedImagePreview(null);
@@ -106,11 +121,13 @@ export default function ImageGenerator() {
     setFinalImage(null);
     setError(null);
     setGender("neutral");
-    setCustomPrompt(PROMPTS.neutral);
+    setCustomPromptInput("");
+    setAppliedCustomPrompt(null);
     setUseCustomPrompt(false);
   };
 
-  const isFormValid = name.trim() !== "" && selectedFile !== null;
+  const isPromptReady = !useCustomPrompt || Boolean(appliedCustomPrompt?.trim());
+  const isFormValid = name.trim() !== "" && selectedFile !== null && isPromptReady;
 
   return (
     <div className="bg-gray-800/40 backdrop-blur-md rounded-3xl p-4 sm:p-6 md:p-8 pt-0 shadow-3xl border border-white/10 transition-all duration-300">
@@ -144,9 +161,11 @@ export default function ImageGenerator() {
                   <button
                     key={option}
                     onClick={() => setGender(option)}
-                    disabled={loading}
+                    disabled={loading || useCustomPrompt}
                     className={`py-2 sm:py-3 px-3 sm:px-4 rounded-lg font-medium text-xs sm:text-sm transition-all duration-200 capitalize ${
-                      loading ? "opacity-50 cursor-not-allowed" : ""
+                      loading || useCustomPrompt
+                        ? "opacity-50 cursor-not-allowed"
+                        : ""
                     } ${
                       gender === option
                         ? "bg-blue-600 text-white shadow-lg ring-2 ring-blue-400/50"
@@ -159,7 +178,9 @@ export default function ImageGenerator() {
               )}
             </div>
             <p className="text-xs text-gray-400">
-              Choose the gender presentation style for the portrait
+              {useCustomPrompt
+                ? "Gender selection disabled while Override is enabled"
+                : "Choose the gender presentation style for the portrait"}
             </p>
           </div>
 
@@ -172,7 +193,11 @@ export default function ImageGenerator() {
               <input
                 type="checkbox"
                 checked={useCustomPrompt}
-                onChange={(e) => setUseCustomPrompt(e.target.checked)}
+                onChange={(e) => {
+                  const checked = e.target.checked;
+                  setUseCustomPrompt(checked);
+                  setGender(checked ? null : "neutral");
+                }}
                 disabled={loading}
                 className="w-5 h-5 accent-blue-500 cursor-pointer rounded disabled:cursor-not-allowed"
               />
@@ -193,34 +218,38 @@ export default function ImageGenerator() {
                 </span>
               </div>
               <textarea
-                placeholder="Edit the prompt to customize the portrait generation..."
+                placeholder="Paste your custom prompt here..."
                 disabled={loading}
                 className={`w-full min-h-[140px] sm:min-h-[160px] bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all resize-none text-sm sm:text-base font-mono leading-relaxed ${
                   loading ? "opacity-50 cursor-not-allowed" : ""
                 }`}
-                value={customPrompt}
-                onChange={(e) => setCustomPrompt(e.target.value)}
+                value={customPromptInput}
+                onChange={(e) => {
+                  const nextValue = e.target.value;
+                  setCustomPromptInput(nextValue);
+                  if (appliedCustomPrompt !== null && nextValue !== appliedCustomPrompt) {
+                    setAppliedCustomPrompt(null);
+                  }
+                }}
               />
               <div className="flex justify-between items-center text-xs pt-2">
-                <p
-                  className={
-                    customPrompt ? "text-green-400/60" : "text-gray-500"
-                  }
-                >
-                  {customPrompt ? "✓ Ready" : "Empty"}
+                <p className={appliedCustomPrompt ? "text-green-400/70" : "text-yellow-300/80"}>
+                  {appliedCustomPrompt
+                    ? "✓ Applied prompt will be sent"
+                    : "Prompt not applied yet"}
                 </p>
                 <p className="text-gray-500">
-                  {customPrompt.length} characters
+                  {customPromptInput.length} characters
                 </p>
               </div>
               <button
-                onClick={() => setCustomPrompt(PROMPTS[gender])}
+                onClick={handleApplyPrompt}
                 disabled={loading}
                 className={`text-xs w-full mt-2 px-3 py-1.5 bg-white/10 hover:bg-white/20 border border-white/10 rounded-lg text-gray-300 hover:text-white transition-all ${
                   loading ? "opacity-50 cursor-not-allowed" : ""
                 }`}
               >
-                ↻ Reset to {gender} template
+                Apply this prompt
               </button>
             </div>
           )}

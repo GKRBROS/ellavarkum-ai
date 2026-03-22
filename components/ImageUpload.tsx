@@ -6,12 +6,23 @@ interface ImageUploadProps {
   onImageUpload: (file: File) => void;
 }
 
+const ALLOWED_IMAGE_TYPES = new Set([
+  "image/png",
+  "image/jpeg",
+  "image/jpg",
+  "image/webp",
+]);
+
+const isAllowedImageType = (file: File) => {
+  return ALLOWED_IMAGE_TYPES.has(file.type.toLowerCase());
+};
+
 export default function ImageUpload({ onImageUpload }: ImageUploadProps) {
   const handleDrop = useCallback(
     (e: React.DragEvent<HTMLDivElement>) => {
       e.preventDefault();
       const file = e.dataTransfer.files[0];
-      if (file && file.type.startsWith("image/")) {
+      if (file && isAllowedImageType(file)) {
         onImageUpload(file);
       }
     },
@@ -24,7 +35,7 @@ export default function ImageUpload({ onImageUpload }: ImageUploadProps) {
 
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
+    if (file && isAllowedImageType(file)) {
       onImageUpload(file);
     }
   };
@@ -61,7 +72,7 @@ export default function ImageUpload({ onImageUpload }: ImageUploadProps) {
           <label className="inline-block">
             <input
               type="file"
-              accept="image/*"
+              accept="image/png,image/jpeg,image/jpg,image/webp"
               onChange={handleFileInput}
               className="hidden"
             />
@@ -70,9 +81,7 @@ export default function ImageUpload({ onImageUpload }: ImageUploadProps) {
             </span>
           </label>
         </div>
-        <p className="text-sm text-gray-500">
-          Supports JPG, PNG, WebP (Max 10MB)
-        </p>
+        <p className="text-sm text-gray-500">Supports PNG, JPEG/JPG, WEBP</p>
       </div>
     </div>
   );

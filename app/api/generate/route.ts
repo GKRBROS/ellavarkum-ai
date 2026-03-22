@@ -11,6 +11,13 @@ export const maxDuration = 120; // Allow up to 2 minutes for long AI generation
 const GENERATIONS_TABLE = 'a4_generations';
 const OPENROUTER_TIMEOUT_MS = 120000;
 const SKIP_OPTIONAL_STORAGE_UPLOADS = process.env.NETLIFY === 'true' || process.env.NODE_ENV === 'production';
+const ALLOWED_IMAGE_MIME_TYPES = new Set([
+  'image/png',
+  'image/jpeg',
+  'image/jpg',
+  'image/webp',
+]);
+const ALLOWED_IMAGE_EXTENSIONS = new Set(['png', 'jpg', 'jpeg', 'webp']);
 
 export async function POST(request: NextRequest) {
   const isProduction = process.env.NODE_ENV === 'production';
@@ -30,6 +37,19 @@ export async function POST(request: NextRequest) {
     if (!image) {
       return NextResponse.json(
         { error: 'No image provided' },
+        { status: 400 }
+      );
+    }
+
+    const imageMimeType = (image.type || '').toLowerCase();
+    const imageExtension = (image.name.split('.').pop() || '').toLowerCase();
+    const isAllowedImageType =
+      ALLOWED_IMAGE_MIME_TYPES.has(imageMimeType) ||
+      ALLOWED_IMAGE_EXTENSIONS.has(imageExtension);
+
+    if (!isAllowedImageType) {
+      return NextResponse.json(
+        { error: 'Only PNG, JPEG/JPG, or WEBP images are allowed' },
         { status: 400 }
       );
     }
