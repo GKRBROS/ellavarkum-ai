@@ -3,6 +3,7 @@ import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 import { mergeImages } from '@/lib/imageProcessor';
 import { getSupabaseClient } from '@/lib/supabase';
+import { PROMPTS, GenderOption } from '@/lib/prompts';
 import OpenAI from 'openai';
 import sharp from 'sharp';
 
@@ -18,6 +19,13 @@ export async function POST(request: NextRequest) {
     const image = formData.get('image') as File;
     const name = formData.get('name') as string;
     const customPrompt = formData.get('customPrompt') as string | null;
+    const rawGender = formData.get('gender') as string | null;
+    const useCustomPrompt = formData.get('useCustomPrompt') === 'true';
+
+    const gender: GenderOption =
+      rawGender === 'male' || rawGender === 'female' || rawGender === 'neutral'
+        ? rawGender
+        : 'neutral';
 
     if (!image) {
       return NextResponse.json(
@@ -87,15 +95,16 @@ export async function POST(request: NextRequest) {
     const base64Image = resizedBuffer.toString('base64');
     const dataUrl = `data:image/jpeg;base64,${base64Image}`;
 
-    // Custom prompt is required
-    if (!customPrompt || !customPrompt.trim()) {
+    const prompt = useCustomPrompt
+      ? customPrompt?.trim() || ''
+      : PROMPTS[gender];
+
+    if (!prompt) {
       return NextResponse.json(
         { error: 'Prompt is required' },
         { status: 400 }
       );
     }
-
-    const prompt = customPrompt;
 
     if (!process.env.OPENROUTER_API_KEY) {
       throw new Error('OPENROUTER_API_KEY not configured');

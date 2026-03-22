@@ -37,6 +37,8 @@ export default function ImageGenerator() {
   };
 
   const handleGenerate = async () => {
+    const effectivePrompt = useCustomPrompt ? customPrompt : PROMPTS[gender];
+
     if (!name.trim()) {
       setError("Please enter a name");
       return;
@@ -45,7 +47,7 @@ export default function ImageGenerator() {
       setError("Please upload an image first");
       return;
     }
-    if (!customPrompt.trim()) {
+    if (!effectivePrompt.trim()) {
       setError("Prompt is empty");
       return;
     }
@@ -61,7 +63,7 @@ export default function ImageGenerator() {
       formData.append("name", name);
       formData.append("gender", gender);
       formData.append("useCustomPrompt", String(useCustomPrompt));
-      formData.append("customPrompt", customPrompt);
+      formData.append("customPrompt", effectivePrompt);
 
       const response = await fetch("/api/generate", {
         method: "POST",
