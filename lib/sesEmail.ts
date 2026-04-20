@@ -58,6 +58,13 @@ const getDisplayDate = () =>
     year: 'numeric',
   }).format(new Date());
 
+const getDefaultLogoUrl = (publicUrl: string) => {
+  if (publicUrl) {
+    return `${publicUrl.replace(/\/$/, '')}/logo_black.png`;
+  }
+  return 'https://memento.frameforge.one/logo_black.png';
+};
+
 const buildOtpEmailHtml = (otp: string, helpCenterUrl: string, logoUrl: string) => `
 <!DOCTYPE html>
 <html lang="en">
@@ -254,7 +261,7 @@ export const sendOtpEmail = async (input: { to: string; otp: string }) => {
   const publicUrl = isPublicAppUrl(APP_URL) ? APP_URL : '';
   const helpCenterUrl = publicUrl || 'https://frameforge.one';
   const logoUrl = SES_LOGO_URL
-    || (publicUrl ? `${publicUrl.replace(/\/$/, '')}/favicon.ico` : 'https://frameforge.one/favicon.ico');
+    || getDefaultLogoUrl(publicUrl);
   const appUrlTextLine = publicUrl || 'https://frameforge.one';
   const textBody = [
     `Your Frame Forge OTP is: ${input.otp}`,
