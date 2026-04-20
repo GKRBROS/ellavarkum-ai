@@ -9,6 +9,19 @@ const SENDER_EMAIL = process.env.AWS_SES_FROM_EMAIL?.trim() || 'no-reply@framefo
 const RETURN_PATH_EMAIL = process.env.AWS_SES_RETURN_PATH?.trim() || SENDER_EMAIL;
 const SES_CONFIGURATION_SET = process.env.AWS_SES_CONFIGURATION_SET?.trim() || '';
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL?.trim() || 'http://localhost:3000';
+const SES_LOGO_URL = process.env.AWS_SES_LOGO_URL?.trim() || '';
+
+const isPublicAppUrl = (url: string) => {
+  try {
+    const parsed = new URL(url);
+    const host = parsed.hostname.toLowerCase();
+    if (host === 'localhost' || host === '127.0.0.1') return false;
+    if (host.endsWith('.local')) return false;
+    return parsed.protocol === 'https:';
+  } catch {
+    return false;
+  }
+};
 
 let sesClient: SESClient | null = null;
 
@@ -38,97 +51,197 @@ const escapeHtml = (value: string) =>
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
 
-const buildOtpEmailHtml = (otp: string) => `
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
-<head>
-<meta http-equiv="Content-type" content="text/html; charset=utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<meta http-equiv="X-UA-Compatible" content="IE=edge">
-<title>FrameForge OTP</title>
-<style>
-body { margin:0; padding:0; background:#EAE7E4; }
-a { text-decoration:none; }
-</style>
-</head>
-<body bgcolor="#EAE7E4">
-<center>
-<table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#EAE7E4">
-<tr>
-<td align="center">
-<table width="652" border="0" cellspacing="0" cellpadding="0" style="background:#ffffff;">
-<tr>
-<td>
-<table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#202020">
-<tr>
-<td align="center" style="padding:40px 20px; font-family: Arial, sans-serif; font-size:28px; font-weight:bold; color:#ffffff; letter-spacing:1px;">
-FRAMEFORGE
-</td>
-</tr>
-</table>
-<table width="100%" border="0" cellspacing="0" cellpadding="0">
-<tr>
-<td align="center" style="padding: 40px 20px 10px 20px; font-family: Arial, sans-serif; font-size:16px; color:#555;">
-Your verification code
-</td>
-</tr>
-<tr>
-<td align="center" style="padding: 10px 20px 30px 20px;">
-<table border="0" cellspacing="0" cellpadding="0">
-<tr>
-<td bgcolor="#F4F2FF" align="center" style="border-radius:16px; padding:24px 38px;">
-<div style="font-family: Arial, sans-serif; font-weight: bold; font-size: 42px; line-height: 42px; letter-spacing: 8px; color:#3F26DB;">${escapeHtml(otp)}</div>
-</td>
-</tr>
-</table>
-</td>
-</tr>
-<tr>
-<td align="center" style="font-family: Arial, sans-serif; font-size:14px; color:#888; padding-bottom:30px;">
-Valid for 10 minutes
-</td>
-</tr>
-</table>
-<table width="100%" border="0" cellspacing="0" cellpadding="0">
-<tr>
-<td align="center" style="padding:30px 70px 20px 70px; font-family: Arial, sans-serif; font-size:16px; line-height:26px; color:#444;">
-Thank you for using <strong>FrameForge</strong>.
-<br><br>
-Use the one-time password above to verify your email and continue creating your image.
-</td>
-</tr>
-<tr>
-<td align="center" style="padding:0 70px 35px 70px; font-family: Arial, sans-serif; font-size:15px; line-height:24px; color:#666;">
-If you didn’t request this code, you can safely ignore this email.
-</td>
-</tr>
-</table>
-<table width="100%" border="0" cellspacing="0" cellpadding="0">
-<tr>
-<td align="center" style="padding-bottom:50px;">
-<span style="font-family: Arial, sans-serif; font-size:16px; color:#3F26DB; font-weight:600;">
-Thank you for choosing Frame Forge
-</span>
-</td>
-</tr>
-</table>
-<table width="100%" border="0" cellspacing="0" cellpadding="0">
-<tr>
-<td align="center" style="padding:30px; font-family: Arial, sans-serif; font-size:12px; color:#8F8C94;">
-You received this email as a registered user of <a href="${APP_URL}" target="_blank" style="color:#8F8C94; text-decoration:none;">FrameForge</a>
-<br><br>
-© 2026 FrameForge. All rights reserved.
-</td>
-</tr>
-</table>
-</td>
-</tr>
-</table>
-</td>
-</tr>
-</table>
-</center>
-</body>
+const getDisplayDate = () =>
+  new Intl.DateTimeFormat('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  }).format(new Date());
+
+const buildOtpEmailHtml = (otp: string, helpCenterUrl: string, logoUrl: string) => `
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>Frame Forge OTP</title>
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body
+    style="
+      margin: 0;
+      font-family: 'Poppins', Arial, sans-serif;
+      background: #ffffff;
+      font-size: 14px;
+    "
+  >
+    <div
+      style="
+        max-width: 680px;
+        margin: 0 auto;
+        padding: 45px 30px 60px;
+        background: #f4f7ff;
+        background-image: linear-gradient(180deg, #2d334a 0%, #f4f7ff 52%);
+        background-repeat: no-repeat;
+        background-size: 800px 452px;
+        background-position: top center;
+        font-size: 14px;
+        color: #434343;
+      "
+    >
+      <header>
+        <table style="width: 100%;">
+          <tbody>
+            <tr style="height: 0;">
+              <td>
+                <table style="border-collapse: collapse;">
+                  <tbody>
+                    <tr>
+                      <td style="padding: 0; vertical-align: middle;">
+                        <img
+                          alt="Frame Forge"
+                          src="${logoUrl}"
+                          width="30"
+                          height="30"
+                          style="display: block; border-radius: 6px;"
+                        />
+                      </td>
+                      <td style="padding-left: 10px; vertical-align: middle;">
+                        <span style="font-size: 16px; line-height: 30px; font-weight: 600; color: #ffffff; letter-spacing: 0.5px;">
+                          FRAME FORGE
+                        </span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </td>
+              <td style="text-align: right;">
+                <span
+                  style="font-size: 16px; line-height: 30px; color: #ffffff;"
+                  >${getDisplayDate()}</span
+                >
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </header>
+
+      <main>
+        <div
+          style="
+            margin: 0;
+            margin-top: 70px;
+            padding: 92px 30px 115px;
+            background: #ffffff;
+            border-radius: 30px;
+            text-align: center;
+          "
+        >
+          <div style="width: 100%; max-width: 489px; margin: 0 auto;">
+            <h1
+              style="
+                margin: 0;
+                font-size: 24px;
+                font-weight: 500;
+                color: #1f1f1f;
+              "
+            >
+              Your OTP
+            </h1>
+            <p
+              style="
+                margin: 0;
+                margin-top: 17px;
+                font-size: 16px;
+                font-weight: 500;
+              "
+            >
+              Hello,
+            </p>
+            <p
+              style="
+                margin: 0;
+                margin-top: 17px;
+                font-weight: 500;
+                letter-spacing: 0.2px;
+                line-height: 1.7;
+              "
+            >
+              Thank you for choosing Frame Forge. Use the following OTP
+              to complete your email verification. OTP is valid for
+              <span style="font-weight: 600; color: #1f1f1f;">10 minutes</span>.
+              Do not share this code with anyone.
+            </p>
+            <p
+              style="
+                margin: 0;
+                margin-top: 60px;
+                font-size: 40px;
+                font-weight: 600;
+                letter-spacing: 25px;
+                color: #ba3d4f;
+              "
+            >
+              ${escapeHtml(otp)}
+            </p>
+          </div>
+        </div>
+
+        <p
+          style="
+            max-width: 400px;
+            margin: 0 auto;
+            margin-top: 90px;
+            text-align: center;
+            font-weight: 500;
+            color: #8c8c8c;
+          "
+        >
+          Need help? Visit our
+          <a
+            href="${helpCenterUrl}"
+            target="_blank"
+            rel="noopener noreferrer"
+            style="color: #499fb6; text-decoration: none;"
+            >Help Center</a
+          >
+        </p>
+      </main>
+
+      <footer
+        style="
+          width: 100%;
+          max-width: 490px;
+          margin: 20px auto 0;
+          text-align: center;
+          border-top: 1px solid #e6ebf1;
+        "
+      >
+        <p
+          style="
+            margin: 0;
+            margin-top: 40px;
+            font-size: 16px;
+            font-weight: 600;
+            color: #434343;
+          "
+        >
+          Frame Forge
+        </p>
+        <p style="margin: 0; margin-top: 8px; color: #434343;">
+          AI image generation platform.
+        </p>
+        <p style="margin: 0; margin-top: 16px; color: #434343;">
+          Copyright © ${new Date().getFullYear()} Frame Forge. All rights reserved.
+        </p>
+      </footer>
+    </div>
+  </body>
 </html>`;
 
 export const sendOtpEmail = async (input: { to: string; otp: string }) => {
@@ -137,19 +250,25 @@ export const sendOtpEmail = async (input: { to: string; otp: string }) => {
   }
 
   const client = getSesClient();
-  const subject = `Frame Forge verification code: ${input.otp}`;
+  const subject = 'Your Frame Forge OTP code';
+  const publicUrl = isPublicAppUrl(APP_URL) ? APP_URL : '';
+  const helpCenterUrl = publicUrl || 'https://frameforge.one';
+  const logoUrl = SES_LOGO_URL
+    || (publicUrl ? `${publicUrl.replace(/\/$/, '')}/favicon.ico` : 'https://frameforge.one/favicon.ico');
+  const appUrlTextLine = publicUrl || 'https://frameforge.one';
   const textBody = [
-    `Your Frame Forge verification code is: ${input.otp}`,
+    `Your Frame Forge OTP is: ${input.otp}`,
     'This code is valid for 10 minutes.',
     '',
-    'If you did not request this code, you can ignore this message.',
+    'If you did not request this code, you can ignore this email.',
     '',
-    `Frame Forge: ${APP_URL}`,
+    `Help Center: ${helpCenterUrl}`,
+    `Frame Forge: ${appUrlTextLine}`,
   ].join('\n');
 
   const response = await client.send(
     new SendEmailCommand({
-      Source: SENDER_EMAIL,
+      Source: `FrameForge Security <${SENDER_EMAIL}>`,
       ReturnPath: RETURN_PATH_EMAIL,
       ...(SES_CONFIGURATION_SET ? { ConfigurationSetName: SES_CONFIGURATION_SET } : {}),
       Destination: {
@@ -162,7 +281,7 @@ export const sendOtpEmail = async (input: { to: string; otp: string }) => {
         },
         Body: {
           Html: {
-            Data: buildOtpEmailHtml(input.otp),
+            Data: buildOtpEmailHtml(input.otp, helpCenterUrl, logoUrl),
             Charset: 'UTF-8',
           },
           Text: {
