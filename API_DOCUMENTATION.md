@@ -299,6 +299,71 @@ canvas.toBlob((blob) => {
 
 ---
 
+### 3.1 Reset Generation For Existing Email (Retry)
+
+**Endpoint:** `POST /api/generate/reset`
+
+**Description:** Clears previously generated image fields for an already-verified email request so the same email can generate again.
+
+**Request Headers:**
+```
+Content-Type: application/json
+Origin: <allowed-origin>
+```
+
+**Request Body:**
+```json
+{
+  "email": "user@example.com",
+  "requestId": "550e8400-e29b-41d4-a716-446655440000"
+}
+```
+
+`requestId` is optional. If omitted, the latest request for the email is reset.
+
+**Response (200 - Success):**
+```json
+{
+  "success": true,
+  "message": "Generation state reset. You can generate again for this email.",
+  "email": "user@example.com",
+  "requestId": "550e8400-e29b-41d4-a716-446655440000",
+  "status": "email_verified"
+}
+```
+
+**Error Responses:**
+
+- **400 Bad Request:**
+  ```json
+  { "error": "Email is required" }
+  ```
+
+- **403 Forbidden:**
+  ```json
+  { "error": "Email is not verified for this request" }
+  ```
+
+- **404 Not Found:**
+  ```json
+  { "error": "No request found for this email" }
+  ```
+
+- **500 Internal Server Error:**
+  ```json
+  { "error": "Unable to reset generation request" }
+  ```
+
+**Example cURL:**
+```bash
+curl -X POST http://localhost:3000/api/generate/reset \
+  -H "Content-Type: application/json" \
+  -H "Origin: http://localhost:3000" \
+  -d '{"email":"user@example.com","requestId":"550e8400-e29b-41d4-a716-446655440000"}'
+```
+
+---
+
 ### 4. Generation Callback (WebSocket Alternative)
 
 **Endpoint:** `POST /api/callback`
@@ -378,6 +443,16 @@ Body: (FormData)
   - gender: "male"
 ↓
 Response: { "success": true, "finalImageUrl": "..." }
+```
+
+### Optional Step: Reset and Regenerate For Same Email
+```
+POST /api/generate/reset
+Body: { "email": "user@example.com", "requestId": "<existing-request-id>" }
+↓
+Response: { "success": true, "status": "email_verified" }
+
+Then call POST /api/generate again using the same email and requestId.
 ```
 
 ---

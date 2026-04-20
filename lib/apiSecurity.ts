@@ -2,15 +2,32 @@ import 'server-only';
 
 import { NextRequest, NextResponse } from 'next/server';
 
-const ALLOWED_ORIGINS = new Set([
+const DEFAULT_ALLOWED_ORIGINS = [
   'http://localhost:5173',
   'http://localhost:3000',
   'https://frameforge.one',
+  'https://www.frameforge.one',
   'https://frameforge-mauve.vercel.app',
-]);
+];
+
+const parseEnvOrigins = () => {
+  const raw = process.env.CORS_ALLOWED_ORIGINS || process.env.ALLOWED_ORIGINS || '';
+  return raw
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+};
+
+const ALLOWED_ORIGINS = new Set([...DEFAULT_ALLOWED_ORIGINS, ...parseEnvOrigins()].map((origin) => {
+  try {
+    return new URL(origin).origin;
+  } catch {
+    return origin.replace(/\/$/, '');
+  }
+}));
 
 const ALLOW_METHODS = 'POST,OPTIONS';
-const ALLOW_HEADERS = 'Content-Type,Authorization,X-Requested-With';
+const ALLOW_HEADERS = ['Content-Type', 'Authorization', 'X-Requested-With'];
 
 const normalizeOrigin = (origin: string) => {
   try {
@@ -28,6 +45,16 @@ const getAllowedOrigin = (request: NextRequest) => {
   return ALLOWED_ORIGINS.has(normalized) ? normalized : null;
 };
 
+const getAllowedHeaders = (request: NextRequest) => {
+  const requestedHeaders = request.headers
+    .get('access-control-request-headers')
+    ?.split(',')
+    .map((header) => header.trim())
+    .filter(Boolean) || [];
+
+  return Array.from(new Set([...ALLOW_HEADERS, ...requestedHeaders])).join(',');
+};
+
 const applyHeaders = (request: NextRequest, response: NextResponse) => {
   const allowedOrigin = getAllowedOrigin(request);
 
@@ -40,7 +67,7 @@ const applyHeaders = (request: NextRequest, response: NextResponse) => {
   if (allowedOrigin) {
     response.headers.set('Access-Control-Allow-Origin', allowedOrigin);
     response.headers.set('Access-Control-Allow-Methods', ALLOW_METHODS);
-    response.headers.set('Access-Control-Allow-Headers', ALLOW_HEADERS);
+    response.headers.set('Access-Control-Allow-Headers', getAllowedHeaders(request));
   }
 
   return response;
