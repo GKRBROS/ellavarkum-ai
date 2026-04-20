@@ -27,7 +27,7 @@ const ALLOWED_ORIGINS = new Set([...DEFAULT_ALLOWED_ORIGINS, ...parseEnvOrigins(
   }
 }));
 
-const ALLOW_METHODS = 'POST,OPTIONS';
+const ALLOW_METHODS = 'GET,POST,OPTIONS';
 const ALLOW_HEADERS = ['Content-Type', 'Authorization', 'X-Requested-With'];
 
 const normalizeOrigin = (origin: string) => {
@@ -56,7 +56,7 @@ const getAllowedHeaders = (request: NextRequest) => {
   return Array.from(new Set([...ALLOW_HEADERS, ...requestedHeaders])).join(',');
 };
 
-const applyHeaders = (request: NextRequest, response: NextResponse) => {
+export const applyCorsHeaders = (request: NextRequest, response: NextResponse) => {
   const allowedOrigin = getAllowedOrigin(request);
 
   response.headers.set('Vary', 'Origin');
@@ -82,7 +82,7 @@ export const rejectIfOriginNotAllowed = (request: NextRequest) => {
   if (getAllowedOrigin(request)) return null;
 
   const response = NextResponse.json({ error: 'Origin not allowed' }, { status: 403 });
-  return applyHeaders(request, response);
+  return applyCorsHeaders(request, response);
 };
 
 export const handleCorsPreflight = (request: NextRequest) => {
@@ -90,10 +90,10 @@ export const handleCorsPreflight = (request: NextRequest) => {
   if (originError) return originError;
 
   const response = new NextResponse(null, { status: 204 });
-  return applyHeaders(request, response);
+  return applyCorsHeaders(request, response);
 };
 
 export const apiJson = (request: NextRequest, body: unknown, init?: ResponseInit) => {
   const response = NextResponse.json(body, init);
-  return applyHeaders(request, response);
+  return applyCorsHeaders(request, response);
 };

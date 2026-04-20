@@ -43,6 +43,27 @@ const ALLOWED_IMAGE_MIME_TYPES = new Set([
 ]);
 const ALLOWED_IMAGE_EXTENSIONS = new Set(['png', 'jpg', 'jpeg', 'webp']);
 
+const buildFinalImageUrl = (request: NextRequest, finalImagePath: string) => {
+  const origin = request.nextUrl.origin;
+
+  if (!finalImagePath) return '';
+
+  if (finalImagePath.startsWith('http')) {
+    try {
+      const parsed = new URL(finalImagePath);
+      const isS3Host = parsed.host.includes('.amazonaws.com');
+      if (isS3Host) {
+        return `${origin}/api/assets/download?url=${encodeURIComponent(finalImagePath)}`;
+      }
+    } catch {
+      return finalImagePath;
+    }
+    return finalImagePath;
+  }
+
+  return `${origin}${finalImagePath.startsWith('/') ? '' : '/'}${finalImagePath}`;
+};
+
 export async function POST(request: NextRequest) {
   const blockedOriginResponse = rejectIfOriginNotAllowed(request);
   if (blockedOriginResponse) return blockedOriginResponse;
@@ -237,6 +258,7 @@ export async function POST(request: NextRequest) {
     }
 
     const finalImagePath = await mergeImages(tempGeneratedFile, timestamp.toString(), name);
+    const finalImageUrl = buildFinalImageUrl(request, finalImagePath);
 
     const { data: dbData, error: dbError } = await supabase
       .from(IMAGE_GENERATION_TABLE)
@@ -267,6 +289,7 @@ export async function POST(request: NextRequest) {
       uploadedImage: uploadedImageUrl,
       generatedImage: finalGeneratedUrl,
       finalImage: finalImagePath,
+      finalImageUrl,
       dbId: dbData?.id,
       requestId: validatedRequestRow.id,
       prompt,
