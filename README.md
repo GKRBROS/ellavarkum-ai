@@ -1,102 +1,74 @@
-# Arcane AI Image Generator
+# Email OTP Image Generator
 
-Transform your photos into stunning Arcane-style illustrations using AI!
+Register an email, verify a 6-digit OTP, then submit a name, organization, gender, and photo to generate a poster-style image through the backend.
 
 ## Features
 
-- 📸 **Easy Upload**: Drag-and-drop or click to upload your image
-- 🎨 **AI Transformation**: Uses OpenAI's DALL-E to reimagine images in Arcane style
-- 🖼️ **Custom Background**: Merges generated image with a fixed background
-- 💾 **Download**: Save your transformed image as PNG
-- 🔗 **Share**: Share your creation with others
+- Email registration with duplicate checking in Supabase
+- 6-digit OTP generation and verification
+- Profile capture for name, organization, and gender
+- Photo upload plus AI image generation
+- Final poster composition with name and organization text
+- Result URLs stored back in Supabase
 
 ## Setup
 
-1. **Install dependencies:**
+1. Install dependencies:
 
-   ```bash
-   npm install
-   ```
+```bash
+npm install
+```
 
-2. **Set up environment variables:**
-   - Copy `.env.local.example` to `.env.local`
-   - Add your OpenAI API key:
-     ```
-     OPENAI_API_KEY=your_openai_api_key_here
-     ```
+2. Configure environment variables:
 
-3. **Add a background image (optional):**
-   - Place a `background.png` file in the `public` folder
-   - If not provided, a default purple gradient will be used
+```bash
+SUPABASE_URL=your_supabase_url
+SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+OTP_SECRET=your_random_secret
+OPENROUTER_API_KEY=your_openrouter_key
+GENERATION_PROMPT=optional_custom_prompt_template
+```
+
+3. Run the Supabase SQL script:
+
+- Open `supabase-setup.sql` in the Supabase SQL editor
+- Run it to create the request table and bucket
 
 ## Running the App
 
-### Development Mode
+Development mode:
 
 ```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Open [http://localhost:3000](http://localhost:3000).
 
-### Production Build
+Production build:
 
 ```bash
 npm run build
 npm start
 ```
 
-## How It Works
+## API Flow
 
-1. **Upload**: User uploads an image through the web interface
-2. **AI Generation**: The image is sent to OpenAI's API with the prompt: _"reimagine this person in an Arcane-style illustration with a cool, professional pose and a confident smile on a plain black background"_
-3. **Image Merging**: The AI-generated image is merged with a background using Sharp (server-side image processing)
-4. **Preview & Download**: User can preview the final result and download or share it
+1. `POST /api/auth/request-otp` creates the email row and generates the OTP
+2. `POST /api/auth/verify-otp` validates the 6-digit code
+3. `POST /api/generate` uploads the photo, generates the image, merges the poster, and saves the final URLs
 
 ## Tech Stack
 
-- **Framework**: Next.js 15 with App Router
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS
-- **AI API**: OpenAI (DALL-E)
-- **Image Processing**: Sharp
-- **Deployment Ready**: Vercel, Netlify, or any Node.js hosting
-
-## Project Structure
-
-```
-├── app/
-│   ├── api/
-│   │   └── generate/
-│   │       └── route.ts          # API endpoint for image generation
-│   ├── layout.tsx                # Root layout
-│   ├── page.tsx                  # Home page
-│   └── globals.css               # Global styles
-├── components/
-│   ├── ImageGenerator.tsx        # Main component
-│   ├── ImageUpload.tsx           # Upload interface
-│   └── ImagePreview.tsx          # Preview and actions
-├── lib/
-│   └── imageProcessor.ts         # Image merging logic
-├── public/
-│   ├── background.png            # Background image (optional)
-│   ├── uploads/                  # Temporary uploaded images
-│   ├── generated/                # AI-generated images
-│   └── final/                    # Final merged images
-└── package.json
-```
-
-## API Requirements
-
-You need an OpenAI API key with access to the Images API (DALL-E). Get one at [https://platform.openai.com/api-keys](https://platform.openai.com/api-keys).
+- Next.js 15 with App Router
+- TypeScript
+- Tailwind CSS
+- Supabase for persistence and storage
+- OpenRouter image generation
+- Sharp for image processing
 
 ## Notes
 
-- Maximum upload size: 10MB
-- Supported formats: JPG, PNG, WebP
-- Generated images are 1024x1024 pixels
-- Temporary files are stored in `public/uploads`, `public/generated`, and `public/final`
-
-## License
-
-MIT
+- The backend expects `SUPABASE_SERVICE_ROLE_KEY` for server-side database access.
+- `supabase-setup.sql` creates the storage bucket `generated-images` and the `image_generation_requests` table.
+- In development, the request OTP route returns the OTP in the response so you can test the flow without an email service.

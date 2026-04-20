@@ -1,69 +1,69 @@
--- ============================================
--- SUPABASE SETUP FOR AI IMAGE GENERATOR
--- ============================================
+-- ==================================================
+-- SUPABASE SETUP FOR EMAIL OTP IMAGE GENERATION FLOW
+-- ==================================================
 
--- Optional extension used by gen_random_uuid()
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
+CREATE EXTENSION IF NOT EXISTS citext;
 
--- 1. Create Storage Bucket for Generated Images
--- Run this in Supabase Dashboard > Storage > Create Bucket
--- OR use the Supabase Dashboard UI to create a bucket named 'generated-images'
--- Make sure to set it as PUBLIC so images can be accessed via URL
-
--- If using SQL, you can create the bucket policy:
+-- Storage bucket for uploaded photos and generated images.
 INSERT INTO storage.buckets (id, name, public)
 VALUES ('generated-images', 'generated-images', true)
 ON CONFLICT (id) DO NOTHING;
 
--- 2. Set up Storage Policy (Allow public read access)
-CREATE POLICY "Public Access"
-ON storage.objects FOR SELECT
-USING ( bucket_id = 'generated-images' );
-
--- 3. Allow authenticated uploads (if you add auth later)
-CREATE POLICY "Authenticated users can upload"
-ON storage.objects FOR INSERT
-WITH CHECK ( bucket_id = 'generated-images' );
-
--- ============================================
--- 4. Create Table for Storing Generation Metadata
--- ============================================
-CREATE TABLE IF NOT EXISTS public.a4_generations (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  name TEXT NOT NULL,
-  designation TEXT NOT NULL,
-  image_url TEXT NOT NULL,
-  output_format TEXT NOT NULL DEFAULT 'A4',
-  output_width INTEGER NOT NULL DEFAULT 2480,
-  output_height INTEGER NOT NULL DEFAULT 3508,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+-- Main request table used by the backend APIs.
+CREATE TABLE IF NOT EXISTS public.image_generation_requests (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email CITEXT NOT NULL UNIQUE,
+  otp_code_hash TEXT,
+  otp_expires_at TIMESTAMPTZ,
+  otp_verified_at TIMESTAMPTZ,
+  is_verified BOOLEAN NOT NULL DEFAULT FALSE,
+  verification_attempts INTEGER NOT NULL DEFAULT 0,
+  name TEXT,
+  organization TEXT,
+  gender TEXT NOT NULL DEFAULT 'neutral',
+  prompt_used TEXT,
+  photo_url TEXT,
+  generated_image_url TEXT,
+  final_image_url TEXT,
+  generation_status TEXT NOT NULL DEFAULT 'otp_pending',
+  last_error TEXT,
+  generated_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- 5. Enable Row Level Security (RLS)
-ALTER TABLE public.a4_generations ENABLE ROW LEVEL SECURITY;
+CREATE INDEX IF NOT EXISTS idx_image_generation_requests_created_at
+  ON public.image_generation_requests (created_at DESC);
 
--- 6. Create Policy for Public Read Access
-DROP POLICY IF EXISTS "Allow public read access" ON public.a4_generations;
-CREATE POLICY "Allow public read access"
-ON public.a4_generations FOR SELECT
-USING (true);
+CREATE INDEX IF NOT EXISTS idx_image_generation_requests_status
+  ON public.image_generation_requests (generation_status);
 
--- 7. Create Policy for Insert (Allow anyone to insert for now)
-DROP POLICY IF EXISTS "Allow public insert" ON public.a4_generations;
-CREATE POLICY "Allow public insert"
-ON public.a4_generations FOR INSERT
-WITH CHECK (true);
+CREATE OR REPLACE FUNCTION public.set_updated_at_timestamp()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$;
 
--- ============================================
--- INDEXES for better performance
--- ============================================
-CREATE INDEX IF NOT EXISTS idx_a4_generations_created_at ON public.a4_generations(created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_a4_generations_name ON public.a4_generations(name);
+DROP TRIGGER IF EXISTS trg_image_generation_requests_updated_at ON public.image_generation_requests;
+CREATE TRIGGER trg_image_generation_requests_updated_at
+BEFORE UPDATE ON public.image_generation_requests
+FOR EACH ROW
+EXECUTE FUNCTION public.set_updated_at_timestamp();
 
--- ============================================
--- DONE! 
--- ============================================
--- Next steps:
--- 1. Copy your Supabase URL and ANON KEY from Supabase Dashboard > Settings > API
--- 2. Add them to your .env.local file
--- 3. Install Supabase client: npm install @supabase/supabase-js
+ALTER TABLE public.image_generation_requests ENABLE ROW LEVEL SECURITY;
+
+-- The backend should use SUPABASE_SERVICE_ROLE_KEY, so no public policies are required.
+
+-- ==================================================
+-- ENVIRONMENT VARIABLES
+-- ==================================================
+-- SUPABASE_URL=...
+-- SUPABASE_ANON_KEY=...
+-- SUPABASE_SERVICE_ROLE_KEY=...
+-- OTP_SECRET=any-long-random-string
+-- OPENROUTER_API_KEY=...

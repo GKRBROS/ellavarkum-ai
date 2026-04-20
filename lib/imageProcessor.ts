@@ -2,6 +2,7 @@ import sharp from 'sharp';
 import { join } from 'path';
 import { existsSync } from 'fs';
 import { mkdir, writeFile } from 'fs/promises';
+import { isS3Configured, uploadBufferToS3 } from '@/lib/s3Storage';
 import { getSupabaseClient } from '@/lib/supabase';
 import { createCanvas, registerFont } from 'canvas';
 
@@ -211,6 +212,7 @@ export async function mergeImages(
             letterSpacingPx,
             strokeWidthPx
           );
+
         }
 
         const textBuffer = canvas.toBuffer('image/png');
@@ -233,6 +235,7 @@ export async function mergeImages(
           const fontSize = Math.max(nameFontSize, 24);
           const strokeWidth = Math.max(2, Math.floor(fontSize * 0.035));
           svgContent += `<text x="${Math.floor(svgWidth / 2)}" y="${nameY}" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="${strokeWidth}" font-size="${fontSize}" font-weight="700" font-family="Cal Sans, Arial, sans-serif" text-anchor="middle" dominant-baseline="middle">${nameText}</text>`;
+
         }
 
         svgContent += `</svg>`;
@@ -270,8 +273,26 @@ export async function mergeImages(
       }
     }
 
-    // Upload final image to Supabase in production so it can be previewed and downloaded
+    // Upload final image to AWS S3 whenever configured.
+    if (isS3Configured()) {
+      try {
+        const s3PublicUrl = await uploadBufferToS3({
+          key: `final/${outputFilename}`,
+          body: finalBuffer,
+          contentType: 'image/png',
+        });
+
+        console.log('Final image uploaded to S3:', s3PublicUrl);
+        console.log('--- MERGE IMAGES DEBUG END - SUCCESS ---');
+        return s3PublicUrl;
+      } catch (s3Error) {
+        console.warn('S3 final upload failed, falling back to Supabase/local storage:', s3Error);
+      }
+    }
+
+    // Fallback: Supabase storage in production when S3 is not configured or fails.
     if (isProduction) {
+      // Fallback: Supabase storage when S3 is not configured or fails
       const supabase = getSupabaseClient();
       const { error: uploadError } = await supabase.storage
         .from('generated-images')

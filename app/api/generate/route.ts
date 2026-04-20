@@ -1,14 +1,29 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { writeFile, mkdir } from 'fs/promises';
+﻿import { NextRequest, NextResponse } from 'next/server';
+import { mkdir, writeFile } from 'fs/promises';
 import { join } from 'path';
-import { mergeImages } from '@/lib/imageProcessor';
-import { getSupabaseClient } from '@/lib/supabase';
-import { PROMPTS, GenderOption } from '@/lib/prompts';
-import OpenAI from 'openai';
+
 import sharp from 'sharp';
 
-export const maxDuration = 120; // Allow up to 2 minutes for long AI generation
-const GENERATIONS_TABLE = 'a4_generations';
+import { apiJson, handleCorsPreflight, rejectIfOriginNotAllowed } from '@/lib/apiSecurity';
+import { mergeImages } from '@/lib/imageProcessor';
+import {
+  buildGenerationPrompt,
+  GenderOption,
+  IMAGE_GENERATION_TABLE,
+  normalizeEmail,
+  parseGender,
+} from '@/lib/generationFlow';
+import { isS3Configured, uploadBufferToS3 } from '@/lib/s3Storage';
+import { getSupabaseClient } from '@/lib/supabase';
+
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+export const maxDuration = 120;
+
+export async function OPTIONS(request: NextRequest) {
+  return handleCorsPreflight(request);
+}
+
 const OPENROUTER_TIMEOUT_MS = 120000;
 const DEFAULT_OPENROUTER_IMAGE_MODELS = ['sourceful/riverflow-v2-fast-preview'];
 const OPENROUTER_IMAGE_MODELS = (process.env.OPENROUTER_IMAGE_MODELS || '')
@@ -29,120 +44,112 @@ const ALLOWED_IMAGE_MIME_TYPES = new Set([
 const ALLOWED_IMAGE_EXTENSIONS = new Set(['png', 'jpg', 'jpeg', 'webp']);
 
 export async function POST(request: NextRequest) {
+  const blockedOriginResponse = rejectIfOriginNotAllowed(request);
+  if (blockedOriginResponse) return blockedOriginResponse;
+
   const isProduction = process.env.NODE_ENV === 'production';
+
   try {
     const formData = await request.formData();
-    const image = formData.get('image') as File;
-    const name = formData.get('name') as string;
-    const customPrompt = formData.get('customPrompt') as string | null;
+    const photo = (formData.get('photo') || formData.get('image')) as File | null;
+    const email = normalizeEmail(String(formData.get('email') || ''));
+    const requestId = String(formData.get('requestId') || '').trim();
+    const name = String(formData.get('name') || '').trim();
+    const organization = String(formData.get('organization') || '').trim();
     const rawGender = formData.get('gender') as string | null;
-    const useCustomPrompt = formData.get('useCustomPrompt') === 'true';
 
-    const gender: GenderOption =
-      rawGender === 'male' || rawGender === 'female' || rawGender === 'neutral'
-        ? rawGender
-        : 'neutral';
+    const gender: GenderOption = parseGender(rawGender);
 
-    if (!image) {
-      return NextResponse.json(
-        { error: 'No image provided' },
-        { status: 400 }
-      );
-    }
-
-    const imageMimeType = (image.type || '').toLowerCase();
-    const imageExtension = (image.name.split('.').pop() || '').toLowerCase();
-    const isAllowedImageType =
-      ALLOWED_IMAGE_MIME_TYPES.has(imageMimeType) ||
-      ALLOWED_IMAGE_EXTENSIONS.has(imageExtension);
-
-    if (!isAllowedImageType) {
-      return NextResponse.json(
-        { error: 'Only PNG, JPEG/JPG, or WEBP images are allowed' },
-        { status: 400 }
-      );
-    }
-
-    // Save uploaded image temporarily for local processing
-    const bytes = await image.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-
-    const timestamp = Date.now();
-    const filename = `upload-${timestamp}.${image.name.split('.').pop()}`;
-
-    const tmpUploadsPath = join('/tmp', 'uploads');
-    const publicUploadsPath = join(process.cwd(), 'public', 'uploads');
-
-    // Save to /tmp for intermediate processing (always works on Vercel)
-    await mkdir(tmpUploadsPath, { recursive: true }).catch(() => { });
-    const tempUploadFile = join(tmpUploadsPath, filename);
-    await writeFile(tempUploadFile, buffer);
-
-    // Save locally for debug/local preview (optional and non-blocking in prod)
-    let uploadedImageUrl = `/uploads/${filename}`;
-    if (!isProduction) {
-      try {
-        await mkdir(publicUploadsPath, { recursive: true }).catch(() => { });
-        await writeFile(join(publicUploadsPath, filename), buffer);
-      } catch (err) {
-        console.warn('Could not save to public/uploads (read-only FS):', err);
-      }
-    }
+    if (!email) return apiJson(request, { error: 'Email is required' }, { status: 400 });
+    if (!photo) return apiJson(request, { error: 'No photo provided' }, { status: 400 });
+    if (!name) return apiJson(request, { error: 'Name is required' }, { status: 400 });
+    if (!organization) return apiJson(request, { error: 'Organization is required' }, { status: 400 });
 
     const supabase = getSupabaseClient();
 
-    // Uploading the raw input is optional; skip on serverless production for speed.
-    if (!SKIP_OPTIONAL_STORAGE_UPLOADS) {
-      console.log('Uploading input to Supabase Storage...');
-      const { error: uploadError } = await supabase.storage
-        .from('generated-images')
-        .upload(`uploads/${filename}`, buffer, {
-          contentType: image.type,
-          upsert: false
-        });
+    const requestSelect = 'id, is_verified';
+    const requestQuery = supabase
+      .from(IMAGE_GENERATION_TABLE)
+      .select(requestSelect)
+      .eq('email', email)
+      .order('created_at', { ascending: false })
+      .limit(1);
 
-      if (uploadError) {
-        console.error('Supabase upload error:', uploadError);
-      } else {
-        const { data: { publicUrl } } = supabase.storage
-          .from('generated-images')
-          .getPublicUrl(`uploads/${filename}`);
+    const { data: requestRows, error: requestError } = await requestQuery;
+    const requestRow = requestRows?.[0] || null;
+
+    if (!requestId && !requestRow) {
+      return apiJson(request, { error: 'No verified request found for this email' }, { status: 404 });
+    }
+
+    const resolvedRequestId = requestId || requestRow?.id || '';
+
+    const { data: validatedRequestRow, error: validatedRequestError } = await supabase
+      .from(IMAGE_GENERATION_TABLE)
+      .select('id, is_verified')
+      .eq('email', email)
+      .eq('id', resolvedRequestId)
+      .maybeSingle();
+
+    if (requestError || validatedRequestError) {
+      console.error('Generate request lookup error:', requestError || validatedRequestError);
+      return apiJson(request, { error: 'Unable to validate session' }, { status: 500 });
+    }
+    if (!validatedRequestRow) return apiJson(request, { error: 'No matching verified request found' }, { status: 404 });
+    if (!validatedRequestRow.is_verified) return apiJson(request, { error: 'Email is not verified yet' }, { status: 403 });
+
+    const imageMimeType = (photo.type || '').toLowerCase();
+    const imageExtension = (photo.name.split('.').pop() || '').toLowerCase();
+    const isAllowedImageType = ALLOWED_IMAGE_MIME_TYPES.has(imageMimeType) || ALLOWED_IMAGE_EXTENSIONS.has(imageExtension);
+    if (!isAllowedImageType) {
+      return apiJson(request, { error: 'Only PNG, JPEG/JPG, or WEBP images are allowed' }, { status: 400 });
+    }
+
+    const buffer = Buffer.from(await photo.arrayBuffer());
+    const timestamp = Date.now();
+    const filename = `upload-${timestamp}.${imageExtension || 'png'}`;
+
+    const tmpUploadsPath = join('/tmp', 'uploads');
+    const publicUploadsPath = join(process.cwd(), 'public', 'uploads');
+    await mkdir(tmpUploadsPath, { recursive: true }).catch(() => undefined);
+    await writeFile(join(tmpUploadsPath, filename), buffer);
+
+    let uploadedImageUrl = `/uploads/${filename}`;
+    if (!isProduction) {
+      try {
+        await mkdir(publicUploadsPath, { recursive: true }).catch(() => undefined);
+        await writeFile(join(publicUploadsPath, filename), buffer);
+      } catch {}
+    }
+
+    if (isS3Configured()) {
+      try {
+        uploadedImageUrl = await uploadBufferToS3({
+          key: `uploads/${filename}`,
+          body: buffer,
+          contentType: photo.type || 'application/octet-stream',
+        });
+      } catch (s3Error) {
+        console.warn('S3 upload failed, falling back to Supabase storage for original upload:', s3Error);
+      }
+    }
+
+    if (uploadedImageUrl.startsWith('/uploads/') && !SKIP_OPTIONAL_STORAGE_UPLOADS) {
+      const { error: uploadError } = await supabase.storage.from('generated-images').upload(`uploads/${filename}`, buffer, {
+        contentType: photo.type,
+        upsert: false,
+      });
+      if (!uploadError) {
+        const { data: { publicUrl } } = supabase.storage.from('generated-images').getPublicUrl(`uploads/${filename}`);
         uploadedImageUrl = publicUrl;
       }
     }
 
-    // Resize image for OpenRouter
-    console.log('Resizing input image for OpenRouter...');
-    const resizedBuffer = await sharp(buffer)
-      .resize(1024, 1024, {
-        fit: 'inside',
-        withoutEnlargement: true
-      })
-      .jpeg({ quality: 85 })
-      .toBuffer();
+    const resizedBuffer = await sharp(buffer).resize(1024, 1024, { fit: 'inside', withoutEnlargement: true }).jpeg({ quality: 85 }).toBuffer();
+    const dataUrl = `data:image/jpeg;base64,${resizedBuffer.toString('base64')}`;
+    const prompt = buildGenerationPrompt({ name, organization, gender });
 
-    const base64Image = resizedBuffer.toString('base64');
-    const dataUrl = `data:image/jpeg;base64,${base64Image}`;
-
-    const prompt = useCustomPrompt
-      ? customPrompt?.trim() || ''
-      : PROMPTS[gender];
-
-    if (!prompt) {
-      return NextResponse.json(
-        { error: 'Prompt is required' },
-        { status: 400 }
-      );
-    }
-
-    if (!process.env.OPENROUTER_API_KEY) {
-      throw new Error('OPENROUTER_API_KEY not configured');
-    }
-
-    // Call OpenRouter with model fallback
-    console.log('Sending prompt to OpenRouter:', prompt.substring(0, 100) + '...');
-    console.log('OpenRouter model candidates:', IMAGE_MODEL_CANDIDATES.join(', '));
-    console.time('OpenRouter_AI_Call');
+    if (!process.env.OPENROUTER_API_KEY) throw new Error('OPENROUTER_API_KEY not configured');
 
     let result: any = null;
     let lastOpenRouterError = 'Unknown OpenRouter error';
@@ -150,180 +157,125 @@ export async function POST(request: NextRequest) {
     for (const model of IMAGE_MODEL_CANDIDATES) {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), OPENROUTER_TIMEOUT_MS);
-
       try {
         const apiResponse = await fetch('https://openrouter.ai/api/v1/chat/completions', {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
+            Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
             'Content-Type': 'application/json',
           },
           signal: controller.signal,
           body: JSON.stringify({
             model,
-            messages: [
-              {
-                role: 'user',
-                content: [
-                  { type: 'text', text: prompt },
-                  { type: 'image_url', image_url: { url: dataUrl } }
-                ],
-              },
-            ],
-            modalities: ['image']
+            messages: [{ role: 'user', content: [{ type: 'text', text: prompt }, { type: 'image_url', image_url: { url: dataUrl } }] }],
+            modalities: ['image'],
           }),
         });
-
-        if (apiResponse.ok) {
-          result = await apiResponse.json();
-          console.log(`OpenRouter success with model: ${model}`);
-          break;
-        }
-
+        if (apiResponse.ok) { result = await apiResponse.json(); break; }
         let errorDetail = 'Unknown error';
         try {
           const contentType = apiResponse.headers.get('content-type') || '';
-          if (contentType.includes('application/json')) {
-            const errorData = await apiResponse.json();
-            errorDetail = JSON.stringify(errorData);
-          } else {
-            const errorText = await apiResponse.text();
-            errorDetail = errorText.slice(0, 300) || 'Non-JSON upstream error';
-          }
-        } catch (e) {
+          if (contentType.includes('application/json')) errorDetail = JSON.stringify(await apiResponse.json());
+          else errorDetail = (await apiResponse.text()).slice(0, 300) || 'Non-JSON upstream error';
+        } catch {
           errorDetail = 'Failed to parse upstream error response';
         }
-
         lastOpenRouterError = `Model ${model} failed (${apiResponse.status}): ${errorDetail}`;
-        console.error('OpenRouter API Error Details:', lastOpenRouterError);
-
-        if (!RETRYABLE_OPENROUTER_STATUS.has(apiResponse.status)) {
-          break;
-        }
+        if (!RETRYABLE_OPENROUTER_STATUS.has(apiResponse.status)) break;
       } catch (error: any) {
-        if (error?.name === 'AbortError') {
-          lastOpenRouterError = `Model ${model} timed out`;
-        } else {
-          lastOpenRouterError = `Model ${model} request failed: ${error?.message || 'Unknown request error'}`;
-        }
-        console.error('OpenRouter request failure:', lastOpenRouterError);
+        lastOpenRouterError = error?.name === 'AbortError' ? `Model ${model} timed out` : `Model ${model} request failed: ${error?.message || 'Unknown request error'}`;
       } finally {
         clearTimeout(timeoutId);
       }
     }
 
-    if (!result) {
-      console.timeEnd('OpenRouter_AI_Call');
-      throw new Error(`OpenRouter upstream unavailable. ${lastOpenRouterError}`);
-    }
+    if (!result) throw new Error(`OpenRouter upstream unavailable. ${lastOpenRouterError}`);
 
-    console.timeEnd('OpenRouter_AI_Call');
-    const responseMessage = result.choices[0].message;
-    let generatedImageUrl: string | undefined = responseMessage.images?.[0]?.image_url?.url;
+    const generatedImageUrl: string | undefined = result.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+    if (!generatedImageUrl) throw new Error('No image returned from AI');
 
-    if (!generatedImageUrl) {
-      throw new Error('No image returned from AI');
-    }
+    const imageBuffer = generatedImageUrl.startsWith('data:')
+      ? Buffer.from(generatedImageUrl.split(',')[1], 'base64')
+      : Buffer.from(await (await fetch(generatedImageUrl, { cache: 'no-store' })).arrayBuffer());
 
-    // Process AI Image
-    let imageBuffer: Buffer;
-    if (generatedImageUrl.startsWith('data:')) {
-      imageBuffer = Buffer.from(generatedImageUrl.split(',')[1], 'base64');
-    } else {
-      const imageResponse = await fetch(generatedImageUrl);
-      imageBuffer = Buffer.from(await imageResponse.arrayBuffer());
-    }
-
-    // Save intermediate image
     const generatedFilename = `generated-${timestamp}.png`;
     let finalGeneratedUrl = `/generated/${generatedFilename}`;
-
-    // Save to /tmp
     const tmpGeneratedPath = join('/tmp', 'generated');
-    await mkdir(tmpGeneratedPath, { recursive: true }).catch(() => { });
+    await mkdir(tmpGeneratedPath, { recursive: true }).catch(() => undefined);
     const tempGeneratedFile = join(tmpGeneratedPath, generatedFilename);
     await writeFile(tempGeneratedFile, imageBuffer);
 
-    // Optional local save
     if (!isProduction) {
       try {
         const publicGeneratedPath = join(process.cwd(), 'public', 'generated');
-        await mkdir(publicGeneratedPath, { recursive: true }).catch(() => { });
+        await mkdir(publicGeneratedPath, { recursive: true }).catch(() => undefined);
         await writeFile(join(publicGeneratedPath, generatedFilename), imageBuffer);
-      } catch (err) {
-        console.warn('Could not save to public/generated (read-only FS):', err);
+      } catch {}
+    }
+
+    if (isS3Configured()) {
+      try {
+        finalGeneratedUrl = await uploadBufferToS3({
+          key: `generated/${generatedFilename}`,
+          body: imageBuffer,
+          contentType: 'image/png',
+        });
+      } catch (s3Error) {
+        console.warn('S3 upload failed, falling back to Supabase storage for generated image:', s3Error);
       }
     }
 
-    // Upload intermediate generated image only when not in time-constrained serverless environments.
-    if (!SKIP_OPTIONAL_STORAGE_UPLOADS) {
-      console.log('Uploading generated image to Supabase Storage...');
-      const { error: genError } = await supabase.storage
-        .from('generated-images')
-        .upload(`generated/${generatedFilename}`, imageBuffer, {
-          contentType: 'image/png',
-          upsert: false
-        });
-
-      if (genError) {
-        console.error('Supabase generated upload error:', genError);
-      } else {
-        const { data: { publicUrl } } = supabase.storage
-          .from('generated-images')
-          .getPublicUrl(`generated/${generatedFilename}`);
+    if (finalGeneratedUrl.startsWith('/generated/') && !SKIP_OPTIONAL_STORAGE_UPLOADS) {
+      const { error: genError } = await supabase.storage.from('generated-images').upload(`generated/${generatedFilename}`, imageBuffer, {
+        contentType: 'image/png',
+        upsert: false,
+      });
+      if (!genError) {
+        const { data: { publicUrl } } = supabase.storage.from('generated-images').getPublicUrl(`generated/${generatedFilename}`);
         finalGeneratedUrl = publicUrl;
       }
     }
 
-    // Merge with background
-    // Pass the /tmp path for processing
     const finalImagePath = await mergeImages(tempGeneratedFile, timestamp.toString(), name);
 
-    // Save metadata to Supabase database
     const { data: dbData, error: dbError } = await supabase
-      .from(GENERATIONS_TABLE)
-      .insert({
-        name: name || 'Unknown',
-        designation: 'N/A',
-        image_url: finalImagePath
+      .from(IMAGE_GENERATION_TABLE)
+      .update({
+        name,
+        organization,
+        gender,
+        prompt_used: prompt,
+        photo_url: uploadedImageUrl,
+        generated_image_url: finalGeneratedUrl,
+        final_image_url: finalImagePath,
+        generation_status: 'completed',
+        generated_at: new Date().toISOString(),
+        last_error: null,
       })
-      .select()
+      .eq('email', email)
+      .eq('id', validatedRequestRow.id)
+      .select('id, email, final_image_url')
       .single();
 
     if (dbError) {
-      console.error('Database insert error:', dbError);
-    } else {
-      console.log('Saved to database:', dbData);
+      console.error('Database update error:', dbError);
+      return apiJson(request, { error: 'Unable to persist generation result' }, { status: 500 });
     }
 
-    return NextResponse.json({
+    return apiJson(request, {
       success: true,
       uploadedImage: uploadedImageUrl,
       generatedImage: finalGeneratedUrl,
       finalImage: finalImagePath,
-      dbId: dbData?.id
+      dbId: dbData?.id,
+      requestId: validatedRequestRow.id,
+      prompt,
     });
   } catch (error: any) {
     console.error('CRITICAL ERROR during generation:', error);
-    // Log stack trace for Vercel logs
-    if (error.stack) console.error(error.stack);
-
     if (error?.name === 'AbortError') {
-      return NextResponse.json(
-        {
-          error: 'Generation timed out due to upstream inactivity. Please try again with a shorter prompt or retry.'
-        },
-        { status: 504 }
-      );
+      return apiJson(request, { error: 'Generation timed out due to upstream inactivity. Please try again with a shorter prompt or retry.' }, { status: 504 });
     }
-
-    return NextResponse.json(
-      {
-        error: error?.message || 'Internal Server Error',
-        details: isProduction ? undefined : error?.stack
-      },
-      { status: 500 }
-    );
+    return apiJson(request, { error: 'Internal Server Error' }, { status: 500 });
   }
 }
-
