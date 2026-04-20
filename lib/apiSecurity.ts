@@ -7,6 +7,7 @@ const DEFAULT_ALLOWED_ORIGINS = [
   'http://localhost:3000',
   'https://frameforge.one',
   'https://www.frameforge.one',
+  'https://memento.frameforge.one',
   'https://frameforge-mauve.vercel.app',
 ];
 
