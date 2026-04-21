@@ -5,9 +5,9 @@ import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
 const SES_REGION = process.env.AWS_SES_REGION?.trim() || process.env.AWS_REGION?.trim() || 'us-east-1';
 const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID?.trim() || '';
 const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY?.trim() || '';
-const SENDER_EMAIL = process.env.AWS_SES_FROM_EMAIL?.trim() || 'no-reply@frameforge.one';
+const SENDER_EMAIL = process.env.AWS_SES_FROM_EMAIL?.trim() || 'no-reply@mail.frameforge.one';
 const RETURN_PATH_EMAIL = process.env.AWS_SES_RETURN_PATH?.trim() || SENDER_EMAIL;
-const SES_CONFIGURATION_SET = process.env.AWS_SES_CONFIGURATION_SET?.trim() || '';
+const REPLY_TO_EMAIL = process.env.AWS_SES_REPLY_TO_EMAIL?.trim() || 'support@frameforge.one';
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL?.trim() || 'http://localhost:3000';
 const SES_LOGO_URL = process.env.AWS_SES_LOGO_URL?.trim() || '';
 
@@ -66,15 +66,14 @@ const getDefaultLogoUrl = (publicUrl: string) => {
 };
 
 const buildOtpEmailText = (otp: string, helpCenterUrl: string, appUrl: string) => [
-  'Frame Forge - Email Verification',
+  'Frame Forge verification code',
   '',
   'Hello,',
   '',
-  'Thank you for choosing Frame Forge.',
-  `Your one-time verification code is: ${otp}`,
-  'This code is valid for 10 minutes.',
+  `Your verification code is: ${otp}`,
+  'This code expires in 10 minutes.',
   '',
-  'If you did not request this code, you can safely ignore this email.',
+  'If you did not request this code, you can ignore this email.',
   '',
   `Help Center: ${helpCenterUrl}`,
   `Frame Forge: ${appUrl}`,
@@ -90,16 +89,11 @@ const buildOtpEmailHtml = (otp: string, helpCenterUrl: string, logoUrl: string) 
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
     <title>Frame Forge OTP</title>
-
-    <link
-      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap"
-      rel="stylesheet"
-    />
   </head>
   <body
     style="
       margin: 0;
-      font-family: 'Poppins', Arial, sans-serif;
+      font-family: Arial, Helvetica, sans-serif;
       background: #ffffff;
       font-size: 14px;
     "
@@ -108,12 +102,8 @@ const buildOtpEmailHtml = (otp: string, helpCenterUrl: string, logoUrl: string) 
       style="
         max-width: 680px;
         margin: 0 auto;
-        padding: 45px 30px 60px;
-        background: #f4f7ff;
-        background-image: linear-gradient(180deg, #2d334a 0%, #f4f7ff 52%);
-        background-repeat: no-repeat;
-        background-size: 800px 452px;
-        background-position: top center;
+        padding: 30px 20px;
+        background: #f6f7fb;
         font-size: 14px;
         color: #434343;
       "
@@ -127,9 +117,7 @@ const buildOtpEmailHtml = (otp: string, helpCenterUrl: string, logoUrl: string) 
                   <tbody>
                     <tr>
                       <td style="padding: 0; vertical-align: middle;">
-                        <span
-                          style="display: inline-block; background: #ffffff; padding: 6px 10px; border-radius: 14px; line-height: 0;"
-                        >
+                        <span style="display: inline-block; background: #ffffff; padding: 6px 10px; border-radius: 14px; line-height: 0;">
                           <img
                             alt="Frame Forge"
                             src="${logoUrl}"
@@ -163,10 +151,10 @@ const buildOtpEmailHtml = (otp: string, helpCenterUrl: string, logoUrl: string) 
         <div
           style="
             margin: 0;
-            margin-top: 70px;
-            padding: 92px 30px 115px;
+            margin-top: 24px;
+            padding: 40px 20px 48px;
             background: #ffffff;
-            border-radius: 30px;
+            border-radius: 10px;
             text-align: center;
           "
         >
@@ -179,7 +167,7 @@ const buildOtpEmailHtml = (otp: string, helpCenterUrl: string, logoUrl: string) 
                 color: #1f1f1f;
               "
             >
-              Your OTP
+              Verify your email
             </h1>
             <p
               style="
@@ -200,10 +188,9 @@ const buildOtpEmailHtml = (otp: string, helpCenterUrl: string, logoUrl: string) 
                 line-height: 1.7;
               "
             >
-              Thank you for choosing Frame Forge. Use the following OTP
-              to complete your email verification. OTP is valid for
+              Use the code below to verify your email. This code expires in
               <span style="font-weight: 600; color: #1f1f1f;">10 minutes</span>.
-              Do not share this code with anyone.
+              If you did not request this code, you can ignore this email.
             </p>
             <p
               style="
@@ -290,7 +277,7 @@ export const sendOtpEmail = async (input: { to: string; otp: string }) => {
     new SendEmailCommand({
       Source: `FrameForge Security <${SENDER_EMAIL}>`,
       ReturnPath: RETURN_PATH_EMAIL,
-      ...(SES_CONFIGURATION_SET ? { ConfigurationSetName: SES_CONFIGURATION_SET } : {}),
+      ReplyToAddresses: [REPLY_TO_EMAIL],
       Destination: {
         ToAddresses: [input.to],
       },
