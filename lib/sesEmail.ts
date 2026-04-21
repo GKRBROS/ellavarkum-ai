@@ -66,15 +66,14 @@ const getDefaultLogoUrl = (publicUrl: string) => {
 };
 
 const buildOtpEmailText = (otp: string, helpCenterUrl: string, appUrl: string) => [
-  'Frame Forge - Email Verification',
+  'Frame Forge verification code',
   '',
   'Hello,',
   '',
-  'Thank you for choosing Frame Forge.',
-  `Your one-time verification code is: ${otp}`,
-  'This code is valid for 10 minutes.',
+  `Your verification code is: ${otp}`,
+  'This code expires in 10 minutes.',
   '',
-  'If you did not request this code, you can safely ignore this email.',
+  'If you did not request this code, you can ignore this email.',
   '',
   `Help Center: ${helpCenterUrl}`,
   `Frame Forge: ${appUrl}`,
@@ -127,8 +126,14 @@ const buildOtpEmailHtml = (otp: string, helpCenterUrl: string, logoUrl: string) 
                   <tbody>
                     <tr>
                       <td style="padding: 0; vertical-align: middle;">
-                        <span style="font-size: 16px; line-height: 30px; font-weight: 700; color: #ffffff; letter-spacing: 0.5px;">
-                          FRAME FORGE
+                        <span style="display: inline-block; background: #ffffff; padding: 6px 10px; border-radius: 14px; line-height: 0;">
+                          <img
+                            alt="Frame Forge"
+                            src="${logoUrl}"
+                            width="110"
+                            height="28"
+                            style="display: block; border: 0; outline: none; text-decoration: none; object-fit: contain;"
+                          />
                         </span>
                       </td>
                       <td style="padding-left: 10px; vertical-align: middle;">
@@ -171,7 +176,7 @@ const buildOtpEmailHtml = (otp: string, helpCenterUrl: string, logoUrl: string) 
                 color: #1f1f1f;
               "
             >
-              Your OTP
+              Verify your email
             </h1>
             <p
               style="
@@ -192,10 +197,9 @@ const buildOtpEmailHtml = (otp: string, helpCenterUrl: string, logoUrl: string) 
                 line-height: 1.7;
               "
             >
-              Thank you for choosing Frame Forge. Use the following OTP
-              to complete your email verification. OTP is valid for
+              Use the code below to verify your email. This code expires in
               <span style="font-weight: 600; color: #1f1f1f;">10 minutes</span>.
-              Do not share this code with anyone.
+              If you did not request this code, you can ignore this email.
             </p>
             <p
               style="
