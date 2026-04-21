@@ -127,16 +127,8 @@ const buildOtpEmailHtml = (otp: string, helpCenterUrl: string, logoUrl: string) 
                   <tbody>
                     <tr>
                       <td style="padding: 0; vertical-align: middle;">
-                        <span
-                          style="display: inline-block; background: #ffffff; padding: 6px 10px; border-radius: 14px; line-height: 0;"
-                        >
-                          <img
-                            alt="Frame Forge"
-                            src="${logoUrl}"
-                            width="110"
-                            height="28"
-                            style="display: block; border: 0; outline: none; text-decoration: none; object-fit: contain;"
-                          />
+                        <span style="font-size: 16px; line-height: 30px; font-weight: 700; color: #ffffff; letter-spacing: 0.5px;">
+                          FRAME FORGE
                         </span>
                       </td>
                       <td style="padding-left: 10px; vertical-align: middle;">
