@@ -7,8 +7,6 @@ const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID?.trim() || '';
 const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY?.trim() || '';
 const SENDER_EMAIL = process.env.AWS_SES_FROM_EMAIL?.trim() || 'no-reply@frameforge.one';
 const RETURN_PATH_EMAIL = process.env.AWS_SES_RETURN_PATH?.trim() || SENDER_EMAIL;
-const SES_CONFIGURATION_SET = process.env.AWS_SES_CONFIGURATION_SET?.trim() || '';
-const USE_SES_TRACKING = (process.env.AWS_SES_USE_TRACKING || 'false').toLowerCase() === 'true';
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL?.trim() || 'http://localhost:3000';
 const SES_LOGO_URL = process.env.AWS_SES_LOGO_URL?.trim() || '';
 
@@ -90,16 +88,11 @@ const buildOtpEmailHtml = (otp: string, helpCenterUrl: string, logoUrl: string) 
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
     <title>Frame Forge OTP</title>
-
-    <link
-      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap"
-      rel="stylesheet"
-    />
   </head>
   <body
     style="
       margin: 0;
-      font-family: 'Poppins', Arial, sans-serif;
+      font-family: Arial, Helvetica, sans-serif;
       background: #ffffff;
       font-size: 14px;
     "
@@ -287,7 +280,6 @@ export const sendOtpEmail = async (input: { to: string; otp: string }) => {
     new SendEmailCommand({
       Source: `FrameForge Security <${SENDER_EMAIL}>`,
       ReturnPath: RETURN_PATH_EMAIL,
-      ...(USE_SES_TRACKING && SES_CONFIGURATION_SET ? { ConfigurationSetName: SES_CONFIGURATION_SET } : {}),
       Destination: {
         ToAddresses: [input.to],
       },
