@@ -65,6 +65,23 @@ const getDefaultLogoUrl = (publicUrl: string) => {
   return 'https://memento.frameforge.one/logo_black.png';
 };
 
+const buildOtpEmailText = (otp: string, helpCenterUrl: string, appUrl: string) => [
+  'Frame Forge - Email Verification',
+  '',
+  'Hello,',
+  '',
+  'Thank you for choosing Frame Forge.',
+  `Your one-time verification code is: ${otp}`,
+  'This code is valid for 10 minutes.',
+  '',
+  'If you did not request this code, you can safely ignore this email.',
+  '',
+  `Help Center: ${helpCenterUrl}`,
+  `Frame Forge: ${appUrl}`,
+  '',
+  `Copyright ${new Date().getFullYear()} Frame Forge. All rights reserved.`,
+].join('\n');
+
 const buildOtpEmailHtml = (otp: string, helpCenterUrl: string, logoUrl: string) => `
 <!DOCTYPE html>
 <html lang="en">
@@ -261,21 +278,13 @@ export const sendOtpEmail = async (input: { to: string; otp: string }) => {
   }
 
   const client = getSesClient();
-  const subject = 'Your Frame Forge OTP code';
+  const subject = 'Frame Forge email verification code (valid for 10 minutes)';
   const publicUrl = isPublicAppUrl(APP_URL) ? APP_URL : '';
   const helpCenterUrl = publicUrl || 'https://frameforge.one';
   const logoUrl = SES_LOGO_URL
     || getDefaultLogoUrl(publicUrl);
   const appUrlTextLine = publicUrl || 'https://frameforge.one';
-  const textBody = [
-    `Your Frame Forge OTP is: ${input.otp}`,
-    'This code is valid for 10 minutes.',
-    '',
-    'If you did not request this code, you can ignore this email.',
-    '',
-    `Help Center: ${helpCenterUrl}`,
-    `Frame Forge: ${appUrlTextLine}`,
-  ].join('\n');
+  const textBody = buildOtpEmailText(input.otp, helpCenterUrl, appUrlTextLine);
 
   const response = await client.send(
     new SendEmailCommand({
