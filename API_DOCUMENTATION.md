@@ -1,6 +1,6 @@
 #
-# Admin API Endpoints (Dashboard)
 
+# Admin API Endpoints (Dashboard)
 
 These endpoints are for secure admin authentication and management. Only registered admin emails can request OTPs and register new admins. All security measures (CORS, rate limiting, OTP hashing, session binding, strict validation) are enforced as in the user flow.
 
@@ -134,6 +134,7 @@ CREATE TABLE IF NOT EXISTS admin_otps (
 - All validation and error handling as in user flow
 
 ---
+
 # AI Image Generation API Documentation
 
 Complete API reference for the AI Image Generation service. These APIs enable email verification, image generation, and AI-powered image-to-Arcane-style transformation.

@@ -1,35 +1,45 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { sendOtpToAdmin, validateAdminEmail, rateLimitAdminOtp } from '@/lib/adminAuth';
-import { db } from '@/lib/supabase';
+import { apiJson, handleCorsPreflight, rejectIfOriginNotAllowed } from '@/lib/apiSecurity';
+
+export async function OPTIONS(request: NextRequest) {
+  return handleCorsPreflight(request);
+}
 
 export async function POST(req: NextRequest) {
-  // Strict CORS and content-type validation
-  if (req.headers.get('origin') && !process.env.ALLOWED_ADMIN_ORIGINS?.split(',').includes(req.headers.get('origin')!)) {
-    return NextResponse.json({ error: 'Origin not allowed' }, { status: 400 });
+  const originError = rejectIfOriginNotAllowed(req);
+  if (originError) return originError;
+
+  if (!req.headers.get('content-type')?.startsWith('application/json')) {
+    return apiJson(req, { error: 'Invalid content type' }, { status: 400 });
   }
-  if (req.headers.get('content-type') !== 'application/json') {
-    return NextResponse.json({ error: 'Invalid content type' }, { status: 400 });
-  }
+  
   const { email } = await req.json();
-  if (!email) return NextResponse.json({ error: 'Email is required' }, { status: 400 });
+  if (!email) return apiJson(req, { error: 'Email is required' }, { status: 400 });
 
   // Rate limit per email and IP
   const rateLimitResult = await rateLimitAdminOtp(email, req);
   if (!rateLimitResult.allowed) {
-    return NextResponse.json({ error: rateLimitResult.error, retryAfterSeconds: rateLimitResult.retryAfter }, { status: 429 });
+    return apiJson(req, { error: rateLimitResult.error, retryAfterSeconds: rateLimitResult.retryAfter }, { status: 429 });
   }
 
   // Check if email is a registered admin
   const admin = await validateAdminEmail(email);
   if (!admin) {
-    return NextResponse.json({ error: 'Email is not a registered admin' }, { status: 403 });
+    return apiJson(req, { error: 'Email is not a registered admin' }, { status: 403 });
   }
 
   // Send OTP
   const otpResult = await sendOtpToAdmin(email);
   if (!otpResult.success) {
-    return NextResponse.json({ error: 'Failed to send OTP' }, { status: 500 });
+    return apiJson(req, { error: 'Failed to send OTP' }, { status: 500 });
   }
 
-  return NextResponse.json({ success: true, email, expiresAt: otpResult.expiresAt, expiresInMinutes: otpResult.expiresInMinutes, emailSent: true });
+  return apiJson(req, { 
+    success: true, 
+    email, 
+    expiresAt: otpResult.expiresAt, 
+    expiresInMinutes: otpResult.expiresInMinutes, 
+    emailSent: true 
+  });
 }
