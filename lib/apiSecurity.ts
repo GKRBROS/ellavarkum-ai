@@ -27,7 +27,7 @@ const ALLOWED_ORIGINS = new Set([...DEFAULT_ALLOWED_ORIGINS, ...parseEnvOrigins(
   }
 }));
 
-const ALLOW_METHODS = 'GET,POST,OPTIONS';
+const ALLOW_METHODS = 'GET,POST,DELETE,OPTIONS';
 const ALLOW_HEADERS = ['Content-Type', 'Authorization', 'X-Requested-With'];
 
 const normalizeOrigin = (origin: string) => {

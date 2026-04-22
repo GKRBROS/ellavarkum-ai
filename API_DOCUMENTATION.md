@@ -20,8 +20,10 @@ These endpoints are for secure admin authentication and management. Only registe
 
 ```
 Content-Type: application/json
-Origin: http://localhost:5173
+Origin: <allowed-origin>
 ```
+
+*(Note: <allowed-origin> must be one of the domains listed in the Authentication section above, e.g., http://localhost:5173, https://frameforge.one, etc.)*
 
 **Request Body:**
 
@@ -138,6 +140,79 @@ Origin: http://localhost:5173
 - 401: `{ "error": "Unauthorized" }`
 - 409: `{ "error": "Failed to register admin (may already exist)" }`
 - 429: `{ "error": "Too many registration requests", "retryAfterSeconds": 30 }`
+
+---
+
+### Admin: List Administrators
+
+**Endpoint:** `GET /api/admin/list`
+
+**Description:** Retrieve a list of all registered administrators.
+
+**Request Headers:**
+
+```
+Origin: http://localhost:5173
+```
+
+**Response (200 - Success):**
+
+```json
+[
+  {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "email": "admin@example.com",
+    "name": "Admin Name",
+    "created_at": "2026-04-20T10:25:00.000Z",
+    "updated_at": "2026-04-20T10:25:00.000Z"
+  }
+]
+```
+
+**Error Responses:**
+
+- 401: `{ "error": "Unauthorized" }`
+- 403: `{ "error": "Origin not allowed" }`
+- 500: `{ "error": "Failed to fetch administrators" }`
+
+---
+
+### Admin: Delete Administrator
+
+**Endpoint:** `DELETE /api/admin/delete`
+
+**Description:** Remove an administrator from the system by email.
+
+**Request Headers:**
+
+```
+Content-Type: application/json
+Origin: http://localhost:5173
+```
+
+**Request Body:**
+
+```json
+{
+  "email": "admin@example.com"
+}
+```
+
+**Response (200 - Success):**
+
+```json
+{
+  "success": true,
+  "email": "admin@example.com"
+}
+```
+
+**Error Responses:**
+
+- 400: `{ "error": "Admin email is required" }`
+- 401: `{ "error": "Unauthorized" }`
+- 403: `{ "error": "Cannot delete the only remaining administrator" }`
+- 500: `{ "error": "Failed to remove administrator" }`
 
 ---
 
