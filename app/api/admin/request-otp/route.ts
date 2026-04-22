@@ -30,16 +30,16 @@ export async function POST(req: NextRequest) {
   }
 
   // Send OTP
-  const otpResult = await sendOtpToAdmin(email);
-  if (!otpResult.success) {
-    return apiJson(req, { error: 'Failed to send OTP' }, { status: 500 });
+  try {
+    const otpResult = await sendOtpToAdmin(email);
+    return apiJson(req, { 
+      success: true, 
+      email, 
+      expiresAt: otpResult.expiresAt, 
+      expiresInMinutes: otpResult.expiresInMinutes, 
+      emailSent: true 
+    });
+  } catch (error: any) {
+    return apiJson(req, { error: error.message || 'Failed to send OTP' }, { status: 500 });
   }
-
-  return apiJson(req, { 
-    success: true, 
-    email, 
-    expiresAt: otpResult.expiresAt, 
-    expiresInMinutes: otpResult.expiresInMinutes, 
-    emailSent: true 
-  });
 }

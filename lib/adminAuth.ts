@@ -1,5 +1,6 @@
 import { db } from './supabase';
 import { randomBytes, timingSafeEqual } from 'crypto';
+import { sendOtpEmail } from './sesEmail';
 
 export async function validateAdminEmail(email: string) {
   const { data } = await db.from('admin_users').select('*').eq('email', email).single();
@@ -7,12 +8,23 @@ export async function validateAdminEmail(email: string) {
 }
 
 export async function sendOtpToAdmin(email: string) {
-  // Generate OTP and store hash in admin_otps table
   const otp = (Math.floor(100000 + Math.random() * 900000)).toString();
   const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
-  const otpHash = Buffer.from(otp).toString('base64'); // Replace with real hash
-  await db.from('admin_otps').upsert({ email, otp_code_hash: otpHash, otp_expires_at: expiresAt });
-  // TODO: Send OTP via email (reuse user flow)
+  const otpHash = Buffer.from(otp).toString('base64');
+  
+  await db.from('admin_otps').upsert({ 
+    email, 
+    otp_code_hash: otpHash, 
+    otp_expires_at: expiresAt 
+  });
+
+  try {
+    await sendOtpEmail({ to: email, otp });
+  } catch (mailError) {
+    console.error('Failed to send admin OTP email:', mailError);
+    throw new Error('Failed to send OTP email');
+  }
+
   return { success: true, expiresAt, expiresInMinutes: 10 };
 }
 
