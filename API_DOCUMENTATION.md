@@ -14,13 +14,13 @@ These endpoints are for secure admin authentication and management. Only registe
 
 **Endpoint:** `POST /api/admin/request-otp`
 
-**Description:** Send a One-Time Password (OTP) to a registered admin email for dashboard login.
+**Description:** Generate and send a One-Time Password (OTP) via email to a registered admin for dashboard login.
 
 **Request Headers:**
 
 ```
 Content-Type: application/json
-Origin: <allowed-admin-origin>
+Origin: http://localhost:5173
 ```
 
 **Request Body:**
@@ -46,9 +46,57 @@ Origin: <allowed-admin-origin>
 **Error Responses:**
 
 - 400: `{ "error": "Email is required" }`
+- 400: `{ "error": "Invalid content type" }` (Must start with `application/json`)
 - 403: `{ "error": "Email is not a registered admin" }`
+- 403: `{ "error": "Origin not allowed" }`
 - 429: `{ "error": "Too many OTP requests", "retryAfterSeconds": 30 }`
-- 500: `{ "error": "Failed to send OTP" }`
+- 500: `{ "error": "Failed to send OTP email" }`
+
+---
+
+### Admin: Verify OTP
+
+**Endpoint:** `POST /api/admin/verify-otp`
+
+**Description:** Verify the 6-digit code sent to the admin email.
+
+**Request Headers:**
+
+```
+Content-Type: application/json
+Origin: http://localhost:5173
+```
+
+**Request Body:**
+
+```json
+{
+  "email": "admin@example.com",
+  "otp": "123456"
+}
+```
+
+**Response (200 - Success):**
+
+```json
+{
+  "success": true,
+  "verified": true,
+  "admin": {
+    "email": "admin@example.com",
+    "name": "Admin Name"
+  }
+}
+```
+
+**Error Responses:**
+
+- 400: `{ "error": "Email and verification code are required" }`
+- 400: `{ "error": "Verification code expired. Please request a new one." }`
+- 400: `{ "error": "Incorrect verification code" }`
+- 403: `{ "error": "Access denied" }` (Email is not a registered admin)
+- 404: `{ "error": "No verification request found for this email" }`
+- 500: `{ "error": "Unable to verify OTP" }`
 
 ---
 
@@ -56,13 +104,13 @@ Origin: <allowed-admin-origin>
 
 **Endpoint:** `POST /api/admin/register`
 
-**Description:** Register a new admin (must be called by an authenticated admin).
+**Description:** Register a new admin. Upon success, a welcome email with a link to the dashboard is sent to the new admin.
 
 **Request Headers:**
 
 ```
 Content-Type: application/json
-Origin: <allowed-admin-origin>
+Origin: http://localhost:5173
 ```
 
 **Request Body:**
@@ -110,7 +158,7 @@ CREATE TABLE IF NOT EXISTS admin_users (
 
 CREATE TABLE IF NOT EXISTS admin_otps (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  email VARCHAR(255) NOT NULL REFERENCES admin_users(email) ON DELETE CASCADE,
+  email VARCHAR(255) NOT NULL UNIQUE REFERENCES admin_users(email) ON DELETE CASCADE,
   otp_code_hash VARCHAR(255),
   otp_expires_at TIMESTAMP WITH TIME ZONE,
   otp_verified_at TIMESTAMP WITH TIME ZONE,
@@ -263,8 +311,9 @@ if (response.ok) {
 
 **Behavior Note (current):**
 
-- If the email has an existing request that is **not completed**, requesting OTP again will reset the OTP session and send a new code.
+- If the email has an existing request that is **not completed**, requesting OTP again will update the existing row (upsert) and send a new code.
 - Only emails with `generation_status = completed` are rejected with `409`.
+- Upon successful generation, the final image is automatically sent to the user's email with a download link.
 
 ---
 
