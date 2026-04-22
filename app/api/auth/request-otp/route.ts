@@ -57,25 +57,23 @@ export async function POST(request: NextRequest) {
       return apiJson(request, { error: 'Unable to process OTP request' }, { status: 500 });
     }
 
+    if (existingRequest?.generation_status === 'completed') {
+      return apiJson(
+        request,
+        { error: 'This email has already completed generation. Please use a different email.' },
+        { status: 409 }
+      );
+    }
+
     const otp = generateOtp();
     const otpCodeHash = hashOtp(email, otp);
     const otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
 
-    let data: { id: string; email: string; otp_expires_at: string } | null = null;
-    let error: any = null;
-
-    if (existingRequest) {
-      if (existingRequest.generation_status === 'completed') {
-        return apiJson(
-          request,
-          { error: 'This email has already completed generation. Please use a different email.' },
-          { status: 409 }
-        );
-      }
-
-      const updateResult = await supabase
-        .from(IMAGE_GENERATION_TABLE)
-        .update({
+    const { data, error } = await supabase
+      .from(IMAGE_GENERATION_TABLE)
+      .upsert(
+        {
+          email,
           otp_code_hash: otpCodeHash,
           otp_expires_at: otpExpiresAt,
           otp_verified_at: null,
@@ -84,34 +82,15 @@ export async function POST(request: NextRequest) {
           generation_status: 'otp_pending',
           generated_at: null,
           last_error: null,
-        })
-        .eq('id', existingRequest.id)
-        .select('id, email, otp_expires_at')
-        .single();
-
-      data = updateResult.data;
-      error = updateResult.error;
-    } else {
-      const insertResult = await supabase
-        .from(IMAGE_GENERATION_TABLE)
-        .insert({
-          email,
-          otp_code_hash: otpCodeHash,
-          otp_expires_at: otpExpiresAt,
-          otp_verified_at: null,
-          is_verified: false,
-          verification_attempts: 0,
-          generation_status: 'otp_pending',
-        })
-        .select('id, email, otp_expires_at')
-        .single();
-
-      data = insertResult.data;
-      error = insertResult.error;
-    }
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'email' }
+      )
+      .select('id, email, otp_expires_at')
+      .single();
 
     if (error) {
-      console.error('OTP request insert error:', error);
+      console.error('OTP request upsert error:', error);
       return apiJson(request, { error: 'Unable to create OTP request' }, { status: 500 });
     }
 

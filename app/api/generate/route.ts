@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { mkdir, writeFile } from 'fs/promises';
 import { join } from 'path';
 
@@ -14,6 +14,7 @@ import {
 import { RATE_LIMITS, enforceRateLimit } from '@/lib/rateLimit';
 import { validateGenerateFormData } from '@/lib/requestValidation';
 import { getOpenRouterApiKeys } from '@/lib/secrets';
+import { sendFinalImageEmail } from '@/lib/sesEmail';
 import { isS3Configured, uploadBufferToS3 } from '@/lib/s3Storage';
 import { getSupabaseClient } from '@/lib/supabase';
 
@@ -303,6 +304,18 @@ export async function POST(request: NextRequest) {
     if (dbError) {
       console.error('Database update error:', dbError);
       return apiJson(request, { error: 'Unable to persist generation result' }, { status: 500 });
+    }
+
+    // Send final image to user email
+    try {
+      await sendFinalImageEmail({
+        to: email,
+        name: name,
+        imageUrl: finalImageUrl,
+      });
+    } catch (emailError) {
+      console.error('Failed to send final image email:', emailError);
+      // Non-critical error, don't fail the response
     }
 
     return apiJson(request, {
