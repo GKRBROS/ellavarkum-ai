@@ -35,3 +35,5 @@ export const getSupabaseClient = () => {
 	}
 	return cachedClient;
 };
+
+export const db = getSupabaseClient();
