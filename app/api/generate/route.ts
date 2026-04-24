@@ -226,26 +226,15 @@ export async function POST(request: NextRequest) {
       : Buffer.from(await (await fetch(generatedImageUrl, { cache: 'no-store' })).arrayBuffer());
 
     const generatedFilename = `generated-${timestamp}.png`;
-    let finalGeneratedUrl = `/elam-ai-final/${generatedFilename}`;
     const tmpGeneratedPath = join('/tmp', 'elam-ai-final');
     await mkdir(tmpGeneratedPath, { recursive: true }).catch(() => undefined);
     const tempGeneratedFile = join(tmpGeneratedPath, generatedFilename);
     await writeFile(tempGeneratedFile, imageBuffer);
 
-    if (isS3Configured()) {
-      try {
-        finalGeneratedUrl = await uploadBufferToS3({
-          key: `elam ai final/${generatedFilename}`,
-          body: imageBuffer,
-          contentType: 'image/png',
-        });
-      } catch (s3Error) {
-        console.warn('S3 upload failed for generated image:', s3Error);
-      }
-    }
-
     const finalImagePath = await mergeImages(tempGeneratedFile, timestamp.toString(), name);
     const finalImageUrl = buildFinalImageUrl(request, finalImagePath);
+
+    const newTries = isAdmin ? triesLeft : Math.max(0, triesLeft - 1);
 
     const { data: dbData, error: dbError } = await supabase
       .from(IMAGE_GENERATION_TABLE)
@@ -256,6 +245,7 @@ export async function POST(request: NextRequest) {
         photo_url: uploadedImageUrl,
         generated_image_url: finalImageUrl,
         status: 'generated',
+        tries_left: newTries,
         updated_at: new Date().toISOString(),
       })
       .eq('email', email)
@@ -268,18 +258,16 @@ export async function POST(request: NextRequest) {
       return apiJson(request, { error: 'Unable to persist generation result' }, { status: 500 });
     }
 
-    // Send final image to user email
-    // Final image email removed as requested
-
     return apiJson(request, {
       success: true,
       uploadedImage: uploadedImageUrl,
-      generatedImage: finalGeneratedUrl,
+      generatedImage: finalImageUrl,
       finalImage: finalImagePath,
       finalImageUrl,
       dbId: dbData?.id,
       requestId: validatedRequestRow.id,
       prompt,
+      triesLeft: newTries,
     });
   } catch (error: any) {
     console.error('CRITICAL ERROR during generation:', error);

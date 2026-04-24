@@ -277,8 +277,8 @@ export default function ElavarkumPage() {
       const data = await response.json();
       
       // 3. Update local state with results
-      const newTries = isAdmin ? triesLeft : Math.max(0, triesLeft - 1);
-      setTriesLeft(newTries);
+      const updatedTries = data.triesLeft ?? triesLeft;
+      setTriesLeft(updatedTries);
       setFinalImageUrl(data.finalImageUrl);
       
       // Save result state with image URL
@@ -292,7 +292,7 @@ export default function ElavarkumPage() {
       setTimeout(() => {
         setStep('result');
         if (!isAdmin) {
-          toast.success(`Generated! ${newTries} tries remaining.`);
+          toast.success(`Generated! ${updatedTries} tries remaining.`);
         }
       }, 2000);
 
