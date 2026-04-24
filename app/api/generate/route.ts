@@ -48,23 +48,12 @@ const ALLOWED_IMAGE_EXTENSIONS = new Set(['png', 'jpg', 'jpeg', 'webp']);
 
 const buildFinalImageUrl = (request: NextRequest, finalImagePath: string) => {
   const origin = request.nextUrl.origin;
-
   if (!finalImagePath) return '';
-
   if (finalImagePath.startsWith('http')) {
-    try {
-      const parsed = new URL(finalImagePath);
-      const isS3Host = parsed.host.includes('.amazonaws.com');
-      if (isS3Host) {
-        return `${origin}/api/assets/download?url=${encodeURIComponent(finalImagePath)}`;
-      }
-    } catch {
-      return finalImagePath;
-    }
     return finalImagePath;
   }
-
-  return `${origin}${finalImagePath.startsWith('/') ? '' : '/'}${finalImagePath}`;
+  const path = finalImagePath.startsWith('/') ? finalImagePath : `/${finalImagePath}`;
+  return `${origin}${path}`;
 };
 
 export async function POST(request: NextRequest) {
@@ -123,7 +112,7 @@ export async function POST(request: NextRequest) {
       .select('id, status, tries_left')
       .eq('email', email)
       .eq('id', resolvedRequestId)
-      .maybeSingle();
+      .maybeSingle() as { data: any, error: any };
 
     if (requestError || validatedRequestError) {
       console.error('Generate request lookup error:', requestError || validatedRequestError);
