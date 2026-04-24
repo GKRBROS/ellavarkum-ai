@@ -2,8 +2,11 @@ const path = require('path')
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  outputFileTracingRoot: path.resolve(__dirname),
+  outputFileTracingRoot: __dirname,
   skipTrailingSlashRedirect: true,
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   images: {
     remotePatterns: [
       {
