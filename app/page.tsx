@@ -277,6 +277,8 @@ export default function ElavarkumPage() {
       const data = await response.json();
       
       // 3. Update local state with results
+      const newTries = isAdmin ? triesLeft : Math.max(0, triesLeft - 1);
+      setTriesLeft(newTries);
       setFinalImageUrl(data.finalImageUrl);
       
       // Save result state with image URL
