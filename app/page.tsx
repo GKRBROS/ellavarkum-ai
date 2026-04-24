@@ -472,13 +472,17 @@ export default function ElavarkumPage() {
             <div className="flex gap-4 mt-8">
               <button onClick={() => setShowGuidelines(false)} className="flex-1 py-3 bg-slate-100 text-slate-600 rounded-full font-bold">Back</button>
               <button 
-                onClick={() => { 
+                onClick={(e) => { 
                   setShowGuidelines(false); 
-                  fileInputRef.current?.click();
+                  if (file) {
+                    handleGenerate(e);
+                  } else {
+                    fileInputRef.current?.click();
+                  }
                 }} 
                 className="flex-1 py-3 bg-blue-600 text-white rounded-full font-bold"
               >
-                Proceed to Upload
+                {file ? 'Generate Now' : 'Proceed to Upload'}
               </button>
             </div>
           </motion.div>
