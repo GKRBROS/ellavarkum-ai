@@ -92,21 +92,27 @@ export default function ElavarkumPage() {
   useEffect(() => {
     generateExamplePreview();
     
-    // Restore session only if it was processing or result
     const savedSession = localStorage.getItem('elavarkum_session');
     if (savedSession) {
       try {
-        const { email: savedEmail, step: savedStep } = JSON.parse(savedSession);
-        if (savedEmail && (savedStep === 'processing' || savedStep === 'result')) {
+        const { email: savedEmail, step: savedStep, imageUrl: savedImageUrl } = JSON.parse(savedSession);
+        
+        // Only restore if processing (active generation)
+        if (savedEmail && savedStep === 'processing') {
           setEmail(savedEmail);
           setStep(savedStep);
+          if (savedImageUrl) setFinalImageUrl(savedImageUrl);
           setIsAdmin(savedEmail === ADMIN_EMAIL);
+          
           const syncTries = async () => {
-            const { data } = await supabase.from('elavarkum_requests').select('tries_left').eq('email', savedEmail).maybeSingle();
-            if (data) setTriesLeft(data.tries_left);
+            const { data } = await supabase.from('elavarkum_requests').select('tries_left, generated_image_url').eq('email', savedEmail).maybeSingle();
+            if (data) {
+              setTriesLeft(data.tries_left);
+            }
           };
           syncTries();
         } else {
+          // Logout on refresh for any other state including 'result'
           localStorage.removeItem('elavarkum_session');
         }
       } catch (e) {
@@ -271,12 +277,14 @@ export default function ElavarkumPage() {
       const data = await response.json();
       
       // 3. Update local state with results
-      const newTries = isAdmin ? triesLeft : Math.max(0, triesLeft - 1);
-      setTriesLeft(newTries);
       setFinalImageUrl(data.finalImageUrl);
       
-      // Save result state
-      localStorage.setItem('elavarkum_session', JSON.stringify({ email, step: 'result' }));
+      // Save result state with image URL
+      localStorage.setItem('elavarkum_session', JSON.stringify({ 
+        email, 
+        step: 'result', 
+        imageUrl: data.finalImageUrl 
+      }));
 
       // Wait for progress effect
       setTimeout(() => {
@@ -352,6 +360,9 @@ export default function ElavarkumPage() {
       setPreviewUrl(null);
       setFinalImageUrl(null);
       setName('');
+      
+      // Update session to form state
+      localStorage.setItem('elavarkum_session', JSON.stringify({ email, step: 'form' }));
     } else {
       toast.error('No tries left. Please contact support.');
     }
@@ -694,32 +705,51 @@ export default function ElavarkumPage() {
                   <p className="text-xl text-slate-500 leading-relaxed">We&apos;ve generated your custom AI portrait. It&apos;s high-resolution, professional, and ready to share.</p>
                 </div>
                 
-                <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex flex-col gap-4 mt-8">
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <button 
+                      onClick={handleDownload}
+                      className="flex-1 py-5 bg-blue-600 text-white rounded-full font-bold text-lg hover:bg-blue-700 hover:shadow-2xl hover:shadow-blue-300 transition-all active:scale-95 flex items-center justify-center gap-3 shadow-xl shadow-blue-100"
+                    >
+                      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      </svg>
+                      Download Portrait
+                    </button>
+                    
+                    <button 
+                      onClick={handleTryAgain}
+                      className="flex-1 py-5 bg-white text-slate-900 border-2 border-slate-200 rounded-full font-bold text-lg hover:bg-slate-50 transition-all active:scale-95 flex items-center justify-center gap-3"
+                    >
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                      Try Again {!isAdmin && `(${triesLeft})`}
+                    </button>
+                  </div>
+
                   <button 
-                    onClick={handleDownload}
-                    className="flex-1 py-5 bg-blue-600 text-white rounded-full font-bold text-lg hover:bg-blue-700 hover:shadow-2xl hover:shadow-blue-300 transition-all active:scale-95 flex items-center justify-center gap-3 shadow-xl shadow-blue-100"
+                    onClick={handleLogout}
+                    className="w-full py-4 text-slate-400 font-bold text-sm hover:text-red-500 transition-all flex items-center justify-center gap-2"
                   >
-                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                     </svg>
-                    Download Portrait
-                  </button>
-                  
-                  <button 
-                    onClick={handleTryAgain}
-                    className="flex-1 py-5 bg-white text-slate-900 border-2 border-slate-200 rounded-full font-bold text-lg hover:bg-slate-50 transition-all active:scale-95 flex items-center justify-center gap-3"
-                  >
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                    </svg>
-                    Try Again {!isAdmin && `(${triesLeft})`}
+                    Logout & Exit
                   </button>
                 </div>
               </div>
 
               <div className="relative aspect-[1080/1350] bg-slate-50 rounded-[50px] overflow-hidden shadow-[0_50px_100px_-20px_rgba(0,0,0,0.15)] border border-slate-100 order-1 lg:order-2 p-4">
-                <div className="w-full h-full rounded-[36px] overflow-hidden relative group">
-                  <img src={finalImageUrl || ''} alt="Final AI Persona" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                <div className="w-full h-full rounded-[36px] overflow-hidden relative group bg-slate-100 flex items-center justify-center">
+                  {finalImageUrl ? (
+                    <img src={finalImageUrl} alt="Final AI Persona" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                  ) : (
+                    <div className="animate-pulse flex flex-col items-center gap-4 text-slate-400">
+                      <div className="w-12 h-12 rounded-full border-4 border-slate-200 border-t-blue-500 animate-spin" />
+                      <p className="text-sm font-medium">Finalizing your portrait...</p>
+                    </div>
+                  )}
                   <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/20 via-transparent to-transparent pointer-events-none" />
                 </div>
               </div>

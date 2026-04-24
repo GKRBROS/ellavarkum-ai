@@ -121,10 +121,10 @@ export async function mergeImages(
 
       // Auto-scaling logic (large and bold look, fitted to footer width)
       const maxWidth = Math.floor(canvasWidth * 0.9);
-      const maxNameSize = Math.floor(canvasWidth * 0.12);
+      const maxNameSize = Math.floor(canvasWidth * 0.08); // Reduced size for better balance
       const minNameSize = Math.floor(canvasWidth * 0.05);
       const estimatedWidthPerChar = 0.52;
-      const desiredFillRatio = 0.96;
+      const desiredFillRatio = 0.85; // Reduced fill ratio to leave margins
       let nameFontSize = Math.floor(maxWidth / (Math.max(nameText.length, 1) * estimatedWidthPerChar));
       nameFontSize = Math.max(minNameSize, Math.min(maxNameSize, nameFontSize));
 

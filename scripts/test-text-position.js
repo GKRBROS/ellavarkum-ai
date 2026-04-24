@@ -13,19 +13,20 @@ async function testFinalPosition() {
     ctx.drawImage(layer, 0, 0, A4_WIDTH_PX, A4_HEIGHT_PX);
 
     const nameText = "SHAFAS";
-    const nameY = 785; // User requested position for better alignment
-
-    console.log(`Testing position Y=${nameY}`);
+    const nameY = 785; // Latest stable position
 
     ctx.fillStyle = '#000000';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.font = 'bold 80px Arial';
+    
+    // REDUCED SIZE: matching the new 0.08 scaling
+    const fontSize = Math.floor(A4_WIDTH_PX * 0.08); 
+    ctx.font = `bold ${fontSize}px Arial`;
 
     ctx.fillText(nameText, A4_WIDTH_PX / 2, nameY);
 
-    fs.writeFileSync('test-text-position-793.png', canvas.toBuffer());
-    console.log('Created test-text-position-793.png at Y=793');
+    fs.writeFileSync('test-text-final-small.png', canvas.toBuffer());
+    console.log(`Created test-text-final-small.png at Y=${nameY} with size ${fontSize}px`);
 }
 
 testFinalPosition().catch(console.error);
