@@ -79,7 +79,7 @@ export async function mergeImages(
     // Positioning the face in the circular gap at the top-middle
     const charWidth = 880; // High-impact zoom (increased from 680)
     const charHeight = 880; 
-    const charTopOffset = 30; // Centered vertically for larger size
+    const charTopOffset = 40; // Shifted down 10px as requested
     const charLeftOffset = Math.floor((A4_WIDTH_PX - charWidth) / 2);
 
     const layerWithCharacter = await sharp(layerPath)
