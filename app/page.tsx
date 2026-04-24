@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import Image from 'next/image';
+import NextImage from 'next/image';
 import { supabase, UPLOAD_FOLDER, FINAL_FOLDER, bucketName } from '@/lib/supabase';
 import { toast, Toaster } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -391,7 +391,7 @@ export default function ElavarkumPage() {
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
           <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="bg-white p-8 rounded-3xl max-w-lg w-full shadow-2xl">
             <h3 className="text-2xl font-black mb-4">Photo Guidelines</h3>
-            <Image src="/Image to use.webp" alt="Guidelines" width={500} height={400} className="w-full h-auto rounded-2xl mb-6 shadow-md" />
+            <NextImage src="/Image to use.webp" alt="Guidelines" width={500} height={400} className="w-full h-auto rounded-2xl mb-6 shadow-md" />
             <div className="text-slate-600 mb-8 space-y-2">
               <p>• Ensure your face is clearly visible.</p>
               <p>• Use a photo with neutral lighting.</p>
@@ -408,7 +408,7 @@ export default function ElavarkumPage() {
       {/* Navbar */}
       <nav className="fixed top-0 left-0 right-0 z-50 px-8 py-4 flex justify-between items-center glass-panel">
         <div className="flex items-center gap-4">
-          <Image src="/LOGO.png" alt="Logo" width={48} height={48} className="h-10 md:h-12 w-auto" />
+          <NextImage src="/LOGO.png" alt="Logo" width={48} height={48} className="h-10 md:h-12 w-auto" />
           <span className="font-heading text-2xl font-black tracking-tighter hidden sm:block">ELLAVARKUM <span className="text-blue-600">AI</span></span>
         </div>
         
@@ -637,7 +637,7 @@ export default function ElavarkumPage() {
               <div className="lg:h-full">
                 <div className="relative h-full bg-[#020617] rounded-[40px] overflow-hidden shadow-2xl border border-slate-200 group min-h-[600px]">
                   <div className="w-full h-full flex flex-col items-center justify-center relative">
-                    <Image src="/example.png" alt="Example" width={1080} height={1350} className="w-full h-full object-contain" />
+                    <NextImage src="/example.png" alt="Example" width={1080} height={1350} className="w-full h-full object-contain" />
                     <div className="absolute top-6 right-6 bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full shadow-lg border border-slate-100">
                       <span className="text-[#0077ff] font-bold text-xs uppercase tracking-widest">Reference Portrait</span>
                     </div>
@@ -754,7 +754,7 @@ export default function ElavarkumPage() {
               <div className="relative aspect-[1080/1350] bg-slate-50 rounded-[50px] overflow-hidden shadow-[0_50px_100px_-20px_rgba(0,0,0,0.15)] border border-slate-100 order-1 lg:order-2 p-4">
                 <div className="w-full h-full rounded-[36px] overflow-hidden relative group bg-slate-100 flex items-center justify-center">
                   {finalImageUrl ? (
-                    <Image 
+                    <NextImage 
                       src={finalImageUrl} 
                       alt="Final AI Persona" 
                       width={1080} 
@@ -858,7 +858,7 @@ export default function ElavarkumPage() {
       <footer className="py-12 border-t border-slate-100 bg-slate-50/30">
         <div className="max-w-7xl mx-auto px-8 flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="flex items-center gap-4">
-            <Image src="/LOGO.png" alt="Elavarkum AI" width={32} height={32} className="h-8 w-auto" />
+            <NextImage src="/LOGO.png" alt="Elavarkum AI" width={32} height={32} className="h-8 w-auto" />
             <span className="text-slate-400 text-sm font-medium">© {new Date().getFullYear()} Elavarkum AI. All rights reserved.</span>
           </div>
           <div className="flex items-center gap-3">
