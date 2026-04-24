@@ -86,7 +86,24 @@ const runBuildWithRetry = () => {
   start()
 }
 
+const CRITICAL_MANIFESTS = [
+  path.join(nextDir, 'routes-manifest.json'),
+  path.join(nextDir, 'server', 'next-font-manifest.json'),
+]
+
+const isNextDirHealthy = () => {
+  if (!fs.existsSync(nextDir)) return true // fresh start is fine
+  return CRITICAL_MANIFESTS.every(f => fs.existsSync(f))
+}
+
 const runDevWithSelfHeal = () => {
+  // Pre-flight: clear .next if it exists but is missing critical manifests.
+  // This prevents blank pages and 404 chunk errors after builds or updates.
+  if (fs.existsSync(nextDir) && !isNextDirHealthy()) {
+    console.warn('[safe-next] Detected incomplete/stale .next directory. Clearing before start...')
+    clearNextDir()
+  }
+
   let restarted = false
   let healing = false
   let child = null
