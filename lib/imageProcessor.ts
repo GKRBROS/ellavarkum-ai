@@ -79,7 +79,7 @@ export async function mergeImages(
     // Positioning the face in the circular gap at the top-middle
     const charWidth = 880; // High-impact zoom (increased from 680)
     const charHeight = 880; 
-    const charTopOffset = 40; // Shifted down 10px as requested
+    const charTopOffset = 45; // Shifted down another 5px as requested (Total 15px from original)
     const charLeftOffset = Math.floor((A4_WIDTH_PX - charWidth) / 2);
 
     const layerWithCharacter = await sharp(layerPath)
@@ -117,7 +117,7 @@ export async function mergeImages(
       const canvasWidth = A4_WIDTH_PX;
       const canvasHeight = A4_HEIGHT_PX;
 
-      const nameText = name ? name.toUpperCase() : '';
+      const nameText = name ? name.trim().charAt(0).toUpperCase() + name.trim().slice(1).toLowerCase() : '';
 
       // Auto-scaling logic (large and bold look, fitted to footer width)
       const maxWidth = Math.floor(canvasWidth * 0.9);
