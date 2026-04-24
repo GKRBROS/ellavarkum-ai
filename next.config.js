@@ -16,7 +16,15 @@ const nextConfig = {
       {
         protocol: 'https',
         hostname: '**.supabase.co',
-      }
+      },
+      {
+        protocol: 'https',
+        hostname: '**.amazonaws.com',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.cloudfront.net',
+      },
     ],
   },
   async headers() {

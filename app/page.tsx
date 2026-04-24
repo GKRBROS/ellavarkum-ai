@@ -11,7 +11,7 @@ type Step = 'otp-request' | 'otp-verify' | 'form' | 'processing' | 'result';
 
 // --- Constants ---
 const ADMIN_EMAIL = 'frameforgeone@gmail.com';
-const GEN_TIME = 45; // seconds
+const GEN_TIME = 95; // seconds
 const CANVAS_WIDTH = 1080;
 const CANVAS_HEIGHT = 1350;
 

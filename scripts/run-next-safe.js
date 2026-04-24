@@ -9,7 +9,7 @@ const nextArgs = [nextBin, mode, ...process.argv.slice(3)]
 const nextDir = path.join(process.cwd(), '.next')
 const devMarkerPath = path.join(nextDir, '.safe-next-dev.json')
 
-const missingChunkRegex = /Cannot find module '\.\/chunks\/vendor-chunks|Cannot find module '\.\/chunks\/vendor-chunks\/@smithy|MODULE_NOT_FOUND[\s\S]*\.next\\server|MODULE_NOT_FOUND[\s\S]*\.next\/server/i
+const missingChunkRegex = /Cannot find module '\.\/chunks\/vendor-chunks|Cannot find module '\.\/chunks\/vendor-chunks\/@smithy|MODULE_NOT_FOUND[\s\S]*\.next\\server|MODULE_NOT_FOUND[\s\S]*\.next\/server|ENOENT[\s\S]*next-font-manifest\.json|ENOENT[\s\S]*routes-manifest\.json/i
 
 const clearNextDir = () => {
   try {

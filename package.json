@@ -11,7 +11,7 @@
     "start": "next start -p 7153",
     "start:pm2": "pm2 start npm --name nextjs-app -- start -- -p 7153",
     "deploy:pm2": "npm run build && pm2 reload nextjs-app --update-env",
-    "lint": "next lint"
+    "lint": "eslint . --ext .ts,.tsx --max-warnings 0"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1032.0",
