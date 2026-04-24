@@ -84,11 +84,17 @@ export default function ElavarkumPage() {
   };
 
   const generateExamplePreview = useCallback(async () => {
-    // This is optional now but kept for consistency
+    try {
+      const blob = await combineImages('/example.png', true);
+      const url = URL.createObjectURL(blob);
+      setPreviewUrl(url);
+    } catch (e) {
+      console.error('Example preview failed:', e);
+    }
   }, []);
+
   // --- Effects ---
 
-  // Generate example preview and restore session on mount
   useEffect(() => {
     generateExamplePreview();
     
@@ -119,7 +125,7 @@ export default function ElavarkumPage() {
         localStorage.removeItem('elavarkum_session');
       }
     }
-  }, []);
+  }, [generateExamplePreview]);
 
   // --- Handlers ---
 
