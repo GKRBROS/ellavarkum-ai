@@ -75,41 +75,40 @@ export async function mergeImages(
 
     console.log(`Dimensions - BG: ${bgWidth}x${bgHeight}, Layer: ${layerWidth}x${layerHeight}`);
 
-    // STEP 1: Composite generated image BEHIND layer.png
-    // Positioning the face in the circular gap at the top-middle
-    const charWidth = 880; // High-impact zoom (increased from 680)
+    // STEP 1: Resize generated character image and prepare it in parallel with canvas text
+    const charWidth = 880;
     const charHeight = 880; 
-    const charTopOffset = 55; // Shifted down another 10px as requested (Total 25px from original)
+    const charTopOffset = 55; // Shifted down 25px from original
     const charLeftOffset = Math.floor((A4_WIDTH_PX - charWidth) / 2);
 
-    const layerWithCharacter = await sharp(layerPath)
-      .resize(layerWidth, layerHeight)
-      .composite([
-        {
-          input: await sharp(generatedImagePath)
-            .resize(charWidth, charHeight, {
-              fit: 'cover',
-              position: 'center'
-            })
-            .toBuffer(),
-          blend: 'dest-over',
-          top: charTopOffset,
-          left: charLeftOffset
-        }
-      ])
-      .toBuffer();
+    // Resize the generated image and layer concurrently
+    const [resizedCharBuffer, resizedLayerBuffer] = await Promise.all([
+      sharp(generatedImagePath)
+        .resize(charWidth, charHeight, { fit: 'cover', position: 'center' })
+        .png()
+        .toBuffer(),
+      sharp(layerPath)
+        .resize(A4_WIDTH_PX, A4_HEIGHT_PX, { fit: 'cover' })
+        .png()
+        .toBuffer(),
+    ]);
 
-    // STEP 2: Create Text Overlay (name only)
+    // STEP 2: Build composite layers array
     let finalCompositeLayers: any[] = [
+      // Character image placed behind the layer
       {
-        input: await sharp(layerWithCharacter)
-          .resize(A4_WIDTH_PX, A4_HEIGHT_PX, {
-            fit: 'cover'
-          })
-          .toBuffer(),
-        gravity: 'center',
-        blend: 'over'
-      }
+        input: resizedCharBuffer,
+        blend: 'over',
+        top: charTopOffset,
+        left: charLeftOffset,
+      },
+      // Layer on top of character
+      {
+        input: resizedLayerBuffer,
+        top: 0,
+        left: 0,
+        blend: 'over',
+      },
     ];
 
     if (name) {

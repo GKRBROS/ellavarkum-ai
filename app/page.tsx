@@ -354,14 +354,24 @@ export default function ElavarkumPage() {
     }
   };
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (!finalImageUrl) return;
-    const link = document.createElement('a');
-    link.href = finalImageUrl;
-    link.download = `elavarkum_ai_${Date.now()}.png`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    try {
+      const response = await fetch(finalImageUrl);
+      if (!response.ok) throw new Error('Failed to fetch image');
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = `elavarkum_ai_${Date.now()}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+    } catch {
+      // Fallback: open in new tab for manual save
+      window.open(finalImageUrl, '_blank');
+    }
   };
 
   const handleTryAgain = () => {
