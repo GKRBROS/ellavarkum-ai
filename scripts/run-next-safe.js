@@ -5,7 +5,7 @@ const path = require('path')
 const mode = process.argv[2] || 'dev'
 const nextBin = require.resolve('next/dist/bin/next')
 const nextCmd = process.execPath
-const nextArgs = [nextBin, mode]
+const nextArgs = [nextBin, mode, ...process.argv.slice(3)]
 const nextDir = path.join(process.cwd(), '.next')
 const devMarkerPath = path.join(nextDir, '.safe-next-dev.json')
 

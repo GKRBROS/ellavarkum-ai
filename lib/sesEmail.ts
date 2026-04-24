@@ -60,13 +60,13 @@ const getDisplayDate = () =>
 
 const getDefaultLogoUrl = (publicUrl: string) => {
   if (publicUrl) {
-    return `${publicUrl.replace(/\/$/, '')}/logo_black.png`;
+    return `${publicUrl.replace(/\/$/, '')}/LOGO.png`;
   }
-  return 'https://memento.frameforge.one/logo_black.png';
+  return 'https://ellavarkumai.frameforge.one/LOGO.png'; // Fallback if app URL is known
 };
 
 const buildOtpEmailText = (otp: string, helpCenterUrl: string, appUrl: string) => [
-  'Frame Forge verification code',
+  'Elavarkum AI verification code',
   '',
   'Hello,',
   '',
@@ -78,7 +78,7 @@ const buildOtpEmailText = (otp: string, helpCenterUrl: string, appUrl: string) =
   `Help Center: ${helpCenterUrl}`,
   `Frame Forge: ${appUrl}`,
   '',
-  `Copyright ${new Date().getFullYear()} Frame Forge. All rights reserved.`,
+  `Copyright ${new Date().getFullYear()} Elavarkum AI. All rights reserved.`,
 ].join('\n');
 
 const buildOtpEmailHtml = (otp: string, helpCenterUrl: string, logoUrl: string) => `
@@ -88,7 +88,7 @@ const buildOtpEmailHtml = (otp: string, helpCenterUrl: string, logoUrl: string) 
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-    <title>Frame Forge OTP</title>
+    <title>Elavarkum AI OTP</title>
   </head>
   <body
     style="
@@ -103,9 +103,10 @@ const buildOtpEmailHtml = (otp: string, helpCenterUrl: string, logoUrl: string) 
         max-width: 680px;
         margin: 0 auto;
         padding: 30px 20px;
-        background: #f6f7fb;
+        background: #ffffff;
         font-size: 14px;
         color: #434343;
+        border-top: 6px solid #e1007a;
       "
     >
       <header>
@@ -129,7 +130,7 @@ const buildOtpEmailHtml = (otp: string, helpCenterUrl: string, logoUrl: string) 
                       </td>
                       <td style="padding-left: 10px; vertical-align: middle;">
                         <span style="font-size: 16px; line-height: 30px; font-weight: 600; color: #1f1f1f; letter-spacing: 0.5px;">
-                          FRAME FORGE
+                          ELAVARKUM AI
                         </span>
                       </td>
                     </tr>
@@ -196,10 +197,10 @@ const buildOtpEmailHtml = (otp: string, helpCenterUrl: string, logoUrl: string) 
               style="
                 margin: 0;
                 margin-top: 60px;
-                font-size: 40px;
-                font-weight: 600;
-                letter-spacing: 15px;
-                color: #000000;
+                font-size: 48px;
+                font-weight: 900;
+                letter-spacing: 10px;
+                color: #0077ff;
               "
             >
               ${otp}
@@ -246,7 +247,7 @@ const buildOtpEmailHtml = (otp: string, helpCenterUrl: string, logoUrl: string) 
             color: #434343;
           "
         >
-          Copyright © ${new Date().getFullYear()} Frame Forge. All rights reserved.
+          Copyright © ${new Date().getFullYear()} Elavarkum AI. All rights reserved.
         </p>
       </footer>
     </div>
@@ -267,7 +268,7 @@ const buildFinalImageEmailText = (name: string, imageUrl: string, appUrl: string
   '',
   `Frame Forge: ${appUrl}`,
   '',
-  `Copyright ${new Date().getFullYear()} Frame Forge. All rights reserved.`,
+  `Copyright ${new Date().getFullYear()} Elavarkum AI. All rights reserved.`,
 ].join('\n');
 
 const buildFinalImageEmailHtml = (name: string, imageUrl: string, helpCenterUrl: string, logoUrl: string) => `
@@ -318,7 +319,7 @@ const buildFinalImageEmailHtml = (name: string, imageUrl: string, helpCenterUrl:
                       </td>
                       <td style="padding-left: 10px; vertical-align: middle;">
                         <span style="font-size: 16px; line-height: 30px; font-weight: 600; color: #1f1f1f; letter-spacing: 0.5px;">
-                          FRAME FORGE
+                          ELAVARKUM AI
                         </span>
                       </td>
                     </tr>
@@ -444,7 +445,7 @@ const buildFinalImageEmailHtml = (name: string, imageUrl: string, helpCenterUrl:
             color: #434343;
           "
         >
-          Copyright © ${new Date().getFullYear()} Frame Forge. All rights reserved.
+          Copyright © ${new Date().getFullYear()} Elavarkum AI. All rights reserved.
         </p>
       </footer>
     </div>
@@ -466,7 +467,7 @@ const buildAdminWelcomeEmailText = (name: string, adminUrl: string, appUrl: stri
   '',
   `Frame Forge: ${appUrl}`,
   '',
-  `Copyright ${new Date().getFullYear()} Frame Forge. All rights reserved.`,
+  `Copyright ${new Date().getFullYear()} Elavarkum AI. All rights reserved.`,
 ].join('\n');
 
 const buildAdminWelcomeEmailHtml = (name: string, adminUrl: string, helpCenterUrl: string, logoUrl: string) => `
@@ -517,7 +518,7 @@ const buildAdminWelcomeEmailHtml = (name: string, adminUrl: string, helpCenterUr
                       </td>
                       <td style="padding-left: 10px; vertical-align: middle;">
                         <span style="font-size: 16px; line-height: 30px; font-weight: 600; color: #1f1f1f; letter-spacing: 0.5px;">
-                          FRAME FORGE
+                          ELAVARKUM AI
                         </span>
                       </td>
                     </tr>
@@ -639,7 +640,7 @@ const buildAdminWelcomeEmailHtml = (name: string, adminUrl: string, helpCenterUr
             color: #434343;
           "
         >
-          Copyright © ${new Date().getFullYear()} Frame Forge. All rights reserved.
+          Copyright © ${new Date().getFullYear()} Elavarkum AI. All rights reserved.
         </p>
       </footer>
     </div>
@@ -653,7 +654,7 @@ export const sendOtpEmail = async (input: { to: string; otp: string }) => {
   }
 
   const client = getSesClient();
-  const subject = 'Frame Forge email verification code (valid for 10 minutes)';
+  const subject = 'Elavarkum AI email verification code (valid for 10 minutes)';
   const publicUrl = isPublicAppUrl(APP_URL) ? APP_URL : '';
   const helpCenterUrl = publicUrl || 'https://frameforge.one';
   const logoUrl = SES_LOGO_URL
@@ -663,7 +664,7 @@ export const sendOtpEmail = async (input: { to: string; otp: string }) => {
 
   const response = await client.send(
     new SendEmailCommand({
-      Source: `FrameForge Security <${SENDER_EMAIL}>`,
+      Source: `Elavarkum AI Security <${SENDER_EMAIL}>`,
       ReturnPath: RETURN_PATH_EMAIL,
       ReplyToAddresses: [REPLY_TO_EMAIL],
       Destination: {

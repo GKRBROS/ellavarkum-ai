@@ -5,9 +5,11 @@ import { NextRequest, NextResponse } from 'next/server';
 const DEFAULT_ALLOWED_ORIGINS = [
   'http://localhost:5173',
   'http://localhost:3000',
+  'http://localhost:7153',
   'https://frameforge.one',
   'https://www.frameforge.one',
   'https://memento.frameforge.one',
+  'https://ellavarkumai.frameforge.one',
   'https://frameforge-mauve.vercel.app',
 ];
 

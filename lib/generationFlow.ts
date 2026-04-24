@@ -9,7 +9,7 @@ export type { GenderOption };
 const OTP_SECRET = process.env.OTP_SECRET?.trim() || '';
 const DEV_FALLBACK_OTP_SECRET = crypto.randomBytes(32).toString('hex');
 
-export const IMAGE_GENERATION_TABLE = 'image_generation_requests';
+export const IMAGE_GENERATION_TABLE = 'elavarkum_requests';
 
 export const normalizeEmail = (email: string) => email.trim().toLowerCase();
 

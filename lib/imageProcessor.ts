@@ -8,9 +8,9 @@ import { createCanvas, registerFont } from 'canvas';
 
 let fontsRegistered = false;
 
-const A4_WIDTH_PX = 2480;
-const A4_HEIGHT_PX = 3508;
-const NAME_TEXT_Y_OFFSET_PX = 90;
+const A4_WIDTH_PX = 1080;
+const A4_HEIGHT_PX = 1350;
+const NAME_TEXT_Y_OFFSET_PX = 0;
 
 const registerCanvasFonts = () => {
   if (fontsRegistered) return;
@@ -45,8 +45,8 @@ export async function mergeImages(
 
     // Create output directory
     const isProduction = process.env.NODE_ENV === 'production';
-    const publicOutputDir = join(process.cwd(), 'public', 'final');
-    const tmpOutputDir = join('/tmp', 'final');
+    const publicOutputDir = join(process.cwd(), 'public', 'elam-ai-final');
+    const tmpOutputDir = join('/tmp', 'elam-ai-final');
     const outputDir = isProduction ? tmpOutputDir : publicOutputDir;
 
     try {
@@ -58,10 +58,13 @@ export async function mergeImages(
     // Load background image
     const backgroundPath = join(process.cwd(), 'public', 'background.png');
     const layerPath = join(process.cwd(), 'public', 'layer.png');
-    console.log('Paths:', { backgroundPath, layerPath });
+    const fallbackPath = join(process.cwd(), 'public', 'example.png');
+    const finalBgPath = existsSync(backgroundPath) ? backgroundPath : fallbackPath;
+    
+    console.log('Paths:', { backgroundPath, layerPath, usingFallback: !existsSync(backgroundPath) });
 
     const [bgMetadata, layerMetadata] = await Promise.all([
-      sharp(backgroundPath).metadata(),
+      sharp(finalBgPath).metadata(),
       sharp(layerPath).metadata(),
     ]);
 
@@ -73,11 +76,11 @@ export async function mergeImages(
     console.log(`Dimensions - BG: ${bgWidth}x${bgHeight}, Layer: ${layerWidth}x${layerHeight}`);
 
     // STEP 1: Composite generated image BEHIND layer.png
-    // Fill full width and keep the generated portrait anchored to the bottom.
-    const charWidth = layerWidth;
-    const charHeight = Math.floor(layerHeight * 0.76);
-    const charTopOffset = layerHeight - charHeight;
-    const charLeftOffset = 0;
+    // Positioning the face in the circular gap at the top-middle
+    const charWidth = 620; 
+    const charHeight = 620;
+    const charTopOffset = 180; // Adjusted for 1080x1350
+    const charLeftOffset = (A4_WIDTH_PX - charWidth) / 2;
 
     const layerWithCharacter = await sharp(layerPath)
       .resize(layerWidth, layerHeight)
@@ -117,15 +120,15 @@ export async function mergeImages(
       const nameText = name ? name.toUpperCase() : '';
 
       // Auto-scaling logic (large and bold look, fitted to footer width)
-      const maxWidth = Math.floor(canvasWidth * 0.95);
-      const maxNameSize = Math.floor(canvasWidth * 0.1);
-      const minNameSize = Math.floor(canvasWidth * 0.045);
+      const maxWidth = Math.floor(canvasWidth * 0.9);
+      const maxNameSize = Math.floor(canvasWidth * 0.12);
+      const minNameSize = Math.floor(canvasWidth * 0.05);
       const estimatedWidthPerChar = 0.52;
       const desiredFillRatio = 0.96;
       let nameFontSize = Math.floor(maxWidth / (Math.max(nameText.length, 1) * estimatedWidthPerChar));
       nameFontSize = Math.max(minNameSize, Math.min(maxNameSize, nameFontSize));
 
-      const nameY = Math.floor(canvasHeight * 0.79) + NAME_TEXT_Y_OFFSET_PX;
+      const nameY = Math.floor(canvasHeight * 0.91); // Perfectly centered in the bottom white box
 
       console.log('Text overlay:', { nameText, nameFontSize, nameY, maxWidth });
 
@@ -249,7 +252,7 @@ export async function mergeImages(
       }
     }
 
-    const finalBuffer = await sharp(backgroundPath)
+    const finalBuffer = await sharp(finalBgPath)
       .resize(A4_WIDTH_PX, A4_HEIGHT_PX, {
         fit: 'cover',
         position: 'center'
@@ -277,7 +280,7 @@ export async function mergeImages(
     if (isS3Configured()) {
       try {
         const s3PublicUrl = await uploadBufferToS3({
-          key: `final/${outputFilename}`,
+          key: `elam ai final/${outputFilename}`,
           body: finalBuffer,
           contentType: 'image/png',
         });
@@ -316,7 +319,7 @@ export async function mergeImages(
     }
 
     console.log('--- MERGE IMAGES DEBUG END - SUCCESS ---');
-    return `/final/${outputFilename}`;
+    return `/elam-ai-final/${outputFilename}`;
   } catch (error) {
     console.error('CRITICAL ERROR in mergeImages:', error);
     throw new Error(`Failed to merge images: ${error instanceof Error ? error.message : 'Unknown error'}`);

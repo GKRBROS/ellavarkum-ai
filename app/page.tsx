@@ -1,3 +1,840 @@
-export default function Home() {
-  return null;
+'use client';
+
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { supabase, UPLOAD_FOLDER, FINAL_FOLDER, bucketName } from '@/lib/supabase';
+import { toast, Toaster } from 'react-hot-toast';
+import { motion, AnimatePresence } from 'framer-motion';
+
+// --- Types ---
+type Step = 'otp-request' | 'otp-verify' | 'form' | 'processing' | 'result';
+
+// --- Constants ---
+const ADMIN_EMAIL = 'frameforgeone@gmail.com';
+const GEN_TIME = 50; // seconds
+const CANVAS_WIDTH = 1080;
+const CANVAS_HEIGHT = 1350;
+
+export default function ElavarkumPage() {
+  const [step, setStep] = useState<Step>('otp-request');
+  const [email, setEmail] = useState('');
+  const [otp, setOtp] = useState('');
+  const [name, setName] = useState('');
+  const [file, setFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [finalImageUrl, setFinalImageUrl] = useState<string | null>(null);
+  const [timer, setTimer] = useState(GEN_TIME);
+  const [triesLeft, setTriesLeft] = useState(3);
+  const [isLoading, setIsLoading] = useState(false);
+  const [gender, setGender] = useState<'male' | 'female'>('male');
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [adminData, setAdminData] = useState<any[]>([]);
+  const [showGuidelines, setShowGuidelines] = useState(false);
+
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  const combineImages = (photoSrc: string, isInternal: boolean): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      const canvas = canvasRef.current;
+      if (!canvas) return reject('Canvas not found');
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return reject('Ctx not found');
+
+      const bgImg = new Image();
+      const userImg = new Image();
+      const layerImg = new Image();
+
+      if (!isInternal) userImg.crossOrigin = 'anonymous';
+      bgImg.crossOrigin = 'anonymous';
+      layerImg.crossOrigin = 'anonymous';
+
+      bgImg.src = '/background.png';
+      userImg.src = photoSrc;
+      layerImg.src = '/layer.png';
+
+      let loadedCount = 0;
+      const onLoad = () => {
+        loadedCount++;
+        if (loadedCount === 3) {
+          canvas.width = CANVAS_WIDTH;
+          canvas.height = CANVAS_HEIGHT;
+          ctx.drawImage(bgImg, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+          const gapWidth = 620;
+          const gapHeight = 620;
+          const gapX = (CANVAS_WIDTH - gapWidth) / 2;
+          const gapY = 160;
+          const scale = Math.max(gapWidth / userImg.width, gapHeight / userImg.height);
+          const w = userImg.width * scale;
+          const h = userImg.height * scale;
+          const dx = gapX + (gapWidth - w) / 2;
+          const dy = gapY + (gapHeight - h) / 2;
+          ctx.drawImage(userImg, dx, dy, w, h);
+          ctx.drawImage(layerImg, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+          canvas.toBlob((blob) => {
+            if (blob) resolve(blob);
+            else reject('Blob creation failed');
+          }, 'image/png');
+        }
+      };
+
+      bgImg.onload = onLoad;
+      userImg.onload = onLoad;
+      layerImg.onload = onLoad;
+      bgImg.onerror = () => reject('Failed to load assets');
+    });
+  };
+
+  const generateExamplePreview = useCallback(async () => {
+    // This is optional now but kept for consistency
+  }, []);
+  // --- Effects ---
+
+  // Generate example preview and restore session on mount
+  useEffect(() => {
+    generateExamplePreview();
+    
+    // Restore session
+    const savedSession = localStorage.getItem('elavarkum_session');
+    if (savedSession) {
+      try {
+        const { email: savedEmail, verified } = JSON.parse(savedSession);
+        if (verified && savedEmail) {
+          setEmail(savedEmail);
+          // Verify with DB to get latest tries
+          const restoreSession = async () => {
+            const { data } = await supabase
+              .from('elavarkum_requests')
+              .select('tries_left')
+              .eq('email', savedEmail)
+              .maybeSingle();
+            
+            if (data) {
+              setTriesLeft(data.tries_left);
+              setStep('form');
+              if (savedEmail === ADMIN_EMAIL) {
+                setIsAdmin(true);
+                fetchAdminData();
+              }
+            }
+          };
+          restoreSession();
+        }
+      } catch (e) {
+        localStorage.removeItem('elavarkum_session');
+      }
+    }
+  }, []);
+
+  // --- Handlers ---
+
+  const handleRequestOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) return;
+    setIsLoading(true);
+
+    try {
+      const currentTries = 3;
+      // Call the real API to send email
+      const response = await fetch('/api/elavarkum/request-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+
+      const resData = await response.json();
+      if (!response.ok) throw new Error(resData.error || 'Failed to send OTP');
+
+      toast.success('OTP sent! Please check your inbox.');
+      setStep('otp-verify');
+      setTriesLeft(resData.triesLeft ?? currentTries);
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to send OTP');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      const { data, error } = await supabase
+        .from('elavarkum_requests')
+        .select('*')
+        .eq('email', email)
+        .eq('otp_code', otp)
+        .maybeSingle();
+
+      if (error || !data) {
+        toast.error('Invalid OTP code. Please try again.');
+        return;
+      }
+
+      // Check expiry
+      if (new Date(data.otp_expires_at) < new Date()) {
+        toast.error('OTP expired. Please request a new one.');
+        return;
+      }
+
+      if (email === ADMIN_EMAIL) {
+        setIsAdmin(true);
+        fetchAdminData();
+      }
+
+      setTriesLeft(data.tries_left);
+      setStep('form');
+      
+      // Save session
+      localStorage.setItem('elavarkum_session', JSON.stringify({ email, verified: true }));
+      
+      toast.success('Identity verified!');
+    } catch (err: any) {
+      toast.error('Verification failed');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('elavarkum_session');
+    setStep('otp-request');
+    setEmail('');
+    setOtp('');
+    setName('');
+    setFile(null);
+    setPreviewUrl(null);
+    setFinalImageUrl(null);
+    setIsAdmin(false);
+    toast.success('Logged out successfully');
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0];
+    if (selectedFile) {
+      setFile(selectedFile);
+      setPreviewUrl(URL.createObjectURL(selectedFile));
+    }
+  };
+
+  const handleGenerate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!file || !name) return;
+    if (triesLeft <= 0 && !isAdmin) {
+      toast.error('No tries left');
+      return;
+    }
+
+    setStep('processing');
+    setTimer(GEN_TIME);
+
+    // Start countdown
+    const interval = setInterval(() => {
+      setTimer((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    try {
+      // 1. Prepare form data
+      const formData = new FormData();
+      formData.append('email', email);
+      formData.append('name', name);
+      formData.append('gender', gender);
+      formData.append('photo', file);
+
+      // 2. Call AI Generation API
+      const response = await fetch('/api/generate', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        let errorMessage = 'AI Generation failed';
+        try {
+          const contentType = response.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            const errData = await response.json();
+            errorMessage = errData.error || errorMessage;
+          } else {
+            const text = await response.text();
+            console.error('Non-JSON Error Response:', text.slice(0, 500));
+            errorMessage = `Server Error (${response.status})`;
+          }
+        } catch (e) {
+          errorMessage = `Connection Error (${response.status})`;
+        }
+        throw new Error(errorMessage);
+      }
+
+      const data = await response.json();
+      
+      // 3. Update local state with results
+      const newTries = isAdmin ? triesLeft : Math.max(0, triesLeft - 1);
+      setTriesLeft(newTries);
+      setFinalImageUrl(data.finalImageUrl);
+
+      // Wait for progress effect
+      setTimeout(() => {
+        setStep('result');
+        if (!isAdmin) {
+          toast.success(`Generated! ${newTries} tries remaining.`);
+        }
+      }, 2000);
+
+    } catch (err: any) {
+      toast.error(err.message || 'Generation failed');
+      setStep('form');
+    } finally {
+      clearInterval(interval);
+    }
+  };
+
+
+  const fetchAdminData = async () => {
+    const { data, error } = await supabase
+      .from('elavarkum_requests')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (data) setAdminData(data);
+  };
+
+  const handleClearMessages = async () => {
+    if (!isAdmin) return;
+    if (!confirm('Are you sure you want to clear all user data?')) return;
+    
+    const { error } = await supabase
+      .from('elavarkum_requests')
+      .delete()
+      .neq('email', ADMIN_EMAIL);
+    
+    if (!error) {
+      toast.success('Cleared all messages');
+      fetchAdminData();
+    } else {
+      toast.error('Failed to clear messages');
+    }
+  };
+
+  const handleAddTry = async (userEmail: string, currentTries: number) => {
+    if (!isAdmin) return;
+    const { error } = await supabase
+      .from('elavarkum_requests')
+      .update({ tries_left: currentTries + 1 })
+      .eq('email', userEmail);
+    
+    if (!error) {
+      toast.success(`Added 1 try to ${userEmail}`);
+      fetchAdminData();
+    } else {
+      toast.error('Failed to add try');
+    }
+  };
+
+  const handleDownload = () => {
+    if (!finalImageUrl) return;
+    const link = document.createElement('a');
+    link.href = finalImageUrl;
+    link.download = `elavarkum_ai_${Date.now()}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleTryAgain = () => {
+    if (triesLeft > 0 || isAdmin) {
+      setStep('form');
+      setFile(null);
+      setPreviewUrl(null);
+      setFinalImageUrl(null);
+      setName('');
+    } else {
+      toast.error('No tries left. Please contact support.');
+    }
+  };
+
+  // --- Render ---
+
+  return (
+    <main className="min-h-screen bg-white text-slate-900 selection:bg-blue-100">
+      <div className="noise-overlay" />
+      <Toaster position="bottom-center" />
+
+      {/* Guidelines Modal */}
+      {showGuidelines && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+          <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="bg-white p-8 rounded-3xl max-w-lg w-full shadow-2xl">
+            <h3 className="text-2xl font-black mb-4">Photo Guidelines</h3>
+            <img src="/Image to use.webp" alt="Guidelines" className="w-full rounded-2xl mb-6 shadow-md" />
+            <div className="text-slate-600 mb-8 space-y-2">
+              <p>• Ensure your face is clearly visible.</p>
+              <p>• Use a photo with neutral lighting.</p>
+              <p>• Look directly at the camera.</p>
+            </div>
+            <div className="flex gap-4">
+              <button onClick={() => setShowGuidelines(false)} className="flex-1 py-3 bg-slate-100 rounded-full font-bold">Cancel</button>
+              <button onClick={(e) => { setShowGuidelines(false); handleGenerate(e); }} className="flex-1 py-3 bg-blue-600 text-white rounded-full font-bold">Proceed</button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Navbar */}
+      <nav className="fixed top-0 left-0 right-0 z-50 px-8 py-4 flex justify-between items-center glass-panel">
+        <div className="flex items-center gap-4">
+          <img src="/LOGO.png" alt="Logo" className="h-10 md:h-12 w-auto" />
+          <span className="font-heading text-2xl font-black tracking-tighter hidden sm:block">ELLAVARKUM <span className="text-blue-600">AI</span></span>
+        </div>
+        
+        {step !== 'otp-request' && step !== 'otp-verify' && (
+          <div className="hidden md:flex items-center gap-6">
+            <div className="px-4 py-2 bg-slate-50 rounded-full border border-slate-100">
+              <span className="text-sm font-semibold text-slate-500">Logged in as: <span className="text-slate-900">{email}</span></span>
+            </div>
+          </div>
+        )}
+
+        {isAdmin && (
+          <button 
+            onClick={handleClearMessages}
+            className="px-5 py-2.5 bg-red-50 text-red-600 rounded-full text-sm font-bold hover:bg-red-100 transition-all active:scale-95 border border-red-100"
+          >
+            Clear Records
+          </button>
+        )}
+      </nav>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-24 relative z-10">
+        <AnimatePresence mode="wait">
+          
+          {/* STEP: OTP REQUEST */}
+          {step === 'otp-request' && (
+            <motion.div 
+              key="otp-request"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="flex flex-col items-center"
+            >
+              <div className="w-full max-w-md glass-panel p-10 rounded-[40px] shadow-2xl border border-slate-100 relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-[#e1007a] via-[#0077ff] to-[#e1007a]" />
+                
+                <div className="mb-10 text-center">
+                  <h2 className="text-4xl font-heading font-black mb-3">Get Started.</h2>
+                  <p className="text-slate-500">Enter your business email to access the AI generator.</p>
+                </div>
+
+                <form onSubmit={handleRequestOtp} className="space-y-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] uppercase tracking-[0.2em] font-bold text-slate-400 ml-4">Email Address</label>
+                    <input 
+                      type="email" 
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="you@company.com"
+                      className="w-full px-6 py-4 rounded-full border border-slate-200 focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all text-lg"
+                    />
+                  </div>
+                  <button 
+                    disabled={isLoading}
+                    className="w-full py-5 bg-blue-600 text-white rounded-full font-bold text-lg hover:bg-blue-700 hover:shadow-xl hover:shadow-blue-200 transition-all active:scale-95 disabled:opacity-50"
+                  >
+                    {isLoading ? 'Sending OTP...' : 'Send Access Code'}
+                  </button>
+                </form>
+              </div>
+            </motion.div>
+          )}
+
+          {/* STEP: OTP VERIFY */}
+          {step === 'otp-verify' && (
+            <motion.div 
+              key="otp-verify"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 1.05 }}
+              className="flex flex-col items-center"
+            >
+              <div className="w-full max-w-md glass-panel p-10 rounded-[40px] shadow-2xl border border-slate-100 relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-[#e1007a] via-[#0077ff] to-[#e1007a]" />
+                
+                <div className="mb-10 text-center">
+                  <h2 className="text-4xl font-heading font-black mb-3">Verify.</h2>
+                  <p className="text-slate-500 text-center mb-6">We&apos;ve sent a code to <span className="font-semibold">{email}</span></p>
+                </div>
+
+                <form onSubmit={handleVerifyOtp} className="space-y-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] uppercase tracking-[0.2em] font-bold text-blue-600 ml-4">Verification Code</label>
+                    <input 
+                      type="text" 
+                      required
+                      maxLength={6}
+                      value={otp}
+                      onChange={(e) => setOtp(e.target.value)}
+                      placeholder="000000"
+                      className="w-full px-6 py-5 rounded-full border border-blue-200 text-center text-3xl font-black tracking-[0.5em] focus:outline-none focus:ring-4 focus:ring-blue-50/50 focus:border-blue-600 transition-all"
+                    />
+                  </div>
+                  <button 
+                    disabled={isLoading}
+                    className="w-full py-5 bg-blue-600 text-white rounded-full font-bold text-lg hover:bg-blue-700 hover:shadow-xl hover:shadow-blue-200 transition-all active:scale-95 disabled:opacity-50"
+                  >
+                    {isLoading ? 'Verifying...' : 'Access Dashboard'}
+                  </button>
+                </form>
+
+                <div className="mt-10 p-5 bg-blue-50/50 border border-blue-100 rounded-3xl">
+                  <p className="text-sm text-blue-800 leading-relaxed">
+                    <span className="font-bold">Pro Tip:</span> If you don&apos;t see the email, please check your <span className="underline decoration-blue-300">Spam or Junk</span> folder. It sometimes lands there!
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* STEP: FORM */}
+          {step === 'form' && (
+            <motion.div 
+              key="form"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start"
+            >
+              {/* Form Side */}
+              <div className="space-y-10">
+                <div className="flex justify-between items-center mb-8 bg-white/50 p-6 rounded-3xl border border-white shadow-sm backdrop-blur-sm">
+                  <div>
+                    <h2 className="text-2xl font-heading font-black tracking-tight text-slate-800">Welcome Back</h2>
+                    <p className="text-sm text-slate-500 font-medium">{email}</p>
+                  </div>
+                  <button 
+                    onClick={handleLogout}
+                    className="px-5 py-2.5 text-xs font-bold text-slate-500 hover:text-[#e1007a] transition-all bg-white border border-slate-100 rounded-2xl hover:border-[#e1007a]/20 shadow-sm hover:shadow-md"
+                  >
+                    Logout
+                  </button>
+                </div>
+
+                <div className="mb-6">
+                  <h2 className="text-5xl font-heading font-black mb-4 tracking-tight">Create your <span className="text-[#e1007a]">AI Persona</span>.</h2>
+                  <p className="text-xl text-slate-500">Transform your photo into a premium professional portrait in seconds.</p>
+                </div>
+
+                <div className="glass-panel p-10 rounded-[40px] border border-slate-100 shadow-xl space-y-8 h-full">
+                  <form className="space-y-6">
+                    <div className="space-y-4">
+                      <label className="text-[10px] uppercase tracking-[0.2em] font-bold text-slate-400 ml-4">Gender</label>
+                      <div className="flex gap-4 p-2 bg-slate-50 rounded-[24px] border border-slate-100">
+                        <button 
+                          type="button"
+                          onClick={() => setGender('male')}
+                          className={`flex-1 py-3 rounded-[18px] text-sm font-bold transition-all ${gender === 'male' ? 'bg-[#0077ff] text-white shadow-lg' : 'text-slate-500 hover:bg-slate-100'}`}
+                        >
+                          Male
+                        </button>
+                        <button 
+                          type="button"
+                          onClick={() => setGender('female')}
+                          className={`flex-1 py-3 rounded-[18px] text-sm font-bold transition-all ${gender === 'female' ? 'bg-[#e1007a] text-white shadow-lg' : 'text-slate-500 hover:bg-slate-100'}`}
+                        >
+                          Female
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[10px] uppercase tracking-[0.2em] font-bold text-slate-400 ml-4">Full Name</label>
+                      <input 
+                        type="text" 
+                        required
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        placeholder="Johnathan Doe"
+                        className="w-full px-6 py-4 rounded-full border border-slate-200 focus:outline-none focus:ring-4 focus:ring-blue-50 focus:border-blue-500 transition-all"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[10px] uppercase tracking-[0.2em] font-bold text-slate-400 ml-4">Upload Professional Photo</label>
+                      <div className="relative group cursor-pointer h-48">
+                        <input 
+                          type="file" 
+                          accept="image/*"
+                          onChange={handleFileUpload}
+                          className="absolute inset-0 w-full h-full opacity-0 z-10 cursor-pointer"
+                        />
+                        <div className="w-full h-full border-2 border-dashed border-slate-200 rounded-[30px] flex flex-col items-center justify-center bg-slate-50 group-hover:bg-blue-50 group-hover:border-blue-300 transition-all group-hover:scale-[1.01]">
+                          {previewUrl ? (
+                            <span className="text-blue-600 font-bold text-sm">Image selected!</span>
+                          ) : (
+                            <>
+                              <div className="w-12 h-12 bg-white rounded-2xl shadow-sm flex items-center justify-center mb-4 group-hover:text-blue-600 transition-colors">
+                                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                                </svg>
+                              </div>
+                              <span className="text-slate-500 font-bold text-sm">Drop your photo here or click to browse</span>
+                              <span className="text-slate-400 text-xs mt-1">PNG or JPG, max 5MB</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between px-2">
+                      <div className="flex items-center gap-2">
+                        <div className={`w-2 h-2 rounded-full ${triesLeft > 1 ? 'bg-green-500' : 'bg-orange-500'} animate-pulse`} />
+                        <span className="text-sm font-bold text-slate-600">
+                          {isAdmin ? 'Unlimited Tries' : `${triesLeft} ${triesLeft === 1 ? 'try' : 'tries'} left`}
+                        </span>
+                      </div>
+                    </div>
+
+                    <button 
+                      type="button"
+                      disabled={!file || !name}
+                      onClick={() => setShowGuidelines(true)}
+                      className="w-full py-5 bg-blue-600 text-white rounded-full font-bold text-lg hover:bg-blue-700 hover:shadow-2xl hover:shadow-blue-300 transition-all active:scale-95 disabled:opacity-40 shadow-xl shadow-blue-100 flex items-center justify-center gap-3"
+                    >
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                      Generate AI Portrait
+                    </button>
+                  </form>
+                </div>
+              </div>
+
+              {/* Preview Side */}
+              <div className="lg:h-full">
+                <div className="relative h-full bg-[#020617] rounded-[40px] overflow-hidden shadow-2xl border border-slate-200 group min-h-[600px]">
+                  <div className="w-full h-full flex flex-col items-center justify-center relative">
+                    <img src="/example.png" alt="Example" className="w-full h-full object-contain" />
+                    <div className="absolute top-6 right-6 bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full shadow-lg border border-slate-100">
+                      <span className="text-[#0077ff] font-bold text-xs uppercase tracking-widest">Reference Portrait</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* STEP: PROCESSING */}
+          {step === 'processing' && (
+            <motion.div 
+              key="processing"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex flex-col items-center justify-center min-h-[50vh]"
+            >
+              <div className="relative w-72 h-72 mb-16">
+                {/* Circular Progress */}
+                <svg className="w-full h-full transform -rotate-90">
+                  <circle
+                    cx="144" cy="144" r="130"
+                    className="stroke-slate-100"
+                    strokeWidth="8"
+                    fill="transparent"
+                  />
+                  <motion.circle
+                    cx="144" cy="144" r="130"
+                    className="stroke-[#e1007a]"
+                    strokeWidth="8"
+                    fill="transparent"
+                    strokeDasharray="816.8"
+                    initial={{ strokeDashoffset: 816.8 }}
+                    animate={{ strokeDashoffset: 816.8 * (timer / GEN_TIME) }}
+                    transition={{ duration: 1, ease: "linear" }}
+                  />
+                </svg>
+                
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-7xl font-heading font-black text-[#e1007a] tracking-tighter">{timer}s</span>
+                  <span className="text-slate-400 font-bold uppercase tracking-widest text-xs mt-2">Sculpting...</span>
+                </div>
+                
+                {/* Decorative dots */}
+                <div className="absolute inset-0 animate-spin-slow pointer-events-none">
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-4 h-4 bg-[#e1007a] rounded-full blur-sm" />
+                </div>
+              </div>
+
+              <div className="text-center space-y-4 max-w-md">
+                <h2 className="text-3xl font-heading font-black text-slate-900">Magical things take time.</h2>
+                <p className="text-slate-500 leading-relaxed text-lg">Our AI is meticulously combining your photo with our premium professional assets. Almost there!</p>
+              </div>
+            </motion.div>
+          )}
+
+          {/* STEP: RESULT */}
+          {step === 'result' && (
+            <motion.div 
+              key="result"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center"
+            >
+              <div className="space-y-10 order-2 lg:order-1">
+                <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-50 text-green-600 rounded-full text-sm font-bold border border-green-100">
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                  </svg>
+                  Generation Complete
+                </div>
+
+                <div>
+                  <h2 className="text-6xl font-heading font-black mb-6 tracking-tight leading-[1.1]">Your Persona is <span className="text-[#e1007a]">Perfect</span>.</h2>
+                  <p className="text-xl text-slate-500 leading-relaxed">We&apos;ve generated your custom AI portrait. It&apos;s high-resolution, professional, and ready to share.</p>
+                </div>
+                
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <button 
+                    onClick={handleDownload}
+                    className="flex-1 py-5 bg-blue-600 text-white rounded-full font-bold text-lg hover:bg-blue-700 hover:shadow-2xl hover:shadow-blue-300 transition-all active:scale-95 flex items-center justify-center gap-3 shadow-xl shadow-blue-100"
+                  >
+                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    Download Portrait
+                  </button>
+                  
+                  <button 
+                    onClick={handleTryAgain}
+                    className="flex-1 py-5 bg-white text-slate-900 border-2 border-slate-200 rounded-full font-bold text-lg hover:bg-slate-50 transition-all active:scale-95 flex items-center justify-center gap-3"
+                  >
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    Try Again {!isAdmin && `(${triesLeft})`}
+                  </button>
+                </div>
+              </div>
+
+              <div className="relative aspect-[1080/1350] bg-slate-50 rounded-[50px] overflow-hidden shadow-[0_50px_100px_-20px_rgba(0,0,0,0.15)] border border-slate-100 order-1 lg:order-2 p-4">
+                <div className="w-full h-full rounded-[36px] overflow-hidden relative group">
+                  <img src={finalImageUrl || ''} alt="Final AI Persona" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                  <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/20 via-transparent to-transparent pointer-events-none" />
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+        </AnimatePresence>
+
+        {/* Admin Dashboard */}
+        {isAdmin && (
+          <motion.div 
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-40 w-full glass-panel p-12 rounded-[50px] border border-slate-100 shadow-2xl"
+          >
+            <div className="flex flex-col md:flex-row justify-between items-end md:items-center gap-6 mb-12">
+              <div>
+                <h3 className="text-4xl font-heading font-black mb-2">Admin Dashboard</h3>
+                <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">Managing Elavarkum AI Records</p>
+              </div>
+              <div className="flex gap-4">
+                <button 
+                  onClick={fetchAdminData}
+                  className="px-6 py-3 bg-slate-100 text-slate-700 rounded-full text-sm font-bold hover:bg-slate-200 transition-all"
+                >
+                  Refresh Feed
+                </button>
+                <button 
+                  onClick={handleClearMessages}
+                  className="px-6 py-3 bg-red-600 text-white rounded-full text-sm font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-100"
+                >
+                  Purge All Records
+                </button>
+              </div>
+            </div>
+
+            <div className="overflow-x-auto -mx-12">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-slate-100 bg-slate-50/50">
+                    <th className="py-6 px-12 text-[10px] uppercase tracking-widest font-black text-slate-400">User Email</th>
+                    <th className="py-6 px-12 text-[10px] uppercase tracking-widest font-black text-slate-400">Full Name</th>
+                    <th className="py-6 px-12 text-[10px] uppercase tracking-widest font-black text-slate-400 text-center">Remaining Tries</th>
+                    <th className="py-6 px-12 text-[10px] uppercase tracking-widest font-black text-slate-400 text-center">Actions</th>
+                    <th className="py-6 px-12 text-[10px] uppercase tracking-widest font-black text-slate-400">Created At</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {adminData.map((row) => (
+                    <tr key={row.id} className="border-b border-slate-50 hover:bg-slate-50/30 transition-colors group">
+                      <td className="py-6 px-12 font-bold text-slate-900">{row.email}</td>
+                      <td className="py-6 px-12 text-slate-600">{row.name || <span className="text-slate-300 italic">Not set</span>}</td>
+                      <td className="py-6 px-12 text-center">
+                        <span className={`px-3 py-1 rounded-full text-xs font-black ${row.tries_left === 0 ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'}`}>
+                          {row.tries_left}
+                        </span>
+                      </td>
+                      <td className="py-6 px-12 text-center">
+                        <button 
+                          onClick={() => handleAddTry(row.email, row.tries_left)}
+                          className="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-all active:scale-90"
+                          title="Add 1 Try"
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" />
+                          </svg>
+                        </button>
+                      </td>
+                      <td className="py-6 px-12 text-slate-400 text-sm font-medium">{new Date(row.created_at).toLocaleString()}</td>
+                    </tr>
+                  ))}
+                  {adminData.length === 0 && (
+                    <tr>
+                      <td colSpan={4} className="py-20 text-center text-slate-400 font-medium italic">No generation requests found yet.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </motion.div>
+        )}
+
+      </div>
+
+      {/* Hidden Canvas */}
+      <canvas ref={canvasRef} style={{ display: 'none' }} />
+
+      <footer className="py-12 border-t border-slate-100 bg-slate-50/30">
+        <div className="max-w-7xl mx-auto px-8 flex flex-col md:flex-row justify-between items-center gap-6">
+          <div className="flex items-center gap-4">
+            <img src="/LOGO.png" alt="Elavarkum AI" className="h-8 w-auto" />
+            <span className="text-slate-400 text-sm font-medium">© {new Date().getFullYear()} Elavarkum AI. All rights reserved.</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-slate-500 text-xs font-bold uppercase tracking-widest">Powered by</span>
+            <a 
+              href="https://frameforge.one/" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="text-[#0077ff] font-black tracking-tight hover:text-[#e1007a] transition-colors"
+            >
+              FRAME FORGE
+            </a>
+          </div>
+        </div>
+      </footer>
+
+      <style jsx global>{`
+        @keyframes spin-slow {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        .animate-spin-slow {
+          animation: spin-slow 10s linear infinite;
+        }
+      `}</style>
+    </main>
+  );
 }

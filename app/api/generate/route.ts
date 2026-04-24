@@ -143,39 +143,21 @@ export async function POST(request: NextRequest) {
     const timestamp = Date.now();
     const filename = `upload-${timestamp}.${imageExtension || 'png'}`;
 
-    const tmpUploadsPath = join('/tmp', 'uploads');
-    const publicUploadsPath = join(process.cwd(), 'public', 'uploads');
+    const tmpUploadsPath = join('/tmp', 'elam-ai-gen');
     await mkdir(tmpUploadsPath, { recursive: true }).catch(() => undefined);
     await writeFile(join(tmpUploadsPath, filename), buffer);
 
-    let uploadedImageUrl = `/uploads/${filename}`;
-    if (!isProduction) {
-      try {
-        await mkdir(publicUploadsPath, { recursive: true }).catch(() => undefined);
-        await writeFile(join(publicUploadsPath, filename), buffer);
-      } catch { }
-    }
+    let uploadedImageUrl = `/elam-ai-gen/${filename}`;
 
     if (isS3Configured()) {
       try {
         uploadedImageUrl = await uploadBufferToS3({
-          key: `uploads/${filename}`,
+          key: `elam ai gen/${filename}`,
           body: buffer,
           contentType: photo.type || 'application/octet-stream',
         });
       } catch (s3Error) {
-        console.warn('S3 upload failed, falling back to Supabase storage for original upload:', s3Error);
-      }
-    }
-
-    if (uploadedImageUrl.startsWith('/uploads/') && !SKIP_OPTIONAL_STORAGE_UPLOADS) {
-      const { error: uploadError } = await supabase.storage.from('generated-images').upload(`uploads/${filename}`, buffer, {
-        contentType: photo.type,
-        upsert: false,
-      });
-      if (!uploadError) {
-        const { data: { publicUrl } } = supabase.storage.from('generated-images').getPublicUrl(`uploads/${filename}`);
-        uploadedImageUrl = publicUrl;
+        console.warn('S3 upload failed for original upload:', s3Error);
       }
     }
 
@@ -242,40 +224,21 @@ export async function POST(request: NextRequest) {
       : Buffer.from(await (await fetch(generatedImageUrl, { cache: 'no-store' })).arrayBuffer());
 
     const generatedFilename = `generated-${timestamp}.png`;
-    let finalGeneratedUrl = `/generated/${generatedFilename}`;
-    const tmpGeneratedPath = join('/tmp', 'generated');
+    let finalGeneratedUrl = `/elam-ai-final/${generatedFilename}`;
+    const tmpGeneratedPath = join('/tmp', 'elam-ai-final');
     await mkdir(tmpGeneratedPath, { recursive: true }).catch(() => undefined);
     const tempGeneratedFile = join(tmpGeneratedPath, generatedFilename);
     await writeFile(tempGeneratedFile, imageBuffer);
 
-    if (!isProduction) {
-      try {
-        const publicGeneratedPath = join(process.cwd(), 'public', 'generated');
-        await mkdir(publicGeneratedPath, { recursive: true }).catch(() => undefined);
-        await writeFile(join(publicGeneratedPath, generatedFilename), imageBuffer);
-      } catch { }
-    }
-
     if (isS3Configured()) {
       try {
         finalGeneratedUrl = await uploadBufferToS3({
-          key: `generated/${generatedFilename}`,
+          key: `elam ai final/${generatedFilename}`,
           body: imageBuffer,
           contentType: 'image/png',
         });
       } catch (s3Error) {
-        console.warn('S3 upload failed, falling back to Supabase storage for generated image:', s3Error);
-      }
-    }
-
-    if (finalGeneratedUrl.startsWith('/generated/') && !SKIP_OPTIONAL_STORAGE_UPLOADS) {
-      const { error: genError } = await supabase.storage.from('generated-images').upload(`generated/${generatedFilename}`, imageBuffer, {
-        contentType: 'image/png',
-        upsert: false,
-      });
-      if (!genError) {
-        const { data: { publicUrl } } = supabase.storage.from('generated-images').getPublicUrl(`generated/${generatedFilename}`);
-        finalGeneratedUrl = publicUrl;
+        console.warn('S3 upload failed for generated image:', s3Error);
       }
     }
 

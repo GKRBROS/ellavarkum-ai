@@ -2,8 +2,11 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Arcane AI Image Generator",
-  description: "Transform your photos into Arcane-style illustrations",
+  title: "ELLAVARKUM AI",
+  description: "Generate premium AI images for your business.",
+  icons: {
+    icon: "/LOGO.png",
+  }
 };
 
 export default function RootLayout({
@@ -14,16 +17,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <style dangerouslySetInnerHTML={{ __html: `
-          @import url('https://fonts.googleapis.com/css2?family=Cal+Sans&display=swap');
-          .cal-sans-regular {
-            font-family: "Cal Sans", sans-serif;
-            font-weight: 400;
-            font-style: normal;
-          }
-        ` }} />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet" />
       </head>
-      <body>{children}</body>
+      <body>
+        {children}
+      </body>
     </html>
   );
 }
