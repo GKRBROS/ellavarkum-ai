@@ -234,7 +234,10 @@ export async function POST(request: NextRequest) {
     const finalImagePath = await mergeImages(tempGeneratedFile, timestamp.toString(), name);
     const finalImageUrl = buildFinalImageUrl(request, finalImagePath);
 
-    const newTries = isAdmin ? triesLeft : Math.max(0, triesLeft - 1);
+    const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'no-reply@frameforge.one';
+    const isUserAdmin = email === ADMIN_EMAIL;
+    const currentTries = validatedRequestRow?.tries_left ?? 3;
+    const newTries = isUserAdmin ? currentTries : Math.max(0, currentTries - 1);
 
     const { data: dbData, error: dbError } = await supabase
       .from(IMAGE_GENERATION_TABLE)
