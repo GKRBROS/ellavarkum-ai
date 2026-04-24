@@ -13,7 +13,9 @@ async function testFinalPosition() {
     ctx.drawImage(layer, 0, 0, A4_WIDTH_PX, A4_HEIGHT_PX);
 
     const nameText = "SHAFAS";
-    const nameY = 795; // User requested position 
+    const nameY = 785; // User requested position for better alignment
+
+    console.log(`Testing position Y=${nameY}`);
 
     ctx.fillStyle = '#000000';
     ctx.textAlign = 'center';
@@ -22,8 +24,8 @@ async function testFinalPosition() {
 
     ctx.fillText(nameText, A4_WIDTH_PX / 2, nameY);
 
-    fs.writeFileSync('test-text-position-810.png', canvas.toBuffer());
-    console.log('Created test-text-position-810.png at Y=810');
+    fs.writeFileSync('test-text-position-793.png', canvas.toBuffer());
+    console.log('Created test-text-position-793.png at Y=793');
 }
 
 testFinalPosition().catch(console.error);

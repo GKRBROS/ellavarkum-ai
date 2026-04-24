@@ -128,7 +128,7 @@ export async function mergeImages(
       let nameFontSize = Math.floor(maxWidth / (Math.max(nameText.length, 1) * estimatedWidthPerChar));
       nameFontSize = Math.max(minNameSize, Math.min(maxNameSize, nameFontSize));
 
-      const nameY = 793; // Final calibrated position
+      const nameY = 785; // User requested position for better alignment
 
       console.log('Text overlay:', { nameText, nameFontSize, nameY, maxWidth });
 
