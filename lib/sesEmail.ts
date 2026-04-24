@@ -120,11 +120,10 @@ const buildOtpEmailHtml = (otp: string, helpCenterUrl: string, logoUrl: string) 
                       <td style="padding: 0; vertical-align: middle;">
                         <span style="display: inline-block; background: #ffffff; padding: 6px 10px; border-radius: 14px; line-height: 0;">
                           <img
-                            alt="Frame Forge"
+                            alt="ELAVARKUM AI"
                             src="${logoUrl}"
                             width="110"
-                            height="28"
-                            style="display: block; border: 0; outline: none; text-decoration: none; object-fit: contain;"
+                            style="display: block; border: 0; outline: none; text-decoration: none;"
                           />
                         </span>
                       </td>
@@ -309,11 +308,10 @@ const buildFinalImageEmailHtml = (name: string, imageUrl: string, helpCenterUrl:
                       <td style="padding: 0; vertical-align: middle;">
                         <span style="display: inline-block; background: #ffffff; padding: 6px 10px; border-radius: 14px; line-height: 0;">
                           <img
-                            alt="Frame Forge"
+                            alt="ELAVARKUM AI"
                             src="${logoUrl}"
                             width="110"
-                            height="28"
-                            style="display: block; border: 0; outline: none; text-decoration: none; object-fit: contain;"
+                            style="display: block; border: 0; outline: none; text-decoration: none;"
                           />
                         </span>
                       </td>
@@ -508,11 +506,10 @@ const buildAdminWelcomeEmailHtml = (name: string, adminUrl: string, helpCenterUr
                       <td style="padding: 0; vertical-align: middle;">
                         <span style="display: inline-block; background: #ffffff; padding: 6px 10px; border-radius: 14px; line-height: 0;">
                           <img
-                            alt="Frame Forge"
+                            alt="ELAVARKUM AI"
                             src="${logoUrl}"
                             width="110"
-                            height="28"
-                            style="display: block; border: 0; outline: none; text-decoration: none; object-fit: contain;"
+                            style="display: block; border: 0; outline: none; text-decoration: none;"
                           />
                         </span>
                       </td>
