@@ -120,7 +120,7 @@ export async function POST(request: NextRequest) {
 
     const { data: validatedRequestRow, error: validatedRequestError } = await supabase
       .from(IMAGE_GENERATION_TABLE)
-      .select('id, status')
+      .select('id, status, tries_left')
       .eq('email', email)
       .eq('id', resolvedRequestId)
       .maybeSingle();

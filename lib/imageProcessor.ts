@@ -77,9 +77,9 @@ export async function mergeImages(
 
     // STEP 1: Composite generated image BEHIND layer.png
     // Positioning the face in the circular gap at the top-middle
-    const charWidth = 680; // Zoomed in (increased from 620)
-    const charHeight = 680; 
-    const charTopOffset = 130; // Re-centered for larger size
+    const charWidth = 880; // High-impact zoom (increased from 680)
+    const charHeight = 880; 
+    const charTopOffset = 30; // Centered vertically for larger size
     const charLeftOffset = Math.floor((A4_WIDTH_PX - charWidth) / 2);
 
     const layerWithCharacter = await sharp(layerPath)
