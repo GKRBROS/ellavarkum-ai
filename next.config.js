@@ -25,6 +25,10 @@ const nextConfig = {
         protocol: 'https',
         hostname: '**.cloudfront.net',
       },
+      {
+        protocol: 'https',
+        hostname: 'ellavarkumai.frameforge.one',
+      },
     ],
   },
   async headers() {

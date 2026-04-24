@@ -11,7 +11,7 @@ type Step = 'otp-request' | 'otp-verify' | 'form' | 'processing' | 'result';
 
 // --- Constants ---
 const ADMIN_EMAIL = 'frameforgeone@gmail.com';
-const GEN_TIME = 95; // seconds
+const GEN_TIME = 50; // seconds
 const CANVAS_WIDTH = 1080;
 const CANVAS_HEIGHT = 1350;
 
@@ -357,18 +357,16 @@ export default function ElavarkumPage() {
   const handleDownload = async () => {
     if (!finalImageUrl) return;
     try {
-      const response = await fetch(finalImageUrl);
-      if (!response.ok) throw new Error('Failed to fetch image');
-      const blob = await response.blob();
-      const blobUrl = URL.createObjectURL(blob);
+      // Use our internal proxy which forces Content-Disposition: attachment
+      const downloadUrl = `/api/assets/download?url=${encodeURIComponent(finalImageUrl)}&download=1&filename=elavarkum_ai_${Date.now()}.png`;
       const link = document.createElement('a');
-      link.href = blobUrl;
+      link.href = downloadUrl;
       link.download = `elavarkum_ai_${Date.now()}.png`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
-    } catch {
+    } catch (err: any) {
+      console.error('Download failed:', err);
       // Fallback: open in new tab for manual save
       window.open(finalImageUrl, '_blank');
     }
@@ -418,7 +416,7 @@ export default function ElavarkumPage() {
       {/* Navbar */}
       <nav className="fixed top-0 left-0 right-0 z-50 px-8 py-4 flex justify-between items-center glass-panel">
         <div className="flex items-center gap-4">
-          <NextImage src="/LOGO.png" alt="Logo" width={48} height={48} className="h-10 md:h-12 w-auto" />
+          <NextImage src="https://ellavarkumai.frameforge.one/LOGO.png" alt="Logo" width={48} height={48} className="h-10 md:h-12 w-auto" />
           <span className="font-heading text-2xl font-black tracking-tighter hidden sm:block">ELLAVARKUM <span className="text-blue-600">AI</span></span>
         </div>
         
@@ -868,7 +866,7 @@ export default function ElavarkumPage() {
       <footer className="py-12 border-t border-slate-100 bg-slate-50/30">
         <div className="max-w-7xl mx-auto px-8 flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="flex items-center gap-4">
-            <NextImage src="/LOGO.png" alt="Elavarkum AI" width={32} height={32} className="h-8 w-auto" />
+            <NextImage src="https://ellavarkumai.frameforge.one/LOGO.png" alt="Elavarkum AI" width={32} height={32} className="h-8 w-auto" />
             <span className="text-slate-400 text-sm font-medium">© {new Date().getFullYear()} Elavarkum AI. All rights reserved.</span>
           </div>
           <div className="flex items-center gap-3">
