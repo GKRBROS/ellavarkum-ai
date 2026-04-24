@@ -78,7 +78,7 @@ export async function mergeImages(
     // STEP 1: Resize generated character image and prepare it in parallel with canvas text
     const charWidth = 880;
     const charHeight = 880; 
-    const charTopOffset = 55; // Shifted down 25px from original
+    const charTopOffset = 75; // Shifted down another 20px as requested (Total 45px from original)
     const charLeftOffset = Math.floor((A4_WIDTH_PX - charWidth) / 2);
 
     // Resize the generated image and layer concurrently
@@ -264,18 +264,7 @@ export async function mergeImages(
     const timestamp_str = timestamp.toString();
     const outputFilename = `final-${timestamp_str}.png`;
 
-    // Save final image locally only in development
-    if (!isProduction) {
-      try {
-        const outputPath = join(outputDir, outputFilename);
-        await writeFile(outputPath, finalBuffer);
-        console.log('Final image saved locally:', outputPath);
-      } catch (err) {
-        console.warn('Could not save final image locally:', err);
-      }
-    }
-
-    // Upload final image to AWS S3 whenever configured.
+    // STEP 3: Handle Storage (S3 prioritized, Local as fallback for dev)
     if (isS3Configured()) {
       try {
         const s3PublicUrl = await uploadBufferToS3({
@@ -288,36 +277,22 @@ export async function mergeImages(
         console.log('--- MERGE IMAGES DEBUG END - SUCCESS ---');
         return s3PublicUrl;
       } catch (s3Error) {
-        console.warn('S3 final upload failed, falling back to Supabase/local storage:', s3Error);
+        console.warn('S3 final upload failed, falling back to local/Supabase:', s3Error);
       }
     }
 
-    // Fallback: Supabase storage in production when S3 is not configured or fails.
-    if (isProduction) {
-      // Fallback: Supabase storage when S3 is not configured or fails
-      const supabase = getSupabaseClient();
-      const { error: uploadError } = await supabase.storage
-        .from('generated-images')
-        .upload(`final/${outputFilename}`, finalBuffer, {
-          contentType: 'image/png',
-          upsert: true,
-        });
-
-      if (uploadError) {
-        console.error('Supabase final upload error:', uploadError);
-        throw new Error('Failed to upload final image');
+    // Only save locally if S3 failed or is not configured
+    if (!isProduction) {
+      try {
+        const outputPath = join(outputDir, outputFilename);
+        await writeFile(outputPath, finalBuffer);
+        console.log('Final image saved locally:', outputPath);
+        return `/elam-ai-final/${outputFilename}`;
+      } catch (err) {
+        console.warn('Could not save final image locally:', err);
       }
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('generated-images')
-        .getPublicUrl(`final/${outputFilename}`);
-
-      console.log('Final image uploaded:', publicUrl);
-      console.log('--- MERGE IMAGES DEBUG END - SUCCESS ---');
-      return publicUrl;
     }
 
-    console.log('--- MERGE IMAGES DEBUG END - SUCCESS ---');
     return `/elam-ai-final/${outputFilename}`;
   } catch (error) {
     console.error('CRITICAL ERROR in mergeImages:', error);
