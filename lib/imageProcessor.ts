@@ -77,9 +77,9 @@ export async function mergeImages(
 
     // STEP 1: Composite generated image BEHIND layer.png
     // Positioning the face in the circular gap at the top-middle
-    const charWidth = 620; 
-    const charHeight = 620;
-    const charTopOffset = 160; 
+    const charWidth = 680; // Zoomed in (increased from 620)
+    const charHeight = 680; 
+    const charTopOffset = 130; // Re-centered for larger size
     const charLeftOffset = Math.floor((A4_WIDTH_PX - charWidth) / 2);
 
     const layerWithCharacter = await sharp(layerPath)
@@ -128,7 +128,7 @@ export async function mergeImages(
       let nameFontSize = Math.floor(maxWidth / (Math.max(nameText.length, 1) * estimatedWidthPerChar));
       nameFontSize = Math.max(minNameSize, Math.min(maxNameSize, nameFontSize));
 
-      const nameY = 820; // Centered in the white rectangle box
+      const nameY = 793; // Final calibrated position
 
       console.log('Text overlay:', { nameText, nameFontSize, nameY, maxWidth });
 

@@ -1,55 +1,29 @@
-const { createCanvas, loadImage, registerFont } = require('canvas');
+const { createCanvas, loadImage } = require('canvas');
 const fs = require('fs');
 const path = require('path');
 
-// Constants to match imageProcessor.ts
 const A4_WIDTH_PX = 1080;
 const A4_HEIGHT_PX = 1350;
 
-async function testTextPosition() {
-    console.log('Starting text position test...');
-    
+async function testFinalPosition() {
     const canvas = createCanvas(A4_WIDTH_PX, A4_HEIGHT_PX);
     const ctx = canvas.getContext('2d');
 
-    // 1. Load Background & Layer
-    const bgPath = path.join(process.cwd(), 'public', 'background.png');
-    const layerPath = path.join(process.cwd(), 'public', 'layer.png');
-    
-    if (!fs.existsSync(bgPath) || !fs.existsSync(layerPath)) {
-        console.error('Assets missing. Ensure background.png and layer.png are in public/');
-        return;
-    }
-
-    const bg = await loadImage(bgPath);
-    const layer = await loadImage(layerPath);
-
-    // Draw BG
-    ctx.drawImage(bg, 0, 0, A4_WIDTH_PX, A4_HEIGHT_PX);
-    
-    // Draw Layer
+    const layer = await loadImage(path.join(process.cwd(), 'public', 'layer.png'));
     ctx.drawImage(layer, 0, 0, A4_WIDTH_PX, A4_HEIGHT_PX);
 
-    // 2. Setup Text
     const nameText = "SHAFAS";
-    
-    // Position to test (White bar seems to be around y=560)
-    const nameY = 590; 
-    const maxWidth = A4_WIDTH_PX * 0.8;
-    const nameFontSize = 70;
+    const nameY = 795; // User requested position 
 
-    ctx.font = `bold ${nameFontSize}px Arial`;
-    ctx.fillStyle = '#000000'; // Black text as requested
+    ctx.fillStyle = '#000000';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
+    ctx.font = 'bold 80px Arial';
 
-    // Draw Text
     ctx.fillText(nameText, A4_WIDTH_PX / 2, nameY);
 
-    // 3. Save Output
-    const buffer = canvas.toBuffer('image/png');
-    fs.writeFileSync('test-text-position.png', buffer);
-    console.log('Test image created: test-text-position.png');
+    fs.writeFileSync('test-text-position-810.png', canvas.toBuffer());
+    console.log('Created test-text-position-810.png at Y=810');
 }
 
-testTextPosition().catch(console.error);
+testFinalPosition().catch(console.error);

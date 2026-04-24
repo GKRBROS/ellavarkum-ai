@@ -269,16 +269,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Send final image to user email
-    try {
-      await sendFinalImageEmail({
-        to: email,
-        name: name,
-        imageUrl: finalImageUrl,
-      });
-    } catch (emailError) {
-      console.error('Failed to send final image email:', emailError);
-      // Non-critical error, don't fail the response
-    }
+    // Final image email removed as requested
 
     return apiJson(request, {
       success: true,
