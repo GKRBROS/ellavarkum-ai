@@ -26,7 +26,7 @@ export async function OPTIONS(request: NextRequest) {
   return handleCorsPreflight(request);
 }
 
-const OPENROUTER_TIMEOUT_MS = 120000;
+const OPENROUTER_TIMEOUT_MS = 60000; // Reduced from 120s to 60s for faster failure recovery
 const DEFAULT_OPENROUTER_IMAGE_MODELS = ['sourceful/riverflow-v2-fast-preview'];
 const OPENROUTER_IMAGE_MODELS = (process.env.OPENROUTER_IMAGE_MODELS || '')
   .split(',')
@@ -139,17 +139,17 @@ export async function POST(request: NextRequest) {
     await writeFile(join(tmpUploadsPath, filename), buffer);
 
     let uploadedImageUrl = `/elam-ai-gen/${filename}`;
+    let s3UploadPromise: Promise<string> | null = null;
 
     if (isS3Configured()) {
-      try {
-        uploadedImageUrl = await uploadBufferToS3({
-          key: `elam ai gen/${filename}`,
-          body: buffer,
-          contentType: photo.type || 'application/octet-stream',
-        });
-      } catch (s3Error) {
-        console.warn('S3 upload failed for original upload:', s3Error);
-      }
+      s3UploadPromise = uploadBufferToS3({
+        key: `elam ai gen/${filename}`,
+        body: buffer,
+        contentType: photo.type || 'application/octet-stream',
+      }).catch(err => {
+        console.warn('Background S3 original upload failed:', err);
+        return `/elam-ai-gen/${filename}`;
+      });
     }
 
     const resizedBuffer = await sharp(buffer).resize(1024, 1024, { fit: 'inside', withoutEnlargement: true }).jpeg({ quality: 85 }).toBuffer();
@@ -227,6 +227,11 @@ export async function POST(request: NextRequest) {
     const isUserAdmin = email === ADMIN_EMAIL;
     const currentTries = validatedRequestRow?.tries_left ?? 3;
     const newTries = isUserAdmin ? currentTries : Math.max(0, currentTries - 1);
+
+    // Finalize the original image URL (if s3 upload was started, get result)
+    if (s3UploadPromise) {
+      uploadedImageUrl = await s3UploadPromise;
+    }
 
     const { data: dbData, error: dbError } = await supabase
       .from(IMAGE_GENERATION_TABLE)

@@ -15,16 +15,23 @@ const NAME_TEXT_Y_OFFSET_PX = 0;
 const registerCanvasFonts = () => {
   if (fontsRegistered) return;
 
+  // On some server environments (Linux/Vercel), Fontconfig needs a path to avoid errors.
+  // We set it to the public directory where our fonts are, or /tmp if that fails.
+  if (process.env.NODE_ENV === 'production' && !process.env.FONTCONFIG_PATH) {
+    process.env.FONTCONFIG_PATH = join(process.cwd(), 'public');
+  }
+
   const calSansPath = join(process.cwd(), 'public', 'CalSans-SemiBold.ttf');
   if (existsSync(calSansPath)) {
-    registerFont(calSansPath, { family: 'Cal Sans', weight: '600', style: 'normal' });
+    // Registering with the same parameters we'll use in ctx.font
+    registerFont(calSansPath, { family: 'Cal Sans', weight: 'bold' });
   } else {
     console.warn('Cal Sans font file not found:', calSansPath);
   }
 
   const geistPath = join(process.cwd(), 'public', 'Geist-Regular.ttf');
   if (existsSync(geistPath)) {
-    registerFont(geistPath, { family: 'Geist', weight: '400', style: 'normal' });
+    registerFont(geistPath, { family: 'Geist', weight: 'normal' });
   } else {
     console.warn('Geist font file not found:', geistPath);
   }
