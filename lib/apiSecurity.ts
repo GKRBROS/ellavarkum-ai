@@ -45,7 +45,14 @@ const getAllowedOrigin = (request: NextRequest) => {
   if (!requestOrigin) return null;
 
   const normalized = normalizeOrigin(requestOrigin);
-  return ALLOWED_ORIGINS.has(normalized) ? normalized : null;
+  if (ALLOWED_ORIGINS.has(normalized)) return normalized;
+
+  // Allow any subdomain of frameforge.one
+  if (normalized.endsWith('.frameforge.one') || normalized === 'https://frameforge.one') {
+    return normalized;
+  }
+
+  return null;
 };
 
 const getAllowedHeaders = (request: NextRequest) => {

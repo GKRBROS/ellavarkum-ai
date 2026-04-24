@@ -32,6 +32,59 @@ export default function ElavarkumPage() {
   const [showGuidelines, setShowGuidelines] = useState(false);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const compressImage = (file: File): Promise<File> => {
+    return new Promise((resolve, reject) => {
+      const maxSize = 1.5 * 1024 * 1024; // 1.5MB limit
+      if (file.size <= maxSize) return resolve(file);
+
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          
+          // Max dimension 2048px to keep quality high but size low
+          const maxDim = 2048;
+          if (width > height) {
+            if (width > maxDim) {
+              height *= maxDim / width;
+              width = maxDim;
+            }
+          } else {
+            if (height > maxDim) {
+              width *= maxDim / height;
+              height = maxDim;
+            }
+          }
+          
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+          
+          canvas.toBlob((blob) => {
+            if (blob) {
+              const compressedFile = new File([blob], file.name, {
+                type: 'image/jpeg',
+                lastModified: Date.now(),
+              });
+              resolve(compressedFile);
+            } else {
+              resolve(file); // Fallback to original
+            }
+          }, 'image/jpeg', 0.85); // High quality JPEG
+        };
+        img.onerror = () => resolve(file);
+      };
+      reader.onerror = () => resolve(file);
+    });
+  };
 
   const combineImages = (photoSrc: string, isInternal: boolean): Promise<Blob> => {
     return new Promise((resolve, reject) => {
@@ -220,11 +273,22 @@ export default function ElavarkumPage() {
     toast.success('Logged out successfully');
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
-      setFile(selectedFile);
-      setPreviewUrl(URL.createObjectURL(selectedFile));
+      setIsLoading(true);
+      try {
+        const compressed = await compressImage(selectedFile);
+        setFile(compressed);
+        setPreviewUrl(URL.createObjectURL(compressed));
+        toast.success(compressed.size < selectedFile.size ? 'Photo optimized for upload!' : 'Photo uploaded!');
+      } catch (err) {
+        console.error('Compression failed:', err);
+        setFile(selectedFile);
+        setPreviewUrl(URL.createObjectURL(selectedFile));
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -405,9 +469,17 @@ export default function ElavarkumPage() {
               <p>• Use a photo with neutral lighting.</p>
               <p>• Look directly at the camera.</p>
             </div>
-            <div className="flex gap-4">
-              <button onClick={() => setShowGuidelines(false)} className="flex-1 py-3 bg-slate-100 rounded-full font-bold">Cancel</button>
-              <button onClick={(e) => { setShowGuidelines(false); handleGenerate(e); }} className="flex-1 py-3 bg-blue-600 text-white rounded-full font-bold">Proceed</button>
+            <div className="flex gap-4 mt-8">
+              <button onClick={() => setShowGuidelines(false)} className="flex-1 py-3 bg-slate-100 text-slate-600 rounded-full font-bold">Back</button>
+              <button 
+                onClick={() => { 
+                  setShowGuidelines(false); 
+                  fileInputRef.current?.click();
+                }} 
+                className="flex-1 py-3 bg-blue-600 text-white rounded-full font-bold"
+              >
+                Proceed to Upload
+              </button>
             </div>
           </motion.div>
         </div>
@@ -592,12 +664,16 @@ export default function ElavarkumPage() {
 
                     <div className="space-y-2">
                       <label className="text-[10px] uppercase tracking-[0.2em] font-bold text-slate-400 ml-4">Upload Professional Photo</label>
-                      <div className="relative group cursor-pointer h-48">
+                      <div 
+                        onClick={() => setShowGuidelines(true)}
+                        className="relative group cursor-pointer h-48"
+                      >
                         <input 
                           type="file" 
+                          ref={fileInputRef}
                           accept="image/*"
                           onChange={handleFileUpload}
-                          className="absolute inset-0 w-full h-full opacity-0 z-10 cursor-pointer"
+                          className="hidden"
                         />
                         <div className="w-full h-full border-2 border-dashed border-slate-200 rounded-[30px] flex flex-col items-center justify-center bg-slate-50 group-hover:bg-blue-50 group-hover:border-blue-300 transition-all group-hover:scale-[1.01]">
                           {previewUrl ? (
