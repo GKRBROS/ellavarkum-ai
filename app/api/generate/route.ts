@@ -97,11 +97,11 @@ export async function POST(request: NextRequest) {
       return apiJson(request, { error: validated.error }, { status: 400 });
     }
 
-    const { photo, email, requestId, name, organization, gender } = validated.data;
+    const { photo, email, requestId, name, gender } = validated.data;
 
     const supabase = getSupabaseClient();
 
-    const requestSelect = 'id, is_verified';
+    const requestSelect = 'id, status';
     const requestQuery = supabase
       .from(IMAGE_GENERATION_TABLE)
       .select(requestSelect)
@@ -120,7 +120,7 @@ export async function POST(request: NextRequest) {
 
     const { data: validatedRequestRow, error: validatedRequestError } = await supabase
       .from(IMAGE_GENERATION_TABLE)
-      .select('id, is_verified')
+      .select('id, status')
       .eq('email', email)
       .eq('id', resolvedRequestId)
       .maybeSingle();
@@ -129,8 +129,10 @@ export async function POST(request: NextRequest) {
       console.error('Generate request lookup error:', requestError || validatedRequestError);
       return apiJson(request, { error: 'Unable to validate session' }, { status: 500 });
     }
-    if (!validatedRequestRow) return apiJson(request, { error: 'No matching verified request found' }, { status: 404 });
-    if (!validatedRequestRow.is_verified) return apiJson(request, { error: 'Email is not verified yet' }, { status: 403 });
+    if (!validatedRequestRow) return apiJson(request, { error: 'No matching request found' }, { status: 404 });
+    if (validatedRequestRow.status !== 'verified' && validatedRequestRow.status !== 'generated') {
+      return apiJson(request, { error: 'Email is not verified yet' }, { status: 403 });
+    }
 
     const imageMimeType = (photo.type || '').toLowerCase();
     const imageExtension = (photo.name.split('.').pop() || '').toLowerCase();
@@ -163,7 +165,7 @@ export async function POST(request: NextRequest) {
 
     const resizedBuffer = await sharp(buffer).resize(1024, 1024, { fit: 'inside', withoutEnlargement: true }).jpeg({ quality: 85 }).toBuffer();
     const dataUrl = `data:image/jpeg;base64,${resizedBuffer.toString('base64')}`;
-    const prompt = buildGenerationPrompt({ name, organization, gender });
+    const prompt = buildGenerationPrompt({ name, gender });
 
     if (OPENROUTER_API_KEYS.length === 0) throw new Error('OPENROUTER_API_KEY or OPENROUTER_API_KEYS must be configured');
 
@@ -249,19 +251,16 @@ export async function POST(request: NextRequest) {
       .from(IMAGE_GENERATION_TABLE)
       .update({
         name,
-        organization,
         gender,
         prompt_used: prompt,
         photo_url: uploadedImageUrl,
-        generated_image_url: finalGeneratedUrl,
-        final_image_url: finalImagePath,
-        generation_status: 'completed',
-        generated_at: new Date().toISOString(),
-        last_error: null,
+        generated_image_url: finalImageUrl,
+        status: 'generated',
+        updated_at: new Date().toISOString(),
       })
       .eq('email', email)
       .eq('id', validatedRequestRow.id)
-      .select('id, email, final_image_url')
+      .select('id, email, generated_image_url')
       .single();
 
     if (dbError) {

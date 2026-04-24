@@ -92,31 +92,22 @@ export default function ElavarkumPage() {
   useEffect(() => {
     generateExamplePreview();
     
-    // Restore session
+    // Restore session only if it was processing or result
     const savedSession = localStorage.getItem('elavarkum_session');
     if (savedSession) {
       try {
-        const { email: savedEmail, verified } = JSON.parse(savedSession);
-        if (verified && savedEmail) {
+        const { email: savedEmail, step: savedStep } = JSON.parse(savedSession);
+        if (savedEmail && (savedStep === 'processing' || savedStep === 'result')) {
           setEmail(savedEmail);
-          // Verify with DB to get latest tries
-          const restoreSession = async () => {
-            const { data } = await supabase
-              .from('elavarkum_requests')
-              .select('tries_left')
-              .eq('email', savedEmail)
-              .maybeSingle();
-            
-            if (data) {
-              setTriesLeft(data.tries_left);
-              setStep('form');
-              if (savedEmail === ADMIN_EMAIL) {
-                setIsAdmin(true);
-                fetchAdminData();
-              }
-            }
+          setStep(savedStep);
+          setIsAdmin(savedEmail === ADMIN_EMAIL);
+          const syncTries = async () => {
+            const { data } = await supabase.from('elavarkum_requests').select('tries_left').eq('email', savedEmail).maybeSingle();
+            if (data) setTriesLeft(data.tries_left);
           };
-          restoreSession();
+          syncTries();
+        } else {
+          localStorage.removeItem('elavarkum_session');
         }
       } catch (e) {
         localStorage.removeItem('elavarkum_session');
@@ -176,6 +167,12 @@ export default function ElavarkumPage() {
         return;
       }
 
+      // Update status in DB
+      await supabase
+        .from('elavarkum_requests')
+        .update({ status: 'verified' })
+        .eq('email', email);
+
       if (email === ADMIN_EMAIL) {
         setIsAdmin(true);
         fetchAdminData();
@@ -184,8 +181,8 @@ export default function ElavarkumPage() {
       setTriesLeft(data.tries_left);
       setStep('form');
       
-      // Save session
-      localStorage.setItem('elavarkum_session', JSON.stringify({ email, verified: true }));
+      // Save session with step
+      localStorage.setItem('elavarkum_session', JSON.stringify({ email, step: 'form' }));
       
       toast.success('Identity verified!');
     } catch (err: any) {
@@ -225,6 +222,7 @@ export default function ElavarkumPage() {
     }
 
     setStep('processing');
+    localStorage.setItem('elavarkum_session', JSON.stringify({ email, step: 'processing' }));
     setTimer(GEN_TIME);
 
     // Start countdown
@@ -276,6 +274,9 @@ export default function ElavarkumPage() {
       const newTries = isAdmin ? triesLeft : Math.max(0, triesLeft - 1);
       setTriesLeft(newTries);
       setFinalImageUrl(data.finalImageUrl);
+      
+      // Save result state
+      localStorage.setItem('elavarkum_session', JSON.stringify({ email, step: 'result' }));
 
       // Wait for progress effect
       setTimeout(() => {

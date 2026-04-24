@@ -103,7 +103,7 @@ export const validateResetInput = (input: unknown) => {
 };
 
 export const validateGenerateFormData = (formData: FormData) => {
-    const allowedFields = ['photo', 'image', 'email', 'requestId', 'name', 'organization', 'gender'];
+    const allowedFields = ['photo', 'image', 'email', 'requestId', 'name', 'gender'];
     for (const key of formData.keys()) {
         if (!allowedFields.includes(key)) {
             return { error: `Unexpected field: ${key}` };
@@ -128,9 +128,6 @@ export const validateGenerateFormData = (formData: FormData) => {
     const nameResult = requiredText(formData.get('name'), 'Name', 1, 100);
     if ('error' in nameResult) return { error: nameResult.error };
 
-    const orgResult = requiredText(formData.get('organization'), 'Organization', 1, 120);
-    if ('error' in orgResult) return { error: orgResult.error };
-
     const genderRaw = typeof formData.get('gender') === 'string' ? cleanText(String(formData.get('gender'))).toLowerCase() : 'neutral';
     const gender = (genderRaw === 'male' || genderRaw === 'female' || genderRaw === 'neutral') ? genderRaw : 'neutral';
 
@@ -140,7 +137,6 @@ export const validateGenerateFormData = (formData: FormData) => {
             email: emailResult.email,
             requestId: requestIdResult.value,
             name: nameResult.value,
-            organization: orgResult.value,
             gender: gender as GenderOption,
         },
     };

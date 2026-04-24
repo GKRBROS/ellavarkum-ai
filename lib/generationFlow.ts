@@ -33,7 +33,6 @@ export const parseGender = (value: unknown): GenderOption => {
 
 export const buildGenerationPrompt = (input: {
 	name: string;
-	organization: string;
 	gender: GenderOption;
 }) => {
 	return PROMPTS[input.gender] || PROMPTS.neutral;

@@ -38,7 +38,8 @@ export async function POST(req: NextRequest) {
         email,
         otp_code: otp,
         otp_expires_at: expiresAt,
-        tries_left: currentTries
+        tries_left: currentTries,
+        status: 'pending'
       }, { onConflict: 'email' });
 
     if (upsertError) throw upsertError;
