@@ -11,7 +11,7 @@ type Step = 'otp-request' | 'otp-verify' | 'form' | 'processing' | 'result';
 
 // --- Constants ---
 const ADMIN_EMAIL = 'frameforgeone@gmail.com';
-const GEN_TIME = 50; // seconds
+const GEN_TIME = 40; // seconds
 const CANVAS_WIDTH = 1080;
 const CANVAS_HEIGHT = 1350;
 
@@ -27,9 +27,6 @@ export default function EllavarkkumPage() {
   const [triesLeft, setTriesLeft] = useState(3);
   const [isLoading, setIsLoading] = useState(false);
   const [gender, setGender] = useState<'male' | 'female'>('male');
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [adminPassword, setAdminPassword] = useState('');
-  const [adminData, setAdminData] = useState<any[]>([]);
   const [showGuidelines, setShowGuidelines] = useState(false);
   const [showSpamModal, setShowSpamModal] = useState(false);
 
@@ -252,24 +249,6 @@ export default function EllavarkkumPage() {
         .update({ status: 'verified' })
         .eq('email', email);
 
-      if (email === ADMIN_EMAIL) {
-        const verifyResponse = await fetch('/api/auth/verify-admin', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ password: adminPassword }),
-        });
-        
-        const verifyData = await verifyResponse.json();
-        
-        if (verifyData.success) {
-          setIsAdmin(true);
-          fetchAdminData();
-        } else {
-          toast.error(verifyData.error || 'Invalid admin password');
-          return;
-        }
-      }
-
       setTriesLeft(data.tries_left);
       setStep('form');
       
@@ -402,46 +381,6 @@ export default function EllavarkkumPage() {
   };
 
 
-  const fetchAdminData = async () => {
-    const { data, error } = await supabase
-      .from('elavarkum_requests')
-      .select('*')
-      .order('created_at', { ascending: false });
-    if (data) setAdminData(data);
-  };
-
-  const handleClearMessages = async () => {
-    if (!isAdmin) return;
-    if (!confirm('Are you sure you want to clear all user data?')) return;
-    
-    const { error } = await supabase
-      .from('elavarkum_requests')
-      .delete()
-      .neq('email', ADMIN_EMAIL);
-    
-    if (!error) {
-      toast.success('Cleared all messages');
-      fetchAdminData();
-    } else {
-      toast.error('Failed to clear messages');
-    }
-  };
-
-  const handleAddTry = async (userEmail: string, currentTries: number) => {
-    if (!isAdmin) return;
-    const { error } = await supabase
-      .from('elavarkum_requests')
-      .update({ tries_left: currentTries + 1 })
-      .eq('email', userEmail);
-    
-    if (!error) {
-      toast.success(`Added 1 try to ${userEmail}`);
-      fetchAdminData();
-    } else {
-      toast.error('Failed to add try');
-    }
-  };
-
   const handleDownload = async () => {
     if (!finalImageUrl) return;
     try {
@@ -543,21 +482,6 @@ export default function EllavarkkumPage() {
         </div>
         
         {step !== 'otp-request' && step !== 'otp-verify' && (
-          <div className="hidden md:flex items-center gap-6">
-            <div className="px-4 py-2 bg-slate-50 rounded-full border border-slate-100">
-              <span className="text-sm font-semibold text-slate-500">Logged in as: <span className="text-slate-900">{email}</span></span>
-            </div>
-          </div>
-        )}
-
-        {isAdmin && (
-          <button 
-            onClick={handleClearMessages}
-            className="px-5 py-2.5 bg-red-50 text-red-600 rounded-full text-sm font-bold hover:bg-red-100 transition-all active:scale-95 border border-red-100"
-          >
-            Clear Records
-          </button>
-        )}
       </nav>
 
       <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 py-20 md:py-32 relative z-10">
@@ -668,20 +592,6 @@ export default function EllavarkkumPage() {
                       className="w-full px-6 py-5 rounded-full border border-blue-200 text-center text-3xl font-black tracking-[0.5em] focus:outline-none focus:ring-4 focus:ring-blue-50/50 focus:border-blue-600 transition-all"
                     />
                   </div>
-
-                  {email === ADMIN_EMAIL && (
-                    <div className="space-y-2">
-                      <label className="text-[10px] uppercase tracking-[0.2em] font-bold text-[#e1007a] ml-4">Admin Password</label>
-                      <input 
-                        type="password" 
-                        required
-                        value={adminPassword}
-                        onChange={(e) => setAdminPassword(e.target.value)}
-                        placeholder="••••••••"
-                        className="w-full px-6 py-4 rounded-full border border-slate-200 focus:outline-none focus:ring-4 focus:ring-[#e1007a]/10 focus:border-[#e1007a] transition-all text-lg"
-                      />
-                    </div>
-                  )}
                   <button 
                     disabled={isLoading}
                     className="w-full py-5 bg-blue-600 text-white rounded-full font-bold text-lg hover:bg-blue-700 hover:shadow-xl hover:shadow-blue-200 transition-all active:scale-95 disabled:opacity-50"
@@ -954,81 +864,6 @@ export default function EllavarkkumPage() {
           )}
 
         </AnimatePresence>
-
-        {/* Admin Dashboard */}
-        {isAdmin && (
-          <motion.div 
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-20 md:mt-40 w-full glass-panel p-6 sm:p-12 rounded-[40px] md:rounded-[50px] border border-slate-100 shadow-2xl overflow-hidden"
-          >
-            <div className="flex flex-col md:flex-row justify-between items-end md:items-center gap-6 mb-12">
-              <div>
-                <h3 className="text-4xl font-heading font-black mb-2">Admin Dashboard</h3>
-                <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">Managing Ellavarkkum AI Records</p>
-              </div>
-              <div className="flex gap-4">
-                <button 
-                  onClick={fetchAdminData}
-                  className="px-6 py-3 bg-slate-100 text-slate-700 rounded-full text-sm font-bold hover:bg-slate-200 transition-all"
-                >
-                  Refresh Feed
-                </button>
-                <button 
-                  onClick={handleClearMessages}
-                  className="px-6 py-3 bg-red-600 text-white rounded-full text-sm font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-100"
-                >
-                  Purge All Records
-                </button>
-              </div>
-            </div>
-
-            <div className="overflow-x-auto -mx-12">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="border-b border-slate-100 bg-slate-50/50">
-                    <th className="py-6 px-12 text-[10px] uppercase tracking-widest font-black text-slate-400">User Email</th>
-                    <th className="py-6 px-12 text-[10px] uppercase tracking-widest font-black text-slate-400">Full Name</th>
-                    <th className="py-6 px-12 text-[10px] uppercase tracking-widest font-black text-slate-400 text-center">Remaining Tries</th>
-                    <th className="py-6 px-12 text-[10px] uppercase tracking-widest font-black text-slate-400 text-center">Actions</th>
-                    <th className="py-6 px-12 text-[10px] uppercase tracking-widest font-black text-slate-400">Created At</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {adminData.map((row) => (
-                    <tr key={row.id} className="border-b border-slate-50 hover:bg-slate-50/30 transition-colors group">
-                      <td className="py-6 px-12 font-bold text-slate-900">{row.email}</td>
-                      <td className="py-6 px-12 text-slate-600">{row.name || <span className="text-slate-300 italic">Not set</span>}</td>
-                      <td className="py-6 px-12 text-center">
-                        <span className={`px-3 py-1 rounded-full text-xs font-black ${row.tries_left === 0 ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'}`}>
-                          {row.tries_left}
-                        </span>
-                      </td>
-                      <td className="py-6 px-12 text-center">
-                        <button 
-                          onClick={() => handleAddTry(row.email, row.tries_left)}
-                          className="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-all active:scale-90"
-                          title="Add 1 Try"
-                        >
-                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" />
-                          </svg>
-                        </button>
-                      </td>
-                      <td className="py-6 px-12 text-slate-400 text-sm font-medium">{new Date(row.created_at).toLocaleString()}</td>
-                    </tr>
-                  ))}
-                  {adminData.length === 0 && (
-                    <tr>
-                      <td colSpan={4} className="py-20 text-center text-slate-400 font-medium italic">No generation requests found yet.</td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </motion.div>
-        )}
-
       </div>
 
       {/* Hidden Canvas */}
