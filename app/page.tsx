@@ -169,7 +169,7 @@ export default function EllavarkkumPage() {
           setIsAdmin(savedEmail === ADMIN_EMAIL);
           
           const syncTries = async () => {
-            const { data } = await supabase.from('Ellavarkkum_requests').select('tries_left, generated_image_url').eq('email', savedEmail).maybeSingle();
+            const { data } = await supabase.from('elavarkum_requests').select('tries_left, generated_image_url').eq('email', savedEmail).maybeSingle();
             if (data) {
               setTriesLeft(data.tries_left);
             }
@@ -228,7 +228,7 @@ export default function EllavarkkumPage() {
 
     try {
       const { data, error } = await supabase
-        .from('Ellavarkkum_requests')
+        .from('elavarkum_requests')
         .select('*')
         .eq('email', email)
         .eq('otp_code', otp)
@@ -247,7 +247,7 @@ export default function EllavarkkumPage() {
 
       // Update status in DB
       await supabase
-        .from('Ellavarkkum_requests')
+        .from('elavarkum_requests')
         .update({ status: 'verified' })
         .eq('email', email);
 
@@ -390,7 +390,7 @@ export default function EllavarkkumPage() {
 
   const fetchAdminData = async () => {
     const { data, error } = await supabase
-      .from('Ellavarkkum_requests')
+      .from('elavarkum_requests')
       .select('*')
       .order('created_at', { ascending: false });
     if (data) setAdminData(data);
@@ -401,7 +401,7 @@ export default function EllavarkkumPage() {
     if (!confirm('Are you sure you want to clear all user data?')) return;
     
     const { error } = await supabase
-      .from('Ellavarkkum_requests')
+      .from('elavarkum_requests')
       .delete()
       .neq('email', ADMIN_EMAIL);
     
@@ -416,7 +416,7 @@ export default function EllavarkkumPage() {
   const handleAddTry = async (userEmail: string, currentTries: number) => {
     if (!isAdmin) return;
     const { error } = await supabase
-      .from('Ellavarkkum_requests')
+      .from('elavarkum_requests')
       .update({ tries_left: currentTries + 1 })
       .eq('email', userEmail);
     
