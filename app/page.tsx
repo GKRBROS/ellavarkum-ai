@@ -28,6 +28,7 @@ export default function EllavarkkumPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [gender, setGender] = useState<'male' | 'female'>('male');
   const [isAdmin, setIsAdmin] = useState(false);
+  const [adminPassword, setAdminPassword] = useState('');
   const [adminData, setAdminData] = useState<any[]>([]);
   const [showGuidelines, setShowGuidelines] = useState(false);
   const [showSpamModal, setShowSpamModal] = useState(false);
@@ -252,8 +253,13 @@ export default function EllavarkkumPage() {
         .eq('email', email);
 
       if (email === ADMIN_EMAIL) {
-        setIsAdmin(true);
-        fetchAdminData();
+        if (adminPassword === 'ellam@123') {
+          setIsAdmin(true);
+          fetchAdminData();
+        } else {
+          toast.error('Invalid admin password');
+          return;
+        }
       }
 
       setTriesLeft(data.tries_left);
@@ -655,6 +661,20 @@ export default function EllavarkkumPage() {
                       className="w-full px-6 py-5 rounded-full border border-blue-200 text-center text-3xl font-black tracking-[0.5em] focus:outline-none focus:ring-4 focus:ring-blue-50/50 focus:border-blue-600 transition-all"
                     />
                   </div>
+
+                  {email === ADMIN_EMAIL && (
+                    <div className="space-y-2">
+                      <label className="text-[10px] uppercase tracking-[0.2em] font-bold text-[#e1007a] ml-4">Admin Password</label>
+                      <input 
+                        type="password" 
+                        required
+                        value={adminPassword}
+                        onChange={(e) => setAdminPassword(e.target.value)}
+                        placeholder="••••••••"
+                        className="w-full px-6 py-4 rounded-full border border-slate-200 focus:outline-none focus:ring-4 focus:ring-[#e1007a]/10 focus:border-[#e1007a] transition-all text-lg"
+                      />
+                    </div>
+                  )}
                   <button 
                     disabled={isLoading}
                     className="w-full py-5 bg-blue-600 text-white rounded-full font-bold text-lg hover:bg-blue-700 hover:shadow-xl hover:shadow-blue-200 transition-all active:scale-95 disabled:opacity-50"
