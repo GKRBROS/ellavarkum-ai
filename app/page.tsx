@@ -10,7 +10,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 type Step = 'otp-request' | 'otp-verify' | 'form' | 'processing' | 'result';
 
 // --- Constants ---
-const ADMIN_EMAIL = 'frameforgeone@gmail.com';
 const GEN_TIME = 40; // seconds
 const CANVAS_WIDTH = 1080;
 const CANVAS_HEIGHT = 1350;
@@ -164,7 +163,7 @@ export default function EllavarkkumPage() {
           setEmail(savedEmail);
           setStep(savedStep);
           if (savedImageUrl) setFinalImageUrl(savedImageUrl);
-          setIsAdmin(savedEmail === ADMIN_EMAIL);
+          if (savedImageUrl) setFinalImageUrl(savedImageUrl);
           
           const syncTries = async () => {
             const { data } = await supabase.from('elavarkum_requests').select('tries_left, generated_image_url').eq('email', savedEmail).maybeSingle();
@@ -176,7 +175,6 @@ export default function EllavarkkumPage() {
         } else if (savedEmail && savedStep === 'processing') {
           setEmail(savedEmail);
           setStep('form'); // Reset to form to prevent stuck timer
-          setIsAdmin(savedEmail === ADMIN_EMAIL);
         } else {
           // Logout on refresh for any other state
           localStorage.removeItem('Ellavarkkum_session');
@@ -367,9 +365,7 @@ export default function EllavarkkumPage() {
       // Wait for progress effect
       setTimeout(() => {
         setStep('result');
-        if (!isAdmin) {
-          toast.success(`Generated! ${updatedTries} tries remaining.`);
-        }
+        toast.success(`Generated! ${updatedTries} tries remaining.`);
       }, 2000);
 
     } catch (err: any) {
