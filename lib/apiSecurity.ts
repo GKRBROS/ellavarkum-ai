@@ -9,7 +9,7 @@ const DEFAULT_ALLOWED_ORIGINS = [
   'https://frameforge.one',
   'https://www.frameforge.one',
   'https://memento.frameforge.one',
-  'https://ellavarkumai.frameforge.one',
+  'https://ellavarkkumai.frameforge.one',
   'https://frameforge-mauve.vercel.app',
 ];
 

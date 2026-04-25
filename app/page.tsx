@@ -525,7 +525,7 @@ export default function EllavarkkumPage() {
       {/* Navbar */}
       <nav className="fixed top-0 left-0 right-0 z-50 px-8 py-4 flex justify-between items-center glass-panel">
         <div className="flex items-center gap-4">
-          <NextImage src="https://ELLAVARKKUMai.frameforge.one/LOGO.png" alt="Logo" width={48} height={48} className="h-10 md:h-12 w-auto" unoptimized />
+          <NextImage src="https://ellavarkkumai.frameforge.one/LOGO.png" alt="Logo" width={48} height={48} className="h-10 md:h-12 w-auto" unoptimized />
           <span className="font-heading text-2xl font-black tracking-tighter hidden sm:block">ELLAVARKKUM <span className="text-blue-600">AI</span></span>
         </div>
         
@@ -1010,7 +1010,7 @@ export default function EllavarkkumPage() {
       <footer className="py-12 border-t border-slate-100 bg-slate-50/30">
         <div className="max-w-7xl mx-auto px-8 flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="flex items-center gap-4">
-            <NextImage src="https://ELLAVARKKUMai.frameforge.one/LOGO.png" alt="Ellavarkkum AI" width={32} height={32} className="h-8 w-auto" unoptimized />
+            <NextImage src="https://ellavarkkumai.frameforge.one/LOGO.png" alt="Ellavarkkum AI" width={32} height={32} className="h-8 w-auto" unoptimized />
             <span className="text-slate-400 text-sm font-medium">© {new Date().getFullYear()} Ellavarkkum AI. All rights reserved.</span>
           </div>
           <div className="flex items-center gap-3">

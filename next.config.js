@@ -27,7 +27,7 @@ const nextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'ellavarkumai.frameforge.one',
+        hostname: 'ellavarkkumai.frameforge.one',
       },
     ],
   },

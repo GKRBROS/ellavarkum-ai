@@ -62,7 +62,7 @@ const getDefaultLogoUrl = (publicUrl: string) => {
   if (publicUrl) {
     return `${publicUrl.replace(/\/$/, '')}/LOGO.png`;
   }
-  return 'https://ELLAVARKKUMai.frameforge.one/LOGO.png'; // Fallback if app URL is known
+  return 'https://ellavarkkumai.frameforge.one/LOGO.png'; // Fallback if app URL is known
 };
 
 const buildOtpEmailText = (otp: string, helpCenterUrl: string, appUrl: string) => [
