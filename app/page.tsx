@@ -481,7 +481,6 @@ export default function EllavarkkumPage() {
           <span className="font-heading text-xl md:text-2xl font-black tracking-tighter hidden sm:block">ELLAVARKKUM <span className="text-blue-600">AI</span></span>
         </div>
         
-        {step !== 'otp-request' && step !== 'otp-verify' && (
       </nav>
 
       <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 py-20 md:py-32 relative z-10">
