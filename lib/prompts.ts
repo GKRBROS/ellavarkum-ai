@@ -42,9 +42,6 @@ Background:
 overexposed face, harsh lighting, blown highlights, hotspots, glare, shiny skin, uneven lighting, neon lighting, color cast, exaggerated smile, teeth enhancement, artificial expression, heavy makeup, skin smoothing, plastic skin, face distortion, asymmetry, blur, low detail, over-sharpening, halos, noise, artifacts, glitch, unrealistic rendering
 `,
 
-  male: ` an editorial potrait of this man with them sitting straight and the camera is looking straight, from bottom chest to top of the head fix lighting and colour, do not modify their face, their skin or their clothing , and any other accessories they might have . remove the background and make it a clean png.
-The expression should be a subtle smile, . Frame the image as a centered, bottom chest-up portrait at eye level with a natural posture , both shoulders must be visible in the shot`,
-
-  female: `make this an editorial potrait of this woman with them sitting straight and the camera is looking straight, from bottom chest to top of the head fix lighting and colour, do not modify their face, their skin , their clothing , or any other accessories they might have . remove the background and make it a clean png.
-The expression should be a subtle smile, . Frame the image as a centered, bottom chest-up portrait at eye level with a natural posture , both shoulders must be visible in the shot`,
+  male: `A chest up studio portrait of this man looking directly into the camera with a calm natural expression and both arms crossed . Maintain the facial features and clothing and any other accessories as is from the image. The background is non existent to be made as png. The lighting is even and flat, without harsh shadows, resembling a natural flash photograph that captures realistic skin texture.`,
+  female: `A chest up studio portrait of this woman looking directly into the camera with a calm natural expression and both arms crossed . Maintain the facial features and clothing and any other accessories as is from the image. The background is non existent to be made as png. The lighting is even and flat, without harsh shadows, resembling a natural flash photograph that captures realistic skin texture.`,
 };
