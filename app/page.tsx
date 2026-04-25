@@ -470,15 +470,15 @@ export default function EllavarkkumPage() {
         </div>
       )}
 
-      <nav className="fixed top-0 left-0 right-0 z-50 px-4 md:px-8 py-4 flex justify-between items-center glass-panel">
-        <div className="flex items-center gap-3 md:gap-4">
-          <NextImage src="https://ellavarkkumai.frameforge.one/LOGO.png" alt="Logo" width={48} height={48} className="h-8 md:h-12 w-auto" unoptimized />
-          <span className="font-heading text-xl md:text-2xl font-black tracking-tighter hidden sm:block">ELLAVARKKUM <span className="text-blue-600">AI</span></span>
+      <nav className="fixed top-0 left-0 right-0 z-50 px-4 md:px-8 py-3 md:py-4 flex justify-between items-center glass-panel">
+        <div className="flex items-center gap-2 md:gap-4">
+          <NextImage src="https://ellavarkkumai.frameforge.one/LOGO.png" alt="Logo" width={48} height={48} className="h-7 md:h-12 w-auto" unoptimized />
+          <span className="font-heading text-lg md:text-2xl font-black tracking-tighter hidden sm:block">ELLAVARKKUM <span className="text-blue-600">AI</span></span>
         </div>
         
       </nav>
 
-      <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 py-20 md:py-32 relative z-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-12 py-16 md:py-32 relative z-10">
         <AnimatePresence mode="wait">
           
           {/* STEP: OTP REQUEST */}
@@ -501,7 +501,7 @@ export default function EllavarkkumPage() {
                   </p>
                 </div>
 
-                <div className="flex flex-col sm:flex-row gap-4 p-4 sm:p-6 bg-slate-50 rounded-[40px] border border-slate-100 shadow-inner">
+                <div className="flex flex-col sm:flex-row gap-3 p-3 sm:p-6 bg-slate-50/50 rounded-[32px] sm:rounded-[40px] border border-slate-100 shadow-inner">
                   <div className="flex-1 space-y-3">
                     <div className="aspect-[4/5] relative rounded-[24px] overflow-hidden shadow-md">
                       <NextImage src="/BEFORE.webp" alt="Before" fill className="object-cover" unoptimized />
