@@ -860,6 +860,29 @@ export default function EllavarkkumPage() {
         </AnimatePresence>
       </div>
 
+      {/* Mobile Scroll Navigator */}
+      <div className="fixed bottom-8 right-6 z-50 flex flex-col gap-3 md:hidden">
+        <button 
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          className="w-12 h-12 bg-white/80 backdrop-blur-md border border-slate-100 rounded-full shadow-xl flex items-center justify-center text-slate-600 active:scale-90 transition-all"
+        >
+          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+          </svg>
+        </button>
+        <button 
+          onClick={() => {
+            const form = document.querySelector('.glass-panel');
+            form?.scrollIntoView({ behavior: 'smooth' });
+          }}
+          className="w-12 h-12 bg-blue-600 rounded-full shadow-xl shadow-blue-200 flex items-center justify-center text-white active:scale-90 transition-all"
+        >
+          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+      </div>
+
       {/* Hidden Canvas */}
       <canvas ref={canvasRef} style={{ display: 'none' }} />
 
