@@ -622,7 +622,7 @@ export default function EllavarkkumPage() {
                         required
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        placeholder="you@company.com"
+                        placeholder="you@gmail.com"
                         className="w-full px-6 py-4 rounded-full border border-slate-200 focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all text-lg"
                       />
                     </div>
