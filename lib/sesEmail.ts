@@ -120,7 +120,7 @@ const buildOtpEmailHtml = (otp: string, helpCenterUrl: string, logoUrl: string) 
                       <td style="padding: 0; vertical-align: middle;">
                         <span style="display: inline-block; background: #ffffff; padding: 6px 10px; border-radius: 14px; line-height: 0;">
                           <img
-                            alt="ELAVARKUM AI"
+                            alt=""
                             src="${logoUrl}"
                             width="110"
                             style="display: block; border: 0; outline: none; text-decoration: none;"
