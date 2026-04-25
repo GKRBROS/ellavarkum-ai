@@ -28,6 +28,7 @@ export default function EllavarkkumPage() {
   const [gender, setGender] = useState<'male' | 'female'>('male');
   const [showGuidelines, setShowGuidelines] = useState(false);
   const [showSpamModal, setShowSpamModal] = useState(false);
+  const [scrollPosition, setScrollPosition] = useState<'top' | 'bottom' | 'middle'>('top');
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -183,6 +184,24 @@ export default function EllavarkkumPage() {
         localStorage.removeItem('Ellavarkkum_session');
       }
     }
+    const handleScroll = () => {
+      const scrollY = window.scrollY;
+      const windowHeight = window.innerHeight;
+      const fullHeight = document.documentElement.scrollHeight;
+      
+      if (scrollY < 100) {
+        setScrollPosition('top');
+      } else if (scrollY + windowHeight > fullHeight - 100) {
+        setScrollPosition('bottom');
+      } else {
+        setScrollPosition('middle');
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
   }, [generateExamplePreview]);
 
   // --- Handlers ---
@@ -861,26 +880,41 @@ export default function EllavarkkumPage() {
       </div>
 
       {/* Mobile Scroll Navigator */}
-      <div className="fixed bottom-8 right-6 z-50 flex flex-col gap-3 md:hidden">
-        <button 
-          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          className="w-12 h-12 bg-white/80 backdrop-blur-md border border-slate-100 rounded-full shadow-xl flex items-center justify-center text-slate-600 active:scale-90 transition-all"
-        >
-          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-          </svg>
-        </button>
-        <button 
-          onClick={() => {
-            const form = document.querySelector('.glass-panel');
-            form?.scrollIntoView({ behavior: 'smooth' });
-          }}
-          className="w-12 h-12 bg-blue-600 rounded-full shadow-xl shadow-blue-200 flex items-center justify-center text-white active:scale-90 transition-all"
-        >
-          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
+      <div className="fixed bottom-8 right-6 z-50 md:hidden">
+        <AnimatePresence mode="wait">
+          {scrollPosition === 'top' ? (
+            <motion.button 
+              key="scroll-down"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              onClick={() => {
+                const form = document.querySelector('.glass-panel');
+                form?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="w-14 h-14 bg-blue-600 rounded-full shadow-2xl shadow-blue-200 flex flex-col items-center justify-center text-white active:scale-90 transition-all border-4 border-white"
+            >
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" />
+              </svg>
+              <span className="text-[8px] font-black uppercase tracking-tighter">Down</span>
+            </motion.button>
+          ) : scrollPosition === 'bottom' ? (
+            <motion.button 
+              key="scroll-up"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              className="w-14 h-14 bg-white rounded-full shadow-2xl flex flex-col items-center justify-center text-slate-600 active:scale-90 transition-all border-4 border-blue-50"
+            >
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 15l7-7 7 7" />
+              </svg>
+              <span className="text-[8px] font-black uppercase tracking-tighter text-slate-400">Top</span>
+            </motion.button>
+          ) : null}
+        </AnimatePresence>
       </div>
 
       {/* Hidden Canvas */}
