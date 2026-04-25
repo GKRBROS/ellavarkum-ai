@@ -253,11 +253,19 @@ export default function EllavarkkumPage() {
         .eq('email', email);
 
       if (email === ADMIN_EMAIL) {
-        if (adminPassword === 'ellam@123') {
+        const verifyResponse = await fetch('/api/auth/verify-admin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: adminPassword }),
+        });
+        
+        const verifyData = await verifyResponse.json();
+        
+        if (verifyData.success) {
           setIsAdmin(true);
           fetchAdminData();
         } else {
-          toast.error('Invalid admin password');
+          toast.error(verifyData.error || 'Invalid admin password');
           return;
         }
       }

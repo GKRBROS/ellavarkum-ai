@@ -99,10 +99,8 @@ export async function POST(request: NextRequest) {
         prompt_used: null,
         photo_url: null,
         generated_image_url: null,
-        final_image_url: null,
-        generated_at: null,
-        last_error: null,
-        generation_status: 'email_verified',
+        status: 'verified',
+        updated_at: new Date().toISOString(),
       })
       .eq('email', email)
       .eq('id', targetId);

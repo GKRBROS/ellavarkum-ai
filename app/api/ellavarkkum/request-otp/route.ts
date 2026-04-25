@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/lib/supabase';
 import { sendOtpEmail } from '@/lib/sesEmail';
+import { IMAGE_GENERATION_TABLE, normalizeEmail } from '@/lib/generationFlow';
 
 export async function POST(req: NextRequest) {
   try {
-    const { email } = await req.json();
+    const { email: rawEmail } = await req.json();
+    const email = normalizeEmail(rawEmail);
 
     if (!email) {
       return NextResponse.json({ error: 'Email is required' }, { status: 400 });
@@ -14,7 +16,7 @@ export async function POST(req: NextRequest) {
 
     // Check tries_left
     const { data: user, error: selectError } = await supabase
-      .from('elavarkum_requests')
+      .from(IMAGE_GENERATION_TABLE)
       .select('*')
       .eq('email', email)
       .maybeSingle();
@@ -33,7 +35,7 @@ export async function POST(req: NextRequest) {
 
     // Upsert OTP
     const { error: upsertError } = await supabase
-      .from('elavarkum_requests')
+      .from(IMAGE_GENERATION_TABLE)
       .upsert({
         email,
         otp_code: otp,
