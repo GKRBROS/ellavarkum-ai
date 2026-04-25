@@ -525,37 +525,25 @@ export default function EllavarkkumPage() {
                   </p>
                 </div>
 
-                <div className="flex flex-col sm:flex-row gap-6 lg:gap-8 items-start lg:items-center">
-                  <div className="flex-1 w-full max-w-sm mx-auto space-y-4">
-                    <div className="relative rounded-[24px] overflow-hidden shadow-2xl bg-white border border-slate-100">
-                      <NextImage 
-                        src="/BEFORE.webp" 
-                        alt="Before" 
-                        width={1080} 
-                        height={1350} 
-                        className="w-full h-auto object-cover" 
-                        unoptimized 
-                      />
-                    </div>
-                    <p className="text-center text-[10px] font-black uppercase tracking-widest text-slate-400">Casual Photo</p>
+                <div className="relative rounded-[32px] overflow-hidden shadow-2xl bg-black border border-slate-100 group">
+                  <div className="absolute inset-0 flex items-center justify-center bg-slate-900/10 z-0">
+                    <div className="w-8 h-8 border-4 border-white/20 border-t-white rounded-full animate-spin" />
                   </div>
-                  <div className="flex-1 w-full max-w-sm mx-auto space-y-4">
-                    <div className="relative rounded-[24px] overflow-hidden shadow-2xl border-2 border-blue-600 bg-white">
-                      <NextImage 
-                        src="/AFTER.webp" 
-                        alt="After" 
-                        width={1080} 
-                        height={1350} 
-                        className="w-full h-auto object-cover" 
-                        unoptimized 
-                      />
-                      <div className="absolute top-3 right-3 bg-blue-600 text-white p-1.5 rounded-full shadow-lg">
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                        </svg>
-                      </div>
+                  <video 
+                    autoPlay 
+                    muted 
+                    loop 
+                    playsInline 
+                    poster="/AFTER.webp"
+                    className="w-full h-auto relative z-10 block"
+                  >
+                    <source src="/before_after.mp4" type="video/mp4" />
+                    Your browser does not support the video tag.
+                  </video>
+                  <div className="absolute bottom-6 left-6 right-6 flex justify-between items-center z-20">
+                    <div className="px-4 py-1.5 bg-black/40 backdrop-blur-md rounded-full border border-white/20">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-white">How it Works</p>
                     </div>
-                    <p className="text-center text-[10px] font-black uppercase tracking-widest text-blue-600">AI Frame</p>
                   </div>
                 </div>
               </div>
@@ -756,12 +744,19 @@ export default function EllavarkkumPage() {
 
               {/* Preview Side */}
               <div className="lg:h-full">
-                <div className="relative h-full bg-[#020617] rounded-[40px] overflow-hidden shadow-2xl border border-slate-200 group min-h-[600px]">
-                  <div className="w-full h-full flex flex-col items-center justify-center relative">
-                    <NextImage src="/AFTER.webp" alt="Reference" width={1080} height={1350} className="w-full h-full object-contain" unoptimized />
-                    <div className="absolute top-6 right-6 bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full shadow-lg border border-slate-100">
-                      <span className="text-[#0077ff] font-bold text-xs uppercase tracking-widest">Reference Portrait</span>
-                    </div>
+                <div className="relative h-full bg-black rounded-[40px] overflow-hidden shadow-2xl border border-slate-200 group min-h-[600px] flex items-center justify-center">
+                  <video 
+                    autoPlay 
+                    muted 
+                    loop 
+                    playsInline 
+                    poster="/AFTER.webp"
+                    className="w-full h-full object-contain"
+                  >
+                    <source src="/before_after.mp4" type="video/mp4" />
+                  </video>
+                  <div className="absolute top-6 right-6 bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full shadow-lg border border-slate-100">
+                    <span className="text-[#0077ff] font-bold text-xs uppercase tracking-widest">Reference Portrait</span>
                   </div>
                 </div>
               </div>
