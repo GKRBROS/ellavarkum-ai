@@ -561,7 +561,7 @@ export default function EllavarkkumPage() {
               </div>
 
               {/* Right Side: Login Form */}
-              <div className="flex justify-center order-2 lg:order-2 w-full px-2">
+              <div className="flex justify-center order-2 lg:order-2 w-full px-2" id="login-section">
                 <div className="w-full max-w-md glass-panel p-6 sm:p-10 rounded-[40px] shadow-2xl border border-slate-100 relative overflow-hidden mx-auto">
                   <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-[#e1007a] via-[#0077ff] to-[#e1007a]" />
                   
@@ -908,8 +908,8 @@ export default function EllavarkkumPage() {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.8 }}
               onClick={() => {
-                const form = document.querySelector('.glass-panel');
-                form?.scrollIntoView({ behavior: 'smooth' });
+                const section = document.getElementById('login-section');
+                section?.scrollIntoView({ behavior: 'smooth', block: 'center' });
               }}
               className="w-14 h-14 bg-blue-600 rounded-full shadow-2xl shadow-blue-200 flex flex-col items-center justify-center text-white active:scale-90 transition-all border-4 border-white"
             >
