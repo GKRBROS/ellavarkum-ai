@@ -270,7 +270,6 @@ export default function EllavarkkumPage() {
     setFile(null);
     setPreviewUrl(null);
     setFinalImageUrl(null);
-    setIsAdmin(false);
     toast.success('Logged out successfully');
   };
 
