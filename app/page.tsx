@@ -787,21 +787,24 @@ export default function EllavarkkumPage() {
               </div>
 
               {/* Preview Side */}
-              <div className="lg:h-full">
-                <div className="relative h-full bg-black rounded-[40px] overflow-hidden shadow-2xl border border-slate-200 group min-h-[600px] flex items-center justify-center">
+              <div className="space-y-4">
+                <div className="flex justify-start px-2">
+                  <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[#0077ff] bg-blue-50 px-4 py-2 rounded-full border border-blue-100 shadow-sm">
+                    Reference Portrait
+                  </span>
+                </div>
+                
+                <div className="relative rounded-[40px] overflow-hidden shadow-2xl bg-black border border-slate-200 group">
                   <video 
                     autoPlay 
                     muted 
                     loop 
                     playsInline 
                     poster="/AFTER.webp"
-                    className="w-full h-full object-contain"
+                    className="w-full h-auto object-contain block"
                   >
                     <source src="/before_after.mp4" type="video/mp4" />
                   </video>
-                  <div className="absolute top-6 right-6 bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full shadow-lg border border-slate-100">
-                    <span className="text-[#0077ff] font-bold text-xs uppercase tracking-widest">Reference Portrait</span>
-                  </div>
                 </div>
               </div>
             </motion.div>
