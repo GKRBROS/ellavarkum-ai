@@ -295,7 +295,7 @@ export default function EllavarkkumPage() {
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!file || !name) return;
-    if (triesLeft <= 0 && !isAdmin) {
+    if (triesLeft <= 0) {
       toast.error('No tries left');
       return;
     }
