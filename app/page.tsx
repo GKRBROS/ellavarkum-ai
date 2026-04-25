@@ -938,42 +938,44 @@ export default function EllavarkkumPage() {
       </div>
 
       {/* Mobile Scroll Navigator */}
-      <div className="fixed bottom-8 right-6 z-50 md:hidden">
+      <div className="fixed bottom-10 right-6 z-[9999] md:hidden pointer-events-auto">
         <AnimatePresence mode="wait">
           {scrollPosition === 'top' ? (
             <motion.button 
               key="scroll-down"
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              onClick={() => {
+              initial={{ opacity: 0, scale: 0.8, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.8, y: 20 }}
+              onPointerDown={(e) => {
+                e.preventDefault();
                 const section = document.getElementById('main-action');
                 if (section) {
-                  const yOffset = -100; // Account for navbar
-                  const y = section.getBoundingClientRect().top + window.pageYOffset + yOffset;
-                  window.scrollTo({ top: y, behavior: 'smooth' });
+                  section.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }
               }}
-              className="w-14 h-14 bg-blue-600 rounded-full shadow-2xl shadow-blue-200 flex flex-col items-center justify-center text-white active:scale-90 transition-all border-4 border-white cursor-pointer pointer-events-auto"
+              className="w-16 h-16 bg-blue-600 rounded-full shadow-[0_20px_50px_rgba(37,99,235,0.4)] flex flex-col items-center justify-center text-white active:scale-90 transition-all border-4 border-white cursor-pointer touch-none"
             >
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" />
               </svg>
-              <span className="text-[8px] font-black uppercase tracking-tighter">Down</span>
+              <span className="text-[9px] font-black uppercase tracking-tighter">Down</span>
             </motion.button>
           ) : scrollPosition === 'bottom' ? (
             <motion.button 
               key="scroll-up"
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-              className="w-14 h-14 bg-white rounded-full shadow-2xl flex flex-col items-center justify-center text-slate-600 active:scale-90 transition-all border-4 border-blue-50"
+              initial={{ opacity: 0, scale: 0.8, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.8, y: 20 }}
+              onPointerDown={(e) => {
+                e.preventDefault();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              className="w-16 h-16 bg-white rounded-full shadow-[0_20px_50px_rgba(0,0,0,0.1)] flex flex-col items-center justify-center text-slate-600 active:scale-90 transition-all border-4 border-blue-50 cursor-pointer touch-none"
             >
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 15l7-7 7 7" />
               </svg>
-              <span className="text-[8px] font-black uppercase tracking-tighter text-slate-400">Top</span>
+              <span className="text-[9px] font-black uppercase tracking-tighter text-slate-400">Top</span>
             </motion.button>
           ) : null}
         </AnimatePresence>
