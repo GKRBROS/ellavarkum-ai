@@ -164,7 +164,6 @@ export default function EllavarkkumPage() {
           setEmail(savedEmail);
           setStep(savedStep);
           if (savedImageUrl) setFinalImageUrl(savedImageUrl);
-          if (savedImageUrl) setFinalImageUrl(savedImageUrl);
           
           const syncTries = async () => {
             const { data } = await supabase.from('elavarkum_requests').select('tries_left, generated_image_url').eq('email', savedEmail).maybeSingle();
@@ -184,23 +183,29 @@ export default function EllavarkkumPage() {
         localStorage.removeItem('Ellavarkkum_session');
       }
     }
+    let scrollTimer: any;
     const handleScroll = () => {
-      const scrollY = window.scrollY;
-      const windowHeight = window.innerHeight;
-      const fullHeight = document.documentElement.scrollHeight;
-      
-      if (scrollY < 100) {
-        setScrollPosition('top');
-      } else if (scrollY + windowHeight > fullHeight - 100) {
-        setScrollPosition('bottom');
-      } else {
-        setScrollPosition('middle');
-      }
+      if (scrollTimer) return;
+      scrollTimer = setTimeout(() => {
+        const scrollY = window.scrollY;
+        const windowHeight = window.innerHeight;
+        const fullHeight = document.documentElement.scrollHeight;
+        
+        if (scrollY < 100) {
+          setScrollPosition('top');
+        } else if (scrollY + windowHeight > fullHeight - 100) {
+          setScrollPosition('bottom');
+        } else {
+          setScrollPosition('middle');
+        }
+        scrollTimer = null;
+      }, 100);
     };
 
     window.addEventListener('scroll', handleScroll);
     return () => {
       window.removeEventListener('scroll', handleScroll);
+      if (scrollTimer) clearTimeout(scrollTimer);
     };
   }, [generateExamplePreview]);
 
@@ -522,14 +527,28 @@ export default function EllavarkkumPage() {
 
                 <div className="flex flex-col sm:flex-row gap-3 p-3 sm:p-6 bg-slate-50/50 rounded-[32px] sm:rounded-[40px] border border-slate-100 shadow-inner">
                   <div className="flex-1 space-y-3">
-                    <div className="aspect-[4/5] relative rounded-[24px] overflow-hidden shadow-md">
-                      <NextImage src="/BEFORE.webp" alt="Before" fill className="object-cover" unoptimized />
+                    <div className="relative rounded-[20px] sm:rounded-[24px] overflow-hidden shadow-md bg-white">
+                      <NextImage 
+                        src="/BEFORE.webp" 
+                        alt="Before" 
+                        width={1080} 
+                        height={1350} 
+                        className="w-full h-auto object-cover" 
+                        unoptimized 
+                      />
                     </div>
                     <p className="text-center text-[10px] font-black uppercase tracking-widest text-slate-400">Casual Photo</p>
                   </div>
                   <div className="flex-1 space-y-3">
-                    <div className="aspect-[4/5] relative rounded-[24px] overflow-hidden shadow-xl border-2 border-blue-100">
-                      <NextImage src="/AFTER.webp" alt="After" fill className="object-cover" unoptimized />
+                    <div className="relative rounded-[20px] sm:rounded-[24px] overflow-hidden shadow-xl border-2 border-blue-100 bg-white">
+                      <NextImage 
+                        src="/AFTER.webp" 
+                        alt="After" 
+                        width={1080} 
+                        height={1350} 
+                        className="w-full h-auto object-cover" 
+                        unoptimized 
+                      />
                       <div className="absolute top-2 right-2 bg-blue-600 text-white p-1 rounded-full shadow-lg">
                         <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
