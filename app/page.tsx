@@ -740,6 +740,8 @@ export default function ElavarkumPage() {
             </motion.div>
           )}
 
+          {/* STEP: PROCESSING */}
+          {step === 'processing' && (
             <motion.div 
               key="processing"
               initial={{ opacity: 0 }}
