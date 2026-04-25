@@ -596,7 +596,7 @@ export default function EllavarkkumPage() {
               </div>
 
               {/* Right Side: Login Form */}
-              <div className="flex justify-center order-2 lg:order-2 w-full px-2" id="login-section">
+              <div className="flex justify-center order-2 lg:order-2 w-full px-2" id="main-action">
                 <div className="w-full max-w-md glass-panel p-6 sm:p-10 rounded-[40px] shadow-2xl border border-slate-100 relative overflow-hidden mx-auto">
                   <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-[#e1007a] via-[#0077ff] to-[#e1007a]" />
                   
@@ -638,7 +638,7 @@ export default function EllavarkkumPage() {
               exit={{ opacity: 0, scale: 1.05 }}
               className="flex flex-col items-center"
             >
-              <div className="w-full max-w-md glass-panel p-10 rounded-[40px] shadow-2xl border border-slate-100 relative overflow-hidden">
+              <div id="main-action" className="w-full max-w-md glass-panel p-10 rounded-[40px] shadow-2xl border border-slate-100 relative overflow-hidden">
                 <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-[#e1007a] via-[#0077ff] to-[#e1007a]" />
                 
                 <div className="mb-10 text-center">
@@ -700,7 +700,7 @@ export default function EllavarkkumPage() {
                   <p className="text-lg sm:text-xl text-slate-500">Fill the form and upload your photo to generate the frame for Ellavarkkum AI. You can see the preview down in a better way.</p>
                 </div>
 
-                <div className="glass-panel p-10 rounded-[40px] border border-slate-100 shadow-xl space-y-8 h-full">
+                <div id="main-action" className="glass-panel p-10 rounded-[40px] border border-slate-100 shadow-xl space-y-8 h-full">
                   <form className="space-y-6">
                     <div className="space-y-4">
                       <label className="text-[10px] uppercase tracking-[0.2em] font-bold text-slate-400 ml-4">Gender</label>
@@ -866,7 +866,7 @@ export default function EllavarkkumPage() {
               animate={{ opacity: 1, scale: 1 }}
               className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center"
             >
-              <div className="space-y-10 order-2 lg:order-1">
+              <div className="space-y-10 order-2 lg:order-1" id="main-action">
                 <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-50 text-green-600 rounded-full text-sm font-bold border border-green-100">
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
@@ -950,10 +950,14 @@ export default function EllavarkkumPage() {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.8 }}
               onClick={() => {
-                const section = document.getElementById('login-section');
-                section?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                const section = document.getElementById('main-action');
+                if (section) {
+                  const yOffset = -100; // Account for navbar
+                  const y = section.getBoundingClientRect().top + window.pageYOffset + yOffset;
+                  window.scrollTo({ top: y, behavior: 'smooth' });
+                }
               }}
-              className="w-14 h-14 bg-blue-600 rounded-full shadow-2xl shadow-blue-200 flex flex-col items-center justify-center text-white active:scale-90 transition-all border-4 border-white"
+              className="w-14 h-14 bg-blue-600 rounded-full shadow-2xl shadow-blue-200 flex flex-col items-center justify-center text-white active:scale-90 transition-all border-4 border-white cursor-pointer pointer-events-auto"
             >
               <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" />
