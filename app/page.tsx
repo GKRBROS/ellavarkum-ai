@@ -557,37 +557,35 @@ export default function EllavarkkumPage() {
                   </p>
                 </div>
 
-                <div className="space-y-4">
-                  <div className="flex justify-start px-2">
-                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-blue-600 bg-blue-50 px-4 py-2 rounded-full border border-blue-100 shadow-sm">
-                      Reference Portrait
-                    </span>
-                  </div>
-                  
-                  <div className="relative rounded-[32px] overflow-hidden shadow-2xl bg-black border border-slate-100 group">
-                    <AnimatePresence>
-                      {!isVideoLoaded && (
-                        <motion.div 
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          exit={{ opacity: 0 }}
-                          className="absolute inset-0 z-20 bg-slate-900"
-                        >
-                          <SlideshowFallback />
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
+                <div className="relative rounded-[32px] overflow-hidden shadow-2xl bg-black border border-slate-100 group">
+                  <AnimatePresence>
+                    {!isVideoLoaded && (
+                      <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="absolute inset-0 z-20 bg-slate-900"
+                      >
+                        <SlideshowFallback />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
 
-                    <video 
-                      autoPlay 
-                      muted 
-                      loop 
-                      playsInline 
-                      onCanPlay={() => setIsVideoLoaded(true)}
-                      className={`w-full h-auto relative z-10 block transition-opacity duration-1000 ${isVideoLoaded ? 'opacity-100' : 'opacity-0'}`}
-                    >
-                      <source src="/before_after.mp4" type="video/mp4" />
-                    </video>
+                  <video 
+                    autoPlay 
+                    muted 
+                    loop 
+                    playsInline 
+                    onCanPlay={() => setIsVideoLoaded(true)}
+                    className={`w-full h-auto relative z-10 block transition-opacity duration-1000 ${isVideoLoaded ? 'opacity-100' : 'opacity-0'}`}
+                  >
+                    <source src="/before_after.mp4" type="video/mp4" />
+                  </video>
+                  
+                  <div className="absolute bottom-6 left-6 right-6 flex justify-between items-center z-30">
+                    <div className="px-4 py-1.5 bg-black/40 backdrop-blur-md rounded-full border border-white/20">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-white">How it Works</p>
+                    </div>
                   </div>
                 </div>
               </div>
