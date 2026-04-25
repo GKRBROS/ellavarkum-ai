@@ -525,9 +525,9 @@ export default function EllavarkkumPage() {
                   </p>
                 </div>
 
-                <div className="flex flex-col sm:flex-row gap-3 p-3 sm:p-6 bg-slate-50/50 rounded-[32px] sm:rounded-[40px] border border-slate-100 shadow-inner">
-                  <div className="flex-1 space-y-3">
-                    <div className="relative rounded-[20px] sm:rounded-[24px] overflow-hidden shadow-md bg-white">
+                <div className="flex flex-col sm:flex-row gap-6 lg:gap-8 items-start lg:items-center">
+                  <div className="flex-1 w-full max-w-sm mx-auto space-y-4">
+                    <div className="relative rounded-[24px] overflow-hidden shadow-2xl bg-white border border-slate-100">
                       <NextImage 
                         src="/BEFORE.webp" 
                         alt="Before" 
@@ -539,8 +539,8 @@ export default function EllavarkkumPage() {
                     </div>
                     <p className="text-center text-[10px] font-black uppercase tracking-widest text-slate-400">Casual Photo</p>
                   </div>
-                  <div className="flex-1 space-y-3">
-                    <div className="relative rounded-[20px] sm:rounded-[24px] overflow-hidden shadow-xl border-2 border-blue-100 bg-white">
+                  <div className="flex-1 w-full max-w-sm mx-auto space-y-4">
+                    <div className="relative rounded-[24px] overflow-hidden shadow-2xl border-2 border-blue-600 bg-white">
                       <NextImage 
                         src="/AFTER.webp" 
                         alt="After" 
@@ -549,8 +549,8 @@ export default function EllavarkkumPage() {
                         className="w-full h-auto object-cover" 
                         unoptimized 
                       />
-                      <div className="absolute top-2 right-2 bg-blue-600 text-white p-1 rounded-full shadow-lg">
-                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <div className="absolute top-3 right-3 bg-blue-600 text-white p-1.5 rounded-full shadow-lg">
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                         </svg>
                       </div>
