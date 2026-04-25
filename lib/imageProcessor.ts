@@ -63,8 +63,8 @@ export async function mergeImages(
     }
 
     // Load background image
-    const backgroundPath = join(process.cwd(), 'public', 'background.png');
-    const layerPath = join(process.cwd(), 'public', 'layer.png');
+    const backgroundPath = join(process.cwd(), 'public', 'background.webp');
+    const layerPath = join(process.cwd(), 'public', 'layer.webp');
     const fallbackPath = join(process.cwd(), 'public', 'example.png');
     const finalBgPath = existsSync(backgroundPath) ? backgroundPath : fallbackPath;
     

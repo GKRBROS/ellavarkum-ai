@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   title: "ELLAVARKUM AI",
   description: "Generate premium AI images for your business.",
   icons: {
-    icon: "https://ellavarkumai.frameforge.one/LOGO.png",
+    icon: "https://ellavarkumai.frameforge.one/LOGO.webp",
   }
 };
 

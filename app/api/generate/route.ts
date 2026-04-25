@@ -27,7 +27,7 @@ export async function OPTIONS(request: NextRequest) {
 }
 
 const OPENROUTER_TIMEOUT_MS = 60000; // Reduced from 120s to 60s for faster failure recovery
-const DEFAULT_OPENROUTER_IMAGE_MODELS = ['sourceful/riverflow-v2-fast-preview'];
+const DEFAULT_OPENROUTER_IMAGE_MODELS = ['bytedance-seed/seedream-4.5'];
 const OPENROUTER_IMAGE_MODELS = (process.env.OPENROUTER_IMAGE_MODELS || '')
   .split(',')
   .map((model) => model.trim())

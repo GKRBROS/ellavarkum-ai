@@ -101,9 +101,9 @@ export default function ElavarkumPage() {
       bgImg.crossOrigin = 'anonymous';
       layerImg.crossOrigin = 'anonymous';
 
-      bgImg.src = '/background.png';
+      bgImg.src = '/background.webp';
       userImg.src = photoSrc;
-      layerImg.src = '/layer.png';
+      layerImg.src = '/layer.webp';
 
       let loadedCount = 0;
       const onLoad = () => {
@@ -159,8 +159,9 @@ export default function ElavarkumPage() {
       try {
         const { email: savedEmail, step: savedStep, imageUrl: savedImageUrl } = JSON.parse(savedSession);
         
-        // Only restore if processing (active generation)
-        if (savedEmail && savedStep === 'processing') {
+        // If we refresh during processing, the 'file' state is lost.
+        // Resetting to 'form' allows the user to start over correctly.
+        if (savedEmail && savedStep !== 'processing') {
           setEmail(savedEmail);
           setStep(savedStep);
           if (savedImageUrl) setFinalImageUrl(savedImageUrl);
@@ -173,8 +174,12 @@ export default function ElavarkumPage() {
             }
           };
           syncTries();
+        } else if (savedEmail && savedStep === 'processing') {
+          setEmail(savedEmail);
+          setStep('form'); // Reset to form to prevent stuck timer
+          setIsAdmin(savedEmail === ADMIN_EMAIL);
         } else {
-          // Logout on refresh for any other state including 'result'
+          // Logout on refresh for any other state
           localStorage.removeItem('elavarkum_session');
         }
       } catch (e) {
@@ -725,7 +730,7 @@ export default function ElavarkumPage() {
               <div className="lg:h-full">
                 <div className="relative h-full bg-[#020617] rounded-[40px] overflow-hidden shadow-2xl border border-slate-200 group min-h-[600px]">
                   <div className="w-full h-full flex flex-col items-center justify-center relative">
-                    <NextImage src="/example.png" alt="Example" width={1080} height={1350} className="w-full h-full object-contain" />
+                    <NextImage src="/example.webp" alt="Example" width={1080} height={1350} className="w-full h-full object-contain" />
                     <div className="absolute top-6 right-6 bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full shadow-lg border border-slate-100">
                       <span className="text-[#0077ff] font-bold text-xs uppercase tracking-widest">Reference Portrait</span>
                     </div>
@@ -735,14 +740,12 @@ export default function ElavarkumPage() {
             </motion.div>
           )}
 
-          {/* STEP: PROCESSING */}
-          {step === 'processing' && (
             <motion.div 
               key="processing"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="flex flex-col items-center justify-center min-h-[50vh]"
+              className="flex flex-col items-center justify-center min-h-[60vh] pt-20"
             >
               <div className="relative w-72 h-72 mb-16">
                 {/* Circular Progress */}
