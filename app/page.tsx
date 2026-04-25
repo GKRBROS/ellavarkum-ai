@@ -536,11 +536,10 @@ export default function EllavarkkumPage() {
         </div>
       )}
 
-      {/* Navbar */}
-      <nav className="fixed top-0 left-0 right-0 z-50 px-8 py-4 flex justify-between items-center glass-panel">
-        <div className="flex items-center gap-4">
-          <NextImage src="https://ellavarkkumai.frameforge.one/LOGO.png" alt="Logo" width={48} height={48} className="h-10 md:h-12 w-auto" unoptimized />
-          <span className="font-heading text-2xl font-black tracking-tighter hidden sm:block">ELLAVARKKUM <span className="text-blue-600">AI</span></span>
+      <nav className="fixed top-0 left-0 right-0 z-50 px-4 md:px-8 py-4 flex justify-between items-center glass-panel">
+        <div className="flex items-center gap-3 md:gap-4">
+          <NextImage src="https://ellavarkkumai.frameforge.one/LOGO.png" alt="Logo" width={48} height={48} className="h-8 md:h-12 w-auto" unoptimized />
+          <span className="font-heading text-xl md:text-2xl font-black tracking-tighter hidden sm:block">ELLAVARKKUM <span className="text-blue-600">AI</span></span>
         </div>
         
         {step !== 'otp-request' && step !== 'otp-verify' && (
@@ -561,7 +560,7 @@ export default function EllavarkkumPage() {
         )}
       </nav>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-24 relative z-10">
+      <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 py-20 md:py-32 relative z-10">
         <AnimatePresence mode="wait">
           
           {/* STEP: OTP REQUEST */}
@@ -575,16 +574,16 @@ export default function EllavarkkumPage() {
             >
               {/* Left Side: Showcase */}
               <div className="space-y-8 order-1 lg:order-1">
-                <div>
-                  <h1 className="text-5xl lg:text-7xl font-heading font-black tracking-tight leading-[1.1] mb-6">
+                <div className="text-center lg:text-left">
+                  <h1 className="text-4xl sm:text-5xl lg:text-7xl font-heading font-black tracking-tight leading-[1.1] mb-6">
                     Ellavarkkum <span className="text-[#e1007a]">AI Frames</span>
                   </h1>
-                  <p className="text-xl text-slate-500 max-w-md">
+                  <p className="text-lg sm:text-xl text-slate-500 max-w-md mx-auto lg:mx-0">
                     Generate creative images for you.
                   </p>
                 </div>
 
-                <div className="flex gap-4 p-4 bg-slate-50 rounded-[40px] border border-slate-100 shadow-inner">
+                <div className="flex flex-col sm:flex-row gap-4 p-4 sm:p-6 bg-slate-50 rounded-[40px] border border-slate-100 shadow-inner">
                   <div className="flex-1 space-y-3">
                     <div className="aspect-[4/5] relative rounded-[24px] overflow-hidden shadow-md">
                       <NextImage src="/BEFORE.webp" alt="Before" fill className="object-cover" unoptimized />
@@ -606,13 +605,13 @@ export default function EllavarkkumPage() {
               </div>
 
               {/* Right Side: Login Form */}
-              <div className="flex justify-center order-2 lg:order-2">
-                <div className="w-full max-w-md glass-panel p-10 rounded-[40px] shadow-2xl border border-slate-100 relative overflow-hidden">
+              <div className="flex justify-center order-2 lg:order-2 w-full px-2">
+                <div className="w-full max-w-md glass-panel p-6 sm:p-10 rounded-[40px] shadow-2xl border border-slate-100 relative overflow-hidden mx-auto">
                   <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-[#e1007a] via-[#0077ff] to-[#e1007a]" />
                   
-                  <div className="mb-10 text-center">
-                    <h2 className="text-4xl font-heading font-black mb-3">Sign In.</h2>
-                    <p className="text-slate-500">Access your Ellavarkkum AI Generator.</p>
+                  <div className="mb-8 sm:mb-10 text-center">
+                    <h2 className="text-3xl sm:text-4xl font-heading font-black mb-3">Sign In.</h2>
+                    <p className="text-slate-500 text-sm sm:text-base">Access your Ellavarkkum AI Generator.</p>
                   </div>
 
                   <form onSubmit={handleRequestOtp} className="space-y-6">
@@ -718,10 +717,10 @@ export default function EllavarkkumPage() {
                   </button>
                 </div>
 
-                <div className="mb-6">
-                  <h2 className="text-4xl font-heading font-black mb-1 tracking-tight leading-[1.1]">Ellavarkkum AI <span className="text-[#e1007a]">Frame Generator</span></h2>
+                <div className="mb-8 text-center lg:text-left">
+                  <h2 className="text-3xl sm:text-4xl font-heading font-black mb-1 tracking-tight leading-[1.1]">Ellavarkkum AI <span className="text-[#e1007a]">Frame Generator</span></h2>
                   <p className="text-[10px] uppercase tracking-[0.3em] font-bold text-slate-400 mb-6">Powered by Frame Forge</p>
-                  <p className="text-xl text-slate-500">Fill the form and upload your photo to generate the frame for Ellavarkkum AI. You can see the preview down in a better way.</p>
+                  <p className="text-lg sm:text-xl text-slate-500">Fill the form and upload your photo to generate the frame for Ellavarkkum AI. You can see the preview down in a better way.</p>
                 </div>
 
                 <div className="glass-panel p-10 rounded-[40px] border border-slate-100 shadow-xl space-y-8 h-full">
@@ -891,9 +890,9 @@ export default function EllavarkkumPage() {
                   Generation Complete
                 </div>
 
-                <div>
-                  <h2 className="text-6xl font-heading font-black mb-6 tracking-tight leading-[1.1]">Your Persona is <span className="text-[#e1007a]">Perfect</span>.</h2>
-                  <p className="text-xl text-slate-500 leading-relaxed">We&apos;ve generated your custom AI portrait. It&apos;s high-resolution, professional, and ready to share.</p>
+                <div className="text-center lg:text-left">
+                  <h2 className="text-4xl sm:text-6xl font-heading font-black mb-6 tracking-tight leading-[1.1]">Your Persona is <span className="text-[#e1007a]">Perfect</span>.</h2>
+                  <p className="text-lg sm:text-xl text-slate-500 leading-relaxed">We&apos;ve generated your custom AI portrait. It&apos;s high-resolution, professional, and ready to share.</p>
                 </div>
                 
                 <div className="flex flex-col gap-4 mt-8">
@@ -961,7 +960,7 @@ export default function EllavarkkumPage() {
           <motion.div 
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mt-40 w-full glass-panel p-12 rounded-[50px] border border-slate-100 shadow-2xl"
+            className="mt-20 md:mt-40 w-full glass-panel p-6 sm:p-12 rounded-[40px] md:rounded-[50px] border border-slate-100 shadow-2xl overflow-hidden"
           >
             <div className="flex flex-col md:flex-row justify-between items-end md:items-center gap-6 mb-12">
               <div>
