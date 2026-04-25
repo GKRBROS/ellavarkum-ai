@@ -14,7 +14,7 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: "ELLAVARKUM AI",
+  title: "ELLAVARKKUM AI",
   description: "Generate premium AI images for your business.",
   icons: {
     icon: "/LOGO.png",

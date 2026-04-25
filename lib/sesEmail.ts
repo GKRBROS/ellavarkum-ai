@@ -62,11 +62,11 @@ const getDefaultLogoUrl = (publicUrl: string) => {
   if (publicUrl) {
     return `${publicUrl.replace(/\/$/, '')}/LOGO.png`;
   }
-  return 'https://ellavarkumai.frameforge.one/LOGO.png'; // Fallback if app URL is known
+  return 'https://ELLAVARKKUMai.frameforge.one/LOGO.png'; // Fallback if app URL is known
 };
 
 const buildOtpEmailText = (otp: string, helpCenterUrl: string, appUrl: string) => [
-  'Elavarkum AI verification code',
+  'Ellavarkkum AI verification code',
   '',
   'Hello,',
   '',
@@ -78,7 +78,7 @@ const buildOtpEmailText = (otp: string, helpCenterUrl: string, appUrl: string) =
   `Help Center: ${helpCenterUrl}`,
   `Frame Forge: ${appUrl}`,
   '',
-  `Copyright ${new Date().getFullYear()} Elavarkum AI. All rights reserved.`,
+  `Copyright ${new Date().getFullYear()} Ellavarkkum AI. All rights reserved.`,
 ].join('\n');
 
 const buildOtpEmailHtml = (otp: string, helpCenterUrl: string, logoUrl: string) => `
@@ -88,7 +88,7 @@ const buildOtpEmailHtml = (otp: string, helpCenterUrl: string, logoUrl: string) 
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-    <title>Elavarkum AI OTP</title>
+    <title>Ellavarkkum AI OTP</title>
   </head>
   <body
     style="
@@ -129,7 +129,7 @@ const buildOtpEmailHtml = (otp: string, helpCenterUrl: string, logoUrl: string) 
                       </td>
                       <td style="padding-left: 10px; vertical-align: middle;">
                         <span style="font-size: 16px; line-height: 30px; font-weight: 600; color: #1f1f1f; letter-spacing: 0.5px;">
-                          ELAVARKUM AI
+                          Ellavarkkum AI
                         </span>
                       </td>
                     </tr>
@@ -207,26 +207,6 @@ const buildOtpEmailHtml = (otp: string, helpCenterUrl: string, logoUrl: string) 
           </div>
         </div>
 
-        <p
-          style="
-            max-width: 400px;
-            margin: 0 auto;
-            margin-top: 30px;
-            text-align: center;
-            font-size: 14px;
-            color: #8c8c8c;
-            font-weight: 300;
-          "
-        >
-          If you have any questions, feel free to visit our
-          <a
-            href="${helpCenterUrl}"
-            target="_blank"
-            style="color: #434343; text-decoration: underline"
-            >Help Center</a
-          >
-          or contact us.
-        </p>
       </main>
 
       <footer
@@ -246,7 +226,7 @@ const buildOtpEmailHtml = (otp: string, helpCenterUrl: string, logoUrl: string) 
             color: #434343;
           "
         >
-          Copyright © ${new Date().getFullYear()} Elavarkum AI. All rights reserved.
+          Copyright © ${new Date().getFullYear()} Ellavarkkum AI. All rights reserved.
         </p>
       </footer>
     </div>
@@ -267,7 +247,7 @@ const buildFinalImageEmailText = (name: string, imageUrl: string, appUrl: string
   '',
   `Frame Forge: ${appUrl}`,
   '',
-  `Copyright ${new Date().getFullYear()} Elavarkum AI. All rights reserved.`,
+  `Copyright ${new Date().getFullYear()} Ellavarkkum AI. All rights reserved.`,
 ].join('\n');
 
 const buildFinalImageEmailHtml = (name: string, imageUrl: string, helpCenterUrl: string, logoUrl: string) => `
@@ -308,7 +288,7 @@ const buildFinalImageEmailHtml = (name: string, imageUrl: string, helpCenterUrl:
                       <td style="padding: 0; vertical-align: middle;">
                         <span style="display: inline-block; background: #ffffff; padding: 6px 10px; border-radius: 14px; line-height: 0;">
                           <img
-                            alt="ELAVARKUM AI"
+                            alt="Ellavarkkum AI"
                             src="${logoUrl}"
                             width="110"
                             style="display: block; border: 0; outline: none; text-decoration: none;"
@@ -317,7 +297,7 @@ const buildFinalImageEmailHtml = (name: string, imageUrl: string, helpCenterUrl:
                       </td>
                       <td style="padding-left: 10px; vertical-align: middle;">
                         <span style="font-size: 16px; line-height: 30px; font-weight: 600; color: #1f1f1f; letter-spacing: 0.5px;">
-                          ELAVARKUM AI
+                          Ellavarkkum AI
                         </span>
                       </td>
                     </tr>
@@ -404,26 +384,6 @@ const buildFinalImageEmailHtml = (name: string, imageUrl: string, helpCenterUrl:
           </div>
         </div>
 
-        <p
-          style="
-            max-width: 400px;
-            margin: 0 auto;
-            margin-top: 30px;
-            text-align: center;
-            font-size: 14px;
-            color: #8c8c8c;
-            font-weight: 300;
-          "
-        >
-          If you have any questions, feel free to visit our
-          <a
-            href="${helpCenterUrl}"
-            target="_blank"
-            style="color: #434343; text-decoration: underline"
-            >Help Center</a
-          >
-          or contact us.
-        </p>
       </main>
 
       <footer
@@ -443,7 +403,7 @@ const buildFinalImageEmailHtml = (name: string, imageUrl: string, helpCenterUrl:
             color: #434343;
           "
         >
-          Copyright © ${new Date().getFullYear()} Elavarkum AI. All rights reserved.
+          Copyright © ${new Date().getFullYear()} Ellavarkkum AI. All rights reserved.
         </p>
       </footer>
     </div>
@@ -465,7 +425,7 @@ const buildAdminWelcomeEmailText = (name: string, adminUrl: string, appUrl: stri
   '',
   `Frame Forge: ${appUrl}`,
   '',
-  `Copyright ${new Date().getFullYear()} Elavarkum AI. All rights reserved.`,
+  `Copyright ${new Date().getFullYear()} Ellavarkkum AI. All rights reserved.`,
 ].join('\n');
 
 const buildAdminWelcomeEmailHtml = (name: string, adminUrl: string, helpCenterUrl: string, logoUrl: string) => `
@@ -506,7 +466,7 @@ const buildAdminWelcomeEmailHtml = (name: string, adminUrl: string, helpCenterUr
                       <td style="padding: 0; vertical-align: middle;">
                         <span style="display: inline-block; background: #ffffff; padding: 6px 10px; border-radius: 14px; line-height: 0;">
                           <img
-                            alt="ELAVARKUM AI"
+                            alt="Ellavarkkum AI"
                             src="${logoUrl}"
                             width="110"
                             style="display: block; border: 0; outline: none; text-decoration: none;"
@@ -515,7 +475,7 @@ const buildAdminWelcomeEmailHtml = (name: string, adminUrl: string, helpCenterUr
                       </td>
                       <td style="padding-left: 10px; vertical-align: middle;">
                         <span style="font-size: 16px; line-height: 30px; font-weight: 600; color: #1f1f1f; letter-spacing: 0.5px;">
-                          ELAVARKUM AI
+                          Ellavarkkum AI
                         </span>
                       </td>
                     </tr>
@@ -598,26 +558,6 @@ const buildAdminWelcomeEmailHtml = (name: string, adminUrl: string, helpCenterUr
           </div>
         </div>
 
-        <p
-          style="
-            max-width: 400px;
-            margin: 0 auto;
-            margin-top: 30px;
-            text-align: center;
-            font-size: 14px;
-            color: #8c8c8c;
-            font-weight: 300;
-          "
-        >
-          If you have any questions about your admin access, feel free to visit our
-          <a
-            href="${helpCenterUrl}"
-            target="_blank"
-            style="color: #434343; text-decoration: underline"
-            >Help Center</a
-          >
-          or contact the platform owner.
-        </p>
       </main>
 
       <footer
@@ -637,7 +577,7 @@ const buildAdminWelcomeEmailHtml = (name: string, adminUrl: string, helpCenterUr
             color: #434343;
           "
         >
-          Copyright © ${new Date().getFullYear()} Elavarkum AI. All rights reserved.
+          Copyright © ${new Date().getFullYear()} Ellavarkkum AI. All rights reserved.
         </p>
       </footer>
     </div>
@@ -651,7 +591,7 @@ export const sendOtpEmail = async (input: { to: string; otp: string }) => {
   }
 
   const client = getSesClient();
-  const subject = 'Elavarkum AI email verification code (valid for 10 minutes)';
+  const subject = 'Ellavarkkum AI email verification code (valid for 10 minutes)';
   const publicUrl = isPublicAppUrl(APP_URL) ? APP_URL : '';
   const helpCenterUrl = publicUrl || 'https://frameforge.one';
   const logoUrl = SES_LOGO_URL
@@ -661,7 +601,7 @@ export const sendOtpEmail = async (input: { to: string; otp: string }) => {
 
   const response = await client.send(
     new SendEmailCommand({
-      Source: `Elavarkum AI Security <${SENDER_EMAIL}>`,
+      Source: `Ellavarkkum AI Security <${SENDER_EMAIL}>`,
       ReturnPath: RETURN_PATH_EMAIL,
       ReplyToAddresses: [REPLY_TO_EMAIL],
       Destination: {

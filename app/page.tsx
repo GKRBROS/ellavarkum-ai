@@ -15,7 +15,7 @@ const GEN_TIME = 50; // seconds
 const CANVAS_WIDTH = 1080;
 const CANVAS_HEIGHT = 1350;
 
-export default function ElavarkumPage() {
+export default function EllavarkkumPage() {
   const [step, setStep] = useState<Step>('otp-request');
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
@@ -30,6 +30,7 @@ export default function ElavarkumPage() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [adminData, setAdminData] = useState<any[]>([]);
   const [showGuidelines, setShowGuidelines] = useState(false);
+  const [showSpamModal, setShowSpamModal] = useState(false);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -154,7 +155,7 @@ export default function ElavarkumPage() {
   useEffect(() => {
     generateExamplePreview();
     
-    const savedSession = localStorage.getItem('elavarkum_session');
+    const savedSession = localStorage.getItem('Ellavarkkum_session');
     if (savedSession) {
       try {
         const { email: savedEmail, step: savedStep, imageUrl: savedImageUrl } = JSON.parse(savedSession);
@@ -168,7 +169,7 @@ export default function ElavarkumPage() {
           setIsAdmin(savedEmail === ADMIN_EMAIL);
           
           const syncTries = async () => {
-            const { data } = await supabase.from('elavarkum_requests').select('tries_left, generated_image_url').eq('email', savedEmail).maybeSingle();
+            const { data } = await supabase.from('Ellavarkkum_requests').select('tries_left, generated_image_url').eq('email', savedEmail).maybeSingle();
             if (data) {
               setTriesLeft(data.tries_left);
             }
@@ -180,25 +181,29 @@ export default function ElavarkumPage() {
           setIsAdmin(savedEmail === ADMIN_EMAIL);
         } else {
           // Logout on refresh for any other state
-          localStorage.removeItem('elavarkum_session');
+          localStorage.removeItem('Ellavarkkum_session');
         }
       } catch (e) {
-        localStorage.removeItem('elavarkum_session');
+        localStorage.removeItem('Ellavarkkum_session');
       }
     }
   }, [generateExamplePreview]);
 
   // --- Handlers ---
 
-  const handleRequestOtp = async (e: React.FormEvent) => {
+  const handleRequestOtp = (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) return;
+    setShowSpamModal(true);
+  };
+
+  const confirmRequestOtp = async () => {
+    setShowSpamModal(false);
     setIsLoading(true);
 
     try {
       const currentTries = 3;
-      // Call the real API to send email
-      const response = await fetch('/api/elavarkum/request-otp', {
+      const response = await fetch('/api/Ellavarkkum/request-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email })
@@ -223,7 +228,7 @@ export default function ElavarkumPage() {
 
     try {
       const { data, error } = await supabase
-        .from('elavarkum_requests')
+        .from('Ellavarkkum_requests')
         .select('*')
         .eq('email', email)
         .eq('otp_code', otp)
@@ -242,7 +247,7 @@ export default function ElavarkumPage() {
 
       // Update status in DB
       await supabase
-        .from('elavarkum_requests')
+        .from('Ellavarkkum_requests')
         .update({ status: 'verified' })
         .eq('email', email);
 
@@ -255,7 +260,7 @@ export default function ElavarkumPage() {
       setStep('form');
       
       // Save session with step
-      localStorage.setItem('elavarkum_session', JSON.stringify({ email, step: 'form' }));
+      localStorage.setItem('Ellavarkkum_session', JSON.stringify({ email, step: 'form' }));
       
       toast.success('Identity verified!');
     } catch (err: any) {
@@ -266,7 +271,7 @@ export default function ElavarkumPage() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('elavarkum_session');
+    localStorage.removeItem('Ellavarkkum_session');
     setStep('otp-request');
     setEmail('');
     setOtp('');
@@ -306,7 +311,7 @@ export default function ElavarkumPage() {
     }
 
     setStep('processing');
-    localStorage.setItem('elavarkum_session', JSON.stringify({ email, step: 'processing' }));
+    localStorage.setItem('Ellavarkkum_session', JSON.stringify({ email, step: 'processing' }));
     setTimer(GEN_TIME);
 
     // Start countdown
@@ -360,7 +365,7 @@ export default function ElavarkumPage() {
       setFinalImageUrl(data.finalImageUrl);
       
       // Save result state with image URL
-      localStorage.setItem('elavarkum_session', JSON.stringify({ 
+      localStorage.setItem('Ellavarkkum_session', JSON.stringify({ 
         email, 
         step: 'result', 
         imageUrl: data.finalImageUrl 
@@ -385,7 +390,7 @@ export default function ElavarkumPage() {
 
   const fetchAdminData = async () => {
     const { data, error } = await supabase
-      .from('elavarkum_requests')
+      .from('Ellavarkkum_requests')
       .select('*')
       .order('created_at', { ascending: false });
     if (data) setAdminData(data);
@@ -396,7 +401,7 @@ export default function ElavarkumPage() {
     if (!confirm('Are you sure you want to clear all user data?')) return;
     
     const { error } = await supabase
-      .from('elavarkum_requests')
+      .from('Ellavarkkum_requests')
       .delete()
       .neq('email', ADMIN_EMAIL);
     
@@ -411,7 +416,7 @@ export default function ElavarkumPage() {
   const handleAddTry = async (userEmail: string, currentTries: number) => {
     if (!isAdmin) return;
     const { error } = await supabase
-      .from('elavarkum_requests')
+      .from('Ellavarkkum_requests')
       .update({ tries_left: currentTries + 1 })
       .eq('email', userEmail);
     
@@ -427,10 +432,10 @@ export default function ElavarkumPage() {
     if (!finalImageUrl) return;
     try {
       // Use our internal proxy which forces Content-Disposition: attachment
-      const downloadUrl = `/api/assets/download?url=${encodeURIComponent(finalImageUrl)}&download=1&filename=elavarkum_ai_${Date.now()}.png`;
+      const downloadUrl = `/api/assets/download?url=${encodeURIComponent(finalImageUrl)}&download=1&filename=Ellavarkkum_ai_${Date.now()}.png`;
       const link = document.createElement('a');
       link.href = downloadUrl;
-      link.download = `elavarkum_ai_${Date.now()}.png`;
+      link.download = `Ellavarkkum_ai_${Date.now()}.png`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -450,7 +455,7 @@ export default function ElavarkumPage() {
       setName('');
       
       // Update session to form state
-      localStorage.setItem('elavarkum_session', JSON.stringify({ email, step: 'form' }));
+      localStorage.setItem('Ellavarkkum_session', JSON.stringify({ email, step: 'form' }));
     } else {
       toast.error('No tries left. Please contact support.');
     }
@@ -494,11 +499,34 @@ export default function ElavarkumPage() {
         </div>
       )}
 
+      {/* Spam Modal */}
+      {showSpamModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+          <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-white p-8 rounded-[40px] max-w-sm w-full shadow-2xl text-center">
+            <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
+              <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <h3 className="text-2xl font-black mb-3 text-slate-900">Check Your Inbox</h3>
+            <p className="text-slate-500 mb-8 leading-relaxed">
+              If you don&apos;t see the email within a minute, please check your <span className="font-bold text-slate-900">Spam or Junk folder</span>.
+            </p>
+            <button 
+              onClick={confirmRequestOtp} 
+              className="w-full py-4 bg-blue-600 text-white rounded-full font-bold text-lg hover:bg-blue-700 shadow-lg shadow-blue-100 transition-all active:scale-95"
+            >
+              Okay
+            </button>
+          </motion.div>
+        </div>
+      )}
+
       {/* Navbar */}
       <nav className="fixed top-0 left-0 right-0 z-50 px-8 py-4 flex justify-between items-center glass-panel">
         <div className="flex items-center gap-4">
-          <NextImage src="https://ellavarkumai.frameforge.one/LOGO.png" alt="Logo" width={48} height={48} className="h-10 md:h-12 w-auto" unoptimized />
-          <span className="font-heading text-2xl font-black tracking-tighter hidden sm:block">ELLAVARKUM <span className="text-blue-600">AI</span></span>
+          <NextImage src="https://ELLAVARKKUMai.frameforge.one/LOGO.png" alt="Logo" width={48} height={48} className="h-10 md:h-12 w-auto" unoptimized />
+          <span className="font-heading text-2xl font-black tracking-tighter hidden sm:block">ELLAVARKKUM <span className="text-blue-600">AI</span></span>
         </div>
         
         {step !== 'otp-request' && step !== 'otp-verify' && (
@@ -529,35 +557,70 @@ export default function ElavarkumPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="flex flex-col items-center"
+              className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center max-w-6xl w-full"
             >
-              <div className="w-full max-w-md glass-panel p-10 rounded-[40px] shadow-2xl border border-slate-100 relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-[#e1007a] via-[#0077ff] to-[#e1007a]" />
-                
-                <div className="mb-10 text-center">
-                  <h2 className="text-4xl font-heading font-black mb-3">Get Started.</h2>
-                  <p className="text-slate-500">Enter your business email to access the AI generator.</p>
+              {/* Left Side: Showcase */}
+              <div className="space-y-8 order-1 lg:order-1">
+                <div>
+                  <h1 className="text-5xl lg:text-7xl font-heading font-black tracking-tight leading-[1.1] mb-6">
+                    Ellavarkkum <span className="text-[#e1007a]">AI Frames</span>
+                  </h1>
+                  <p className="text-xl text-slate-500 max-w-md">
+                    Generate creative images for you.
+                  </p>
                 </div>
 
-                <form onSubmit={handleRequestOtp} className="space-y-6">
-                  <div className="space-y-2">
-                    <label className="text-[10px] uppercase tracking-[0.2em] font-bold text-slate-400 ml-4">Email Address</label>
-                    <input 
-                      type="email" 
-                      required
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="you@company.com"
-                      className="w-full px-6 py-4 rounded-full border border-slate-200 focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all text-lg"
-                    />
+                <div className="flex gap-4 p-4 bg-slate-50 rounded-[40px] border border-slate-100 shadow-inner">
+                  <div className="flex-1 space-y-3">
+                    <div className="aspect-[4/5] relative rounded-[24px] overflow-hidden shadow-md">
+                      <NextImage src="/BEFORE.webp" alt="Before" fill className="object-cover" unoptimized />
+                    </div>
+                    <p className="text-center text-[10px] font-black uppercase tracking-widest text-slate-400">Casual Photo</p>
                   </div>
-                  <button 
-                    disabled={isLoading}
-                    className="w-full py-5 bg-blue-600 text-white rounded-full font-bold text-lg hover:bg-blue-700 hover:shadow-xl hover:shadow-blue-200 transition-all active:scale-95 disabled:opacity-50"
-                  >
-                    {isLoading ? 'Sending OTP...' : 'Send Access Code'}
-                  </button>
-                </form>
+                  <div className="flex-1 space-y-3">
+                    <div className="aspect-[4/5] relative rounded-[24px] overflow-hidden shadow-xl border-2 border-blue-100">
+                      <NextImage src="/AFTER.webp" alt="After" fill className="object-cover" unoptimized />
+                      <div className="absolute top-2 right-2 bg-blue-600 text-white p-1 rounded-full shadow-lg">
+                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                    </div>
+                    <p className="text-center text-[10px] font-black uppercase tracking-widest text-blue-600">AI Frame</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Side: Login Form */}
+              <div className="flex justify-center order-2 lg:order-2">
+                <div className="w-full max-w-md glass-panel p-10 rounded-[40px] shadow-2xl border border-slate-100 relative overflow-hidden">
+                  <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-[#e1007a] via-[#0077ff] to-[#e1007a]" />
+                  
+                  <div className="mb-10 text-center">
+                    <h2 className="text-4xl font-heading font-black mb-3">Sign In.</h2>
+                    <p className="text-slate-500">Access your Ellavarkkum AI Generator.</p>
+                  </div>
+
+                  <form onSubmit={handleRequestOtp} className="space-y-6">
+                    <div className="space-y-2">
+                      <label className="text-[10px] uppercase tracking-[0.2em] font-bold text-slate-400 ml-4">Email Address</label>
+                      <input 
+                        type="email" 
+                        required
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="you@company.com"
+                        className="w-full px-6 py-4 rounded-full border border-slate-200 focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all text-lg"
+                      />
+                    </div>
+                    <button 
+                      disabled={isLoading}
+                      className="w-full py-5 bg-blue-600 text-white rounded-full font-bold text-lg hover:bg-blue-700 hover:shadow-xl hover:shadow-blue-200 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                    >
+                      {isLoading ? 'Sending OTP...' : 'Send Access Code'}
+                    </button>
+                  </form>
+                </div>
               </div>
             </motion.div>
           )}
@@ -596,15 +659,10 @@ export default function ElavarkumPage() {
                     disabled={isLoading}
                     className="w-full py-5 bg-blue-600 text-white rounded-full font-bold text-lg hover:bg-blue-700 hover:shadow-xl hover:shadow-blue-200 transition-all active:scale-95 disabled:opacity-50"
                   >
-                    {isLoading ? 'Verifying...' : 'Access Dashboard'}
+                    {isLoading ? 'Verifying...' : 'ELLAVARKKUM AI IMAGE GENERATOR'}
                   </button>
                 </form>
 
-                <div className="mt-10 p-5 bg-blue-50/50 border border-blue-100 rounded-3xl">
-                  <p className="text-sm text-blue-800 leading-relaxed">
-                    <span className="font-bold">Pro Tip:</span> If you don&apos;t see the email, please check your <span className="underline decoration-blue-300">Spam or Junk</span> folder. It sometimes lands there!
-                  </p>
-                </div>
               </div>
             </motion.div>
           )}
@@ -615,7 +673,7 @@ export default function ElavarkumPage() {
               key="form"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start"
+              className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-start"
             >
               {/* Form Side */}
               <div className="space-y-10">
@@ -633,8 +691,9 @@ export default function ElavarkumPage() {
                 </div>
 
                 <div className="mb-6">
-                  <h2 className="text-5xl font-heading font-black mb-4 tracking-tight">Create your <span className="text-[#e1007a]">AI Persona</span>.</h2>
-                  <p className="text-xl text-slate-500">Transform your photo into a premium professional portrait in seconds.</p>
+                  <h2 className="text-4xl font-heading font-black mb-1 tracking-tight leading-[1.1]">Ellavarkkum AI <span className="text-[#e1007a]">Frame Generator</span></h2>
+                  <p className="text-[10px] uppercase tracking-[0.3em] font-bold text-slate-400 mb-6">Powered by Frame Forge</p>
+                  <p className="text-xl text-slate-500">Fill the form and upload your photo to generate the frame for Ellavarkkum AI. You can see the preview down in a better way.</p>
                 </div>
 
                 <div className="glass-panel p-10 rounded-[40px] border border-slate-100 shadow-xl space-y-8 h-full">
@@ -730,7 +789,7 @@ export default function ElavarkumPage() {
               <div className="lg:h-full">
                 <div className="relative h-full bg-[#020617] rounded-[40px] overflow-hidden shadow-2xl border border-slate-200 group min-h-[600px]">
                   <div className="w-full h-full flex flex-col items-center justify-center relative">
-                    <NextImage src="/example.webp" alt="Example" width={1080} height={1350} className="w-full h-full object-contain" />
+                    <NextImage src="/AFTER.webp" alt="Reference" width={1080} height={1350} className="w-full h-full object-contain" unoptimized />
                     <div className="absolute top-6 right-6 bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full shadow-lg border border-slate-100">
                       <span className="text-[#0077ff] font-bold text-xs uppercase tracking-widest">Reference Portrait</span>
                     </div>
@@ -879,7 +938,7 @@ export default function ElavarkumPage() {
             <div className="flex flex-col md:flex-row justify-between items-end md:items-center gap-6 mb-12">
               <div>
                 <h3 className="text-4xl font-heading font-black mb-2">Admin Dashboard</h3>
-                <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">Managing Elavarkum AI Records</p>
+                <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">Managing Ellavarkkum AI Records</p>
               </div>
               <div className="flex gap-4">
                 <button 
@@ -951,8 +1010,8 @@ export default function ElavarkumPage() {
       <footer className="py-12 border-t border-slate-100 bg-slate-50/30">
         <div className="max-w-7xl mx-auto px-8 flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="flex items-center gap-4">
-            <NextImage src="https://ellavarkumai.frameforge.one/LOGO.png" alt="Elavarkum AI" width={32} height={32} className="h-8 w-auto" unoptimized />
-            <span className="text-slate-400 text-sm font-medium">© {new Date().getFullYear()} Elavarkum AI. All rights reserved.</span>
+            <NextImage src="https://ELLAVARKKUMai.frameforge.one/LOGO.png" alt="Ellavarkkum AI" width={32} height={32} className="h-8 w-auto" unoptimized />
+            <span className="text-slate-400 text-sm font-medium">© {new Date().getFullYear()} Ellavarkkum AI. All rights reserved.</span>
           </div>
           <div className="flex items-center gap-3">
             <span className="text-slate-500 text-xs font-bold uppercase tracking-widest">Powered by</span>
