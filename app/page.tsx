@@ -14,6 +14,42 @@ const GEN_TIME = 40; // seconds
 const CANVAS_WIDTH = 1080;
 const CANVAS_HEIGHT = 1350;
 
+// --- Sub-components ---
+const SlideshowFallback = () => {
+  const [index, setIndex] = useState(0);
+  useEffect(() => {
+    const timer = setInterval(() => setIndex(prev => (prev === 0 ? 1 : 0)), 3000);
+    return () => clearInterval(timer);
+  }, []);
+
+  return (
+    <div className="w-full h-full relative overflow-hidden bg-slate-900">
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={index}
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -20 }}
+          className="absolute inset-0"
+        >
+          <NextImage 
+            src={index === 0 ? "/BEFORE.webp" : "/AFTER.webp"} 
+            alt="Step" 
+            fill 
+            className="object-cover"
+            unoptimized
+          />
+          <div className="absolute bottom-6 right-6 px-4 py-2 bg-white/10 backdrop-blur-md rounded-full border border-white/20">
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white">
+              {index === 0 ? "Before" : "After"}
+            </span>
+          </div>
+        </motion.div>
+      </AnimatePresence>
+    </div>
+  );
+};
+
 export default function EllavarkkumPage() {
   const [step, setStep] = useState<Step>('otp-request');
   const [email, setEmail] = useState('');
@@ -29,6 +65,7 @@ export default function EllavarkkumPage() {
   const [showGuidelines, setShowGuidelines] = useState(false);
   const [showSpamModal, setShowSpamModal] = useState(false);
   const [scrollPosition, setScrollPosition] = useState<'top' | 'bottom' | 'middle'>('top');
+  const [isVideoLoaded, setIsVideoLoaded] = useState(false);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -525,22 +562,32 @@ export default function EllavarkkumPage() {
                   </p>
                 </div>
 
-                <div className="relative rounded-[32px] overflow-hidden shadow-2xl bg-black border border-slate-100 group">
-                  <div className="absolute inset-0 flex items-center justify-center bg-slate-900/10 z-0">
-                    <div className="w-8 h-8 border-4 border-white/20 border-t-white rounded-full animate-spin" />
-                  </div>
+                <div className="relative rounded-[32px] overflow-hidden shadow-2xl bg-black border border-slate-100 group min-h-[400px]">
+                  <AnimatePresence>
+                    {!isVideoLoaded && (
+                      <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="absolute inset-0 z-20 bg-slate-900"
+                      >
+                        <SlideshowFallback />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
                   <video 
                     autoPlay 
                     muted 
                     loop 
                     playsInline 
-                    poster="/AFTER.webp"
-                    className="w-full h-auto relative z-10 block"
+                    onCanPlay={() => setIsVideoLoaded(true)}
+                    className={`w-full h-auto relative z-10 block transition-opacity duration-1000 ${isVideoLoaded ? 'opacity-100' : 'opacity-0'}`}
                   >
                     <source src="/before_after.mp4" type="video/mp4" />
-                    Your browser does not support the video tag.
                   </video>
-                  <div className="absolute bottom-6 left-6 right-6 flex justify-between items-center z-20">
+                  
+                  <div className="absolute bottom-6 left-6 right-6 flex justify-between items-center z-30">
                     <div className="px-4 py-1.5 bg-black/40 backdrop-blur-md rounded-full border border-white/20">
                       <p className="text-[10px] font-black uppercase tracking-widest text-white">How it Works</p>
                     </div>
