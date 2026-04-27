@@ -1,7 +1,8 @@
-import { NextRequest } from 'next/server';
 import { apiJson, handleCorsPreflight, rejectIfOriginNotAllowed } from '@/lib/apiSecurity';
-import { validateAdminEmail } from '@/lib/adminAuth';
 import { getSupabaseClient } from '@/lib/supabase';
+import { hashOtp, normalizePhone, verifyOtpHash } from '@/lib/generationFlow';
+import { validateAdminPhone } from '@/lib/adminAuth';
+import { NextRequest } from 'next/server';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -15,27 +16,26 @@ export async function POST(request: NextRequest) {
   if (originError) return originError;
 
   try {
-    const { email, otp } = await request.json();
+    const { phone, otp } = await request.json();
 
-    if (!email || !otp) {
-      return apiJson(request, { error: 'Email and verification code are required' }, { status: 400 });
+    if (!phone || !otp) {
+      return apiJson(request, { error: 'Phone number and verification code are required' }, { status: 400 });
     }
 
+    const normalizedPhone = normalizePhone(phone);
     const supabase = getSupabaseClient();
 
-    // 1. Check if the email is a registered admin
-    const admin = await validateAdminEmail(email);
+    // 1. Check if the phone is a registered admin
+    const admin = await validateAdminPhone(normalizedPhone);
     if (!admin) {
       return apiJson(request, { error: 'Access denied' }, { status: 403 });
     }
 
     // 2. Fetch the latest OTP for this admin
-    // We already have a unique constraint on email, but order by updated_at just in case 
-    // to always get the most recent one if duplicates exist before cleanup.
     const { data: otpRow, error: selectError } = await supabase
       .from('admin_otps')
       .select('id, otp_code_hash, otp_expires_at, is_verified, verification_attempts')
-      .eq('email', email)
+      .eq('phone', normalizedPhone)
       .order('updated_at', { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (!otpRow) {
-      return apiJson(request, { error: 'No verification request found for this email' }, { status: 404 });
+      return apiJson(request, { error: 'No verification request found for this phone number' }, { status: 404 });
     }
 
     // 3. Check if already verified
@@ -66,8 +66,10 @@ export async function POST(request: NextRequest) {
     }
 
     // 5. Verify the code
-    const hashedInput = Buffer.from(otp).toString('base64');
-    if (hashedInput !== otpRow.otp_code_hash) {
+    const providedHash = hashOtp(normalizedPhone, otp);
+    const isMatch = verifyOtpHash(providedHash, otpRow.otp_code_hash || '');
+
+    if (!isMatch) {
       // Increment verification attempts
       await supabase
         .from('admin_otps')
@@ -83,7 +85,7 @@ export async function POST(request: NextRequest) {
       .update({
         is_verified: true,
         otp_verified_at: new Date().toISOString(),
-        otp_code_hash: null, // Clear it out
+        otp_code_hash: null, // Clear it out after success
         verification_attempts: 0
       })
       .eq('id', otpRow.id);
@@ -97,7 +99,7 @@ export async function POST(request: NextRequest) {
       success: true,
       verified: true,
       admin: {
-        email: admin.email,
+        phone: admin.phone,
         name: admin.name
       }
     });

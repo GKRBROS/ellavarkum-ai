@@ -11,20 +11,31 @@ const DEV_FALLBACK_OTP_SECRET = crypto.randomBytes(32).toString('hex');
 
 export const IMAGE_GENERATION_TABLE = 'elavarkum_requests';
 
-export const normalizeEmail = (email: string) => email.trim().toLowerCase();
+export const normalizePhone = (phone: string) => phone.trim().replace(/\s+/g, '');
 
-export const generateOtp = () => crypto.randomInt(0, 1_000_000).toString().padStart(6, '0');
+export const generateOtp = () => crypto.randomInt(100_000, 1_000_000).toString();
 
-export const hashOtp = (email: string, otp: string) => {
+export const hashOtp = (phone: string, otp: string) => {
 	const secret = OTP_SECRET || (process.env.NODE_ENV === 'production' ? '' : DEV_FALLBACK_OTP_SECRET);
 	if (!secret) {
 		throw new Error('OTP_SECRET must be configured in production environments');
 	}
 
 	return crypto
-		.createHash('sha256')
-		.update(`${normalizeEmail(email)}:${otp}:${secret}`)
+		.createHmac('sha256', secret)
+		.update(`${normalizePhone(phone)}:${otp}`)
 		.digest('hex');
+};
+
+export const verifyOtpHash = (providedHash: string, storedHash: string) => {
+	try {
+		const provided = Buffer.from(providedHash, 'hex');
+		const stored = Buffer.from(storedHash, 'hex');
+		if (provided.length !== stored.length) return false;
+		return crypto.timingSafeEqual(provided, stored);
+	} catch (e) {
+		return false;
+	}
 };
 
 export const parseGender = (value: unknown): GenderOption => {
@@ -44,3 +55,5 @@ export const isOtpExpired = (expiresAt: string | null) => {
 	}
 	return Date.parse(expiresAt) <= Date.now();
 };
+
+export const normalizeEmail = (email: string) => email.trim().toLowerCase();

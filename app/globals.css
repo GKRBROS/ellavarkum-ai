@@ -77,6 +77,24 @@ h1, h2, h3, .font-heading {
   background: #94a3b8;
 }
 
+/* Slim scrollbar for dropdowns */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #e2e8f0;
+  border-radius: 999px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #cbd5e1;
+}
+
 /* Loading Spinner Blue */
 .spinner {
   border: 3px solid rgba(59, 130, 246, 0.1);

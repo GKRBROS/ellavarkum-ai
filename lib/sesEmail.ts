@@ -7,7 +7,7 @@ const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID?.trim() || '';
 const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY?.trim() || '';
 const SENDER_EMAIL = process.env.AWS_SES_FROM_EMAIL?.trim() || 'no-reply@mail.frameforge.one';
 const RETURN_PATH_EMAIL = process.env.AWS_SES_RETURN_PATH?.trim() || SENDER_EMAIL;
-const REPLY_TO_EMAIL = process.env.AWS_SES_REPLY_TO_EMAIL?.trim() || 'support@frameforge.one';
+const REPLY_TO_EMAIL = process.env.AWS_SES_REPLY_TO_EMAIL?.trim() || 'support@ellavarkkumai.frameforge.one';
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL?.trim() || 'http://localhost:3000';
 const SES_LOGO_URL = process.env.AWS_SES_LOGO_URL?.trim() || '';
 
@@ -235,7 +235,7 @@ const buildOtpEmailHtml = (otp: string, helpCenterUrl: string, logoUrl: string) 
 `;
 
 const buildFinalImageEmailText = (name: string, imageUrl: string, appUrl: string) => [
-  `Your Frame Forge image is ready, ${name}!`,
+  `Your Ellavarkkum AI image is ready, ${name}!`,
   '',
   'Hello,',
   '',
@@ -243,9 +243,9 @@ const buildFinalImageEmailText = (name: string, imageUrl: string, appUrl: string
   '',
   `${imageUrl}`,
   '',
-  'Thank you for using Frame Forge!',
+  'Thank you for using Ellavarkkum AI!',
   '',
-  `Frame Forge: ${appUrl}`,
+  `Ellavarkkum AI: ${appUrl}`,
   '',
   `Copyright ${new Date().getFullYear()} Ellavarkkum AI. All rights reserved.`,
 ].join('\n');
@@ -412,18 +412,18 @@ const buildFinalImageEmailHtml = (name: string, imageUrl: string, helpCenterUrl:
 `;
 
 const buildAdminWelcomeEmailText = (name: string, adminUrl: string, appUrl: string) => [
-  `Welcome to Frame Forge Admin, ${name}!`,
+  `Welcome to Ellavarkkum AI Admin, ${name}!`,
   '',
   'Hello,',
   '',
-  'You have been added as an administrator for Frame Forge. You can now access the admin dashboard to manage requests and monitor generation status.',
+  'You have been added as an administrator for Ellavarkkum AI. You can now access the admin dashboard to manage requests and monitor generation status.',
   '',
   `Admin Dashboard: ${adminUrl}`,
   '',
   'Thank you,',
-  'The Frame Forge Team',
+  'The Ellavarkkum AI Team',
   '',
-  `Frame Forge: ${appUrl}`,
+  `Ellavarkkum AI: ${appUrl}`,
   '',
   `Copyright ${new Date().getFullYear()} Ellavarkkum AI. All rights reserved.`,
 ].join('\n');
@@ -534,7 +534,7 @@ const buildAdminWelcomeEmailHtml = (name: string, adminUrl: string, helpCenterUr
                 line-height: 1.7;
               "
             >
-              You have been added as an administrator for <strong>Frame Forge</strong>. You can now access the dashboard to manage requests and monitor activity.
+              You have been added as an administrator for <strong>Ellavarkkum AI</strong>. You can now access the dashboard to manage requests and monitor activity.
             </p>
             
             <div style="margin-top: 40px;">
@@ -593,10 +593,10 @@ export const sendOtpEmail = async (input: { to: string; otp: string }) => {
   const client = getSesClient();
   const subject = 'Ellavarkkum AI email verification code (valid for 10 minutes)';
   const publicUrl = isPublicAppUrl(APP_URL) ? APP_URL : '';
-  const helpCenterUrl = publicUrl || 'https://frameforge.one';
+  const helpCenterUrl = publicUrl || 'https://ellavarkkumai.frameforge.one';
   const logoUrl = SES_LOGO_URL
     || getDefaultLogoUrl(publicUrl);
-  const appUrlTextLine = publicUrl || 'https://frameforge.one';
+  const appUrlTextLine = publicUrl || 'https://ellavarkkumai.frameforge.one';
   const textBody = buildOtpEmailText(input.otp, helpCenterUrl, appUrlTextLine);
 
   const response = await client.send(
@@ -635,18 +635,18 @@ export const sendAdminWelcomeEmail = async (input: { to: string; name: string })
   }
 
   const client = getSesClient();
-  const subject = 'Welcome to Frame Forge Admin';
+  const subject = 'Welcome to Ellavarkkum AI Admin';
   const publicUrl = isPublicAppUrl(APP_URL) ? APP_URL : '';
   const adminUrl = publicUrl ? `${publicUrl.replace(/\/$/, '')}/admin` : 'https://frameforge.one/admin';
-  const helpCenterUrl = publicUrl || 'https://frameforge.one';
+  const helpCenterUrl = publicUrl || 'https://ellavarkkumai.frameforge.one';
   const logoUrl = SES_LOGO_URL
     || getDefaultLogoUrl(publicUrl);
-  const appUrlTextLine = publicUrl || 'https://frameforge.one';
+  const appUrlTextLine = publicUrl || 'https://ellavarkkumai.frameforge.one';
   const textBody = buildAdminWelcomeEmailText(input.name, adminUrl, appUrlTextLine);
 
   const response = await client.send(
     new SendEmailCommand({
-      Source: `FrameForge <${SENDER_EMAIL}>`,
+      Source: `Ellavarkkum AI <${SENDER_EMAIL}>`,
       ReturnPath: RETURN_PATH_EMAIL,
       ReplyToAddresses: [REPLY_TO_EMAIL],
       Destination: {
@@ -680,17 +680,17 @@ export const sendFinalImageEmail = async (input: { to: string; name: string; ima
   }
 
   const client = getSesClient();
-  const subject = 'Your Frame Forge transformation is complete!';
+  const subject = 'Your Ellavarkkum AI transformation is complete!';
   const publicUrl = isPublicAppUrl(APP_URL) ? APP_URL : '';
-  const helpCenterUrl = publicUrl || 'https://frameforge.one';
+  const helpCenterUrl = publicUrl || 'https://ellavarkkumai.frameforge.one';
   const logoUrl = SES_LOGO_URL
     || getDefaultLogoUrl(publicUrl);
-  const appUrlTextLine = publicUrl || 'https://frameforge.one';
+  const appUrlTextLine = publicUrl || 'https://ellavarkkumai.frameforge.one';
   const textBody = buildFinalImageEmailText(input.name, input.imageUrl, appUrlTextLine);
 
   const response = await client.send(
     new SendEmailCommand({
-      Source: `FrameForge <${SENDER_EMAIL}>`,
+      Source: `Ellavarkkum AI <${SENDER_EMAIL}>`,
       ReturnPath: RETURN_PATH_EMAIL,
       ReplyToAddresses: [REPLY_TO_EMAIL],
       Destination: {

@@ -2,7 +2,8 @@ import { NextRequest } from 'next/server';
 import { db } from '@/lib/supabase';
 import { requireAdminAuth, rateLimitAdminRegister } from '@/lib/adminAuth';
 import { apiJson, handleCorsPreflight, rejectIfOriginNotAllowed } from '@/lib/apiSecurity';
-import { sendAdminWelcomeEmail } from '@/lib/sesEmail';
+import { sendSMS } from '@/lib/snsSms';
+import { normalizePhone } from '@/lib/generationFlow';
 
 export async function OPTIONS(request: NextRequest) {
   return handleCorsPreflight(request);
@@ -16,8 +17,8 @@ export async function POST(req: NextRequest) {
     return apiJson(req, { error: 'Invalid content type' }, { status: 400 });
   }
 
-  const { email, name } = await req.json();
-  if (!email || !name) return apiJson(req, { error: 'Email and name are required' }, { status: 400 });
+  const { phone, name } = await req.json();
+  if (!phone || !name) return apiJson(req, { error: 'Phone number and name are required' }, { status: 400 });
 
   // Rate limit per IP
   const rateLimitResult = await rateLimitAdminRegister(req);
@@ -31,19 +32,21 @@ export async function POST(req: NextRequest) {
     return apiJson(req, { error: 'Unauthorized' }, { status: 401 });
   }
 
+  const normalizedPhone = normalizePhone(phone);
+
   // Insert new admin
-  const { error } = await db.from('admin_users').insert([{ email, name }]);
+  const { error } = await db.from('admin_users').insert([{ phone: normalizedPhone, name }]);
   if (error) {
     return apiJson(req, { error: 'Failed to register admin (may already exist)' }, { status: 409 });
   }
 
-  // Send welcome email to new admin
+  // Send welcome SMS to new admin
   try {
-    await sendAdminWelcomeEmail({ to: email, name });
-  } catch (emailError) {
-    console.error('Failed to send admin welcome email:', emailError);
-    // Non-critical error, don't fail the response
+    const welcomeMessage = `Welcome to Elavarkum AI, ${name}! You have been registered as an administrator.`;
+    await sendSMS(normalizedPhone, welcomeMessage);
+  } catch (smsError) {
+    console.error('Failed to send admin welcome SMS:', smsError);
   }
 
-  return apiJson(req, { success: true, email, name });
+  return apiJson(req, { success: true, phone: normalizedPhone, name });
 }

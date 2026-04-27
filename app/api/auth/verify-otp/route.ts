@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { apiJson, handleCorsPreflight, rejectIfOriginNotAllowed } from '@/lib/apiSecurity';
-import { hashOtp, IMAGE_GENERATION_TABLE, isOtpExpired, normalizeEmail } from '@/lib/generationFlow';
+import { hashOtp, IMAGE_GENERATION_TABLE, isOtpExpired, normalizePhone, verifyOtpHash } from '@/lib/generationFlow';
 import { RATE_LIMITS, enforceRateLimit } from '@/lib/rateLimit';
 import { parseStrictJson, validateVerifyOtpInput } from '@/lib/requestValidation';
 import { getSupabaseClient } from '@/lib/supabase';
@@ -20,11 +20,11 @@ export async function POST(request: NextRequest) {
   try {
     const body = await parseStrictJson(request);
 
-    const prevalidatedEmail = typeof body?.email === 'string' ? body.email : '';
+    const prevalidatedPhone = typeof body?.phone === 'string' ? body.phone : '';
     const rateLimit = enforceRateLimit(request, {
       endpointKey: 'verifyOtp',
       limits: RATE_LIMITS.verifyOtp,
-      userIdentifier: prevalidatedEmail,
+      userIdentifier: prevalidatedPhone,
     });
     if (rateLimit.limited) {
       return apiJson(
@@ -42,14 +42,14 @@ export async function POST(request: NextRequest) {
       return apiJson(request, { error: validated.error }, { status: 400 });
     }
 
-    const email = normalizeEmail(validated.data.email);
+    const phone = normalizePhone(validated.data.phone);
     const otp = validated.data.otp;
     const supabase = getSupabaseClient();
 
     const { data: requestRow, error: selectError } = await supabase
       .from(IMAGE_GENERATION_TABLE)
-      .select('id, otp_code_hash, otp_expires_at, is_verified, verification_attempts')
-      .eq('email', email)
+      .select('id, otp_hash, otp_expires_at, status, tries_left')
+      .eq('phone', phone)
       .maybeSingle();
 
     if (selectError) {
@@ -58,35 +58,46 @@ export async function POST(request: NextRequest) {
     }
 
     if (!requestRow) {
-      return apiJson(request, { error: 'No OTP request found for this email' }, { status: 404 });
+      return apiJson(request, { error: 'No OTP request found for this phone number' }, { status: 404 });
     }
 
-    if (requestRow.is_verified) {
+    if (requestRow.status === 'verified' || requestRow.status === 'generated') {
       return apiJson(request, { success: true, verified: true, requestId: requestRow.id });
+    }
+
+    if (requestRow.tries_left <= 0) {
+      return apiJson(request, { error: 'Too many failed attempts. Please request a new code.' }, { status: 403 });
     }
 
     if (isOtpExpired(requestRow.otp_expires_at)) {
       return apiJson(request, { error: 'Verification code expired. Request a new code.' }, { status: 400 });
     }
 
-    const expectedHash = hashOtp(email, otp);
-    if (expectedHash !== requestRow.otp_code_hash) {
+    const providedHash = hashOtp(phone, otp);
+    const isMatch = verifyOtpHash(providedHash, requestRow.otp_hash || '');
+
+    if (!isMatch) {
+      const newTries = (requestRow.tries_left ?? 5) - 1;
       await supabase
         .from(IMAGE_GENERATION_TABLE)
-        .update({ verification_attempts: (requestRow.verification_attempts ?? 0) + 1 })
+        .update({ tries_left: newTries })
         .eq('id', requestRow.id);
 
-      return apiJson(request, { error: 'Incorrect verification code' }, { status: 400 });
+      const errorMsg = newTries <= 0 
+        ? 'Too many failed attempts. Please request a new code.' 
+        : `Incorrect verification code. ${newTries} attempts remaining.`;
+        
+      return apiJson(request, { error: errorMsg }, { status: 400 });
     }
 
     const { error: updateError } = await supabase
       .from(IMAGE_GENERATION_TABLE)
       .update({
-        is_verified: true,
-        otp_verified_at: new Date().toISOString(),
-        otp_code_hash: null,
+        status: 'verified',
+        otp_hash: null, // Destroy hash after successful verification
         otp_expires_at: null,
-        generation_status: 'email_verified',
+        tries_left: 5,
+        updated_at: new Date().toISOString(),
       })
       .eq('id', requestRow.id);
 

@@ -5,6 +5,8 @@ import NextImage from 'next/image';
 import { supabase, UPLOAD_FOLDER, FINAL_FOLDER, bucketName } from '@/lib/supabase';
 import { toast, Toaster } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
+import dynamic from 'next/dynamic';
+const CountryCodeDropdown = dynamic(() => import('../components/CountryCodeDropdown'), { ssr: false });
 
 // --- Types ---
 type Step = 'otp-request' | 'otp-verify' | 'form' | 'processing' | 'result';
@@ -47,7 +49,8 @@ const SlideshowFallback = () => {
 
 export default function EllavarkkumPage() {
   const [step, setStep] = useState<Step>('otp-request');
-  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [countryCode, setCountryCode] = useState('+91');
   const [otp, setOtp] = useState('');
   const [name, setName] = useState('');
   const [file, setFile] = useState<File | null>(null);
@@ -188,27 +191,24 @@ export default function EllavarkkumPage() {
     const savedSession = localStorage.getItem('Ellavarkkum_session');
     if (savedSession) {
       try {
-        const { email: savedEmail, step: savedStep, imageUrl: savedImageUrl } = JSON.parse(savedSession);
+        const { phone: savedPhone, step: savedStep, imageUrl: savedImageUrl } = JSON.parse(savedSession);
         
-        // If we refresh during processing, the 'file' state is lost.
-        // Resetting to 'form' allows the user to start over correctly.
-        if (savedEmail && savedStep !== 'processing') {
-          setEmail(savedEmail);
+        if (savedPhone && savedStep !== 'processing') {
+          setPhone(savedPhone);
           setStep(savedStep);
           if (savedImageUrl) setFinalImageUrl(savedImageUrl);
           
           const syncTries = async () => {
-            const { data } = await supabase.from('elavarkum_requests').select('tries_left, generated_image_url').eq('email', savedEmail).maybeSingle();
+            const { data } = await supabase.from('elavarkkum_requests').select('tries_left, generated_image_url').eq('phone', savedPhone).maybeSingle();
             if (data) {
               setTriesLeft(data.tries_left);
             }
           };
           syncTries();
-        } else if (savedEmail && savedStep === 'processing') {
-          setEmail(savedEmail);
-          setStep('form'); // Reset to form to prevent stuck timer
+        } else if (savedPhone && savedStep === 'processing') {
+          setPhone(savedPhone);
+          setStep('form'); 
         } else {
-          // Logout on refresh for any other state
           localStorage.removeItem('Ellavarkkum_session');
         }
       } catch (e) {
@@ -245,7 +245,11 @@ export default function EllavarkkumPage() {
 
   const handleRequestOtp = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email) return;
+    const localNumber = phone.replace(/^0+/, '').trim();
+    if (!localNumber) return;
+    // Assemble full phone number before showing confirmation
+    const fullPhone = countryCode + localNumber;
+    setPhone(fullPhone);
     setShowSpamModal(true);
   };
 
@@ -255,10 +259,10 @@ export default function EllavarkkumPage() {
 
     try {
       const currentTries = 3;
-      const response = await fetch('/api/ellavarkkum/request-otp', {
+      const response = await fetch('/api/auth/request-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email })
+        body: JSON.stringify({ phone })
       });
 
       const resData = await response.json();
@@ -279,35 +283,20 @@ export default function EllavarkkumPage() {
     setIsLoading(true);
 
     try {
-      const { data, error } = await supabase
-        .from('elavarkum_requests')
-        .select('*')
-        .eq('email', email)
-        .eq('otp_code', otp)
-        .maybeSingle();
+      const response = await fetch('/api/auth/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone, otp })
+      });
 
-      if (error || !data) {
-        toast.error('Invalid OTP code. Please try again.');
-        return;
-      }
+      const resData = await response.json();
+      if (!response.ok) throw new Error(resData.error || 'Verification failed');
 
-      // Check expiry
-      if (new Date(data.otp_expires_at) < new Date()) {
-        toast.error('OTP expired. Please request a new one.');
-        return;
-      }
-
-      // Update status in DB
-      await supabase
-        .from('elavarkum_requests')
-        .update({ status: 'verified' })
-        .eq('email', email);
-
-      setTriesLeft(data.tries_left);
+      setTriesLeft(resData.triesLeft ?? 5);
       setStep('form');
       
       // Save session with step
-      localStorage.setItem('Ellavarkkum_session', JSON.stringify({ email, step: 'form' }));
+      localStorage.setItem('Ellavarkkum_session', JSON.stringify({ phone, step: 'form' }));
       
       toast.success('Identity verified!');
     } catch (err: any) {
@@ -320,7 +309,8 @@ export default function EllavarkkumPage() {
   const handleLogout = () => {
     localStorage.removeItem('Ellavarkkum_session');
     setStep('otp-request');
-    setEmail('');
+    setPhone('');
+    setCountryCode('+91');
     setOtp('');
     setName('');
     setFile(null);
@@ -344,6 +334,7 @@ export default function EllavarkkumPage() {
         setPreviewUrl(URL.createObjectURL(selectedFile));
       } finally {
         setIsLoading(false);
+        setShowGuidelines(false); // Auto-close modal once image is picked
       }
     }
   };
@@ -357,7 +348,7 @@ export default function EllavarkkumPage() {
     }
 
     setStep('processing');
-    localStorage.setItem('Ellavarkkum_session', JSON.stringify({ email, step: 'processing' }));
+    localStorage.setItem('Ellavarkkum_session', JSON.stringify({ phone, step: 'processing' }));
     setTimer(GEN_TIME);
 
     // Start countdown
@@ -374,7 +365,7 @@ export default function EllavarkkumPage() {
     try {
       // 1. Prepare form data
       const formData = new FormData();
-      formData.append('email', email);
+      formData.append('phone', phone);
       formData.append('name', name);
       formData.append('gender', gender);
       formData.append('photo', file);
@@ -412,7 +403,7 @@ export default function EllavarkkumPage() {
       
       // Save result state with image URL
       localStorage.setItem('Ellavarkkum_session', JSON.stringify({ 
-        email, 
+        phone, 
         step: 'result', 
         imageUrl: data.finalImageUrl 
       }));
@@ -459,7 +450,7 @@ export default function EllavarkkumPage() {
       setName('');
       
       // Update session to form state
-      localStorage.setItem('Ellavarkkum_session', JSON.stringify({ email, step: 'form' }));
+      localStorage.setItem('Ellavarkkum_session', JSON.stringify({ phone, step: 'form' }));
     } else {
       toast.error('No tries left. Please contact support.');
     }
@@ -602,15 +593,24 @@ export default function EllavarkkumPage() {
 
                   <form onSubmit={handleRequestOtp} className="space-y-6">
                     <div className="space-y-2">
-                      <label className="text-[10px] uppercase tracking-[0.2em] font-bold text-slate-400 ml-4">Email Address</label>
-                      <input 
-                        type="email" 
-                        required
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="you@gmail.com"
-                        className="w-full px-6 py-4 rounded-full border border-slate-200 focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all text-lg"
-                      />
+                      <label className="text-[10px] uppercase tracking-[0.2em] font-bold text-slate-400 ml-4">Phone Number</label>
+                      <div className="flex gap-2 items-stretch">
+                        <CountryCodeDropdown
+                          selectedCode={countryCode}
+                          onSelect={(code) => setCountryCode(code)}
+                        />
+                        <input
+                          type="tel"
+                          required
+                          value={phone.startsWith(countryCode) ? phone.slice(countryCode.length) : phone}
+                          onChange={(e) => setPhone(e.target.value)}
+                          placeholder="98765 43210"
+                          className="flex-1 min-w-0 px-6 py-4 rounded-full border border-slate-200 focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all text-lg"
+                        />
+                      </div>
+                      <p className="text-[11px] text-slate-400 ml-4">
+                        Enter your number without the country code
+                      </p>
                     </div>
                     <button 
                       disabled={isLoading}
@@ -638,7 +638,7 @@ export default function EllavarkkumPage() {
                 
                 <div className="mb-10 text-center">
                   <h2 className="text-4xl font-heading font-black mb-3">Verify.</h2>
-                  <p className="text-slate-500 text-center mb-6">We&apos;ve sent a code to <span className="font-semibold">{email}</span></p>
+                  <p className="text-slate-500 text-center mb-6">We&apos;ve sent a code to <span className="font-semibold">{phone}</span></p>
                 </div>
 
                 <form onSubmit={handleVerifyOtp} className="space-y-6">
@@ -679,7 +679,7 @@ export default function EllavarkkumPage() {
                 <div className="flex justify-between items-center mb-8 bg-white/50 p-6 rounded-3xl border border-white shadow-sm backdrop-blur-sm">
                   <div>
                     <h2 className="text-2xl font-heading font-black tracking-tight text-slate-800">Welcome Back</h2>
-                    <p className="text-sm text-slate-500 font-medium">{email}</p>
+                    <p className="text-sm text-slate-500 font-medium">{phone}</p>
                   </div>
                   <button 
                     onClick={handleLogout}
@@ -691,7 +691,7 @@ export default function EllavarkkumPage() {
 
                 <div className="mb-8 text-center lg:text-left">
                   <h2 className="text-3xl sm:text-4xl font-heading font-black mb-1 tracking-tight leading-[1.1]">Ellavarkkum AI <span className="text-[#e1007a]">Frame Generator</span></h2>
-                  <p className="text-[10px] uppercase tracking-[0.3em] font-bold text-slate-400 mb-6">Powered by Frame Forge</p>
+                  <p className="text-[10px] uppercase tracking-[0.3em] font-bold text-slate-400 mb-6">Experience the Magic</p>
                   <p className="text-lg sm:text-xl text-slate-500">Fill the form and upload your photo to generate the frame for Ellavarkkum AI. You can see the preview down in a better way.</p>
                 </div>
 
@@ -772,7 +772,7 @@ export default function EllavarkkumPage() {
                     <button 
                       type="button"
                       disabled={!file || !name}
-                      onClick={() => setShowGuidelines(true)}
+                      onClick={(e) => file ? handleGenerate(e) : setShowGuidelines(true)}
                       className="w-full py-5 bg-blue-600 text-white rounded-full font-bold text-lg hover:bg-blue-700 hover:shadow-2xl hover:shadow-blue-300 transition-all active:scale-95 disabled:opacity-40 shadow-xl shadow-blue-100 flex items-center justify-center gap-3"
                     >
                       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

@@ -2,7 +2,7 @@
 
 # Admin API Endpoints (Dashboard)
 
-These endpoints are for secure admin authentication and management. Only registered admin emails can request OTPs and register new admins. All security measures (CORS, rate limiting, OTP hashing, session binding, strict validation) are enforced as in the user flow.
+These endpoints are for secure admin authentication and management. Only registered admin phone numbers can request OTPs and register new admins. All security measures (CORS, rate limiting, OTP hashing, session binding, strict validation) are enforced as in the user flow.
 
 **Session/OTP Expiry Note:**
 
@@ -14,7 +14,7 @@ These endpoints are for secure admin authentication and management. Only registe
 
 **Endpoint:** `POST /api/admin/request-otp`
 
-**Description:** Generate and send a One-Time Password (OTP) via email to a registered admin for dashboard login.
+**Description:** Generate and send a One-Time Password (OTP) via SMS to a registered admin for dashboard login.
 
 **Request Headers:**
 
@@ -29,7 +29,7 @@ Origin: <allowed-origin>
 
 ```json
 {
-  "email": "admin@example.com"
+  "phone": "+919876543210"
 }
 ```
 
@@ -38,21 +38,21 @@ Origin: <allowed-origin>
 ```json
 {
   "success": true,
-  "email": "admin@example.com",
+  "phone": "+919876543210",
   "expiresAt": "2026-04-20T10:25:00.000Z",
   "expiresInMinutes": 10,
-  "emailSent": true
+  "smsSent": true
 }
 ```
 
 **Error Responses:**
 
-- 400: `{ "error": "Email is required" }`
+- 400: `{ "error": "Phone number is required" }`
 - 400: `{ "error": "Invalid content type" }` (Must start with `application/json`)
-- 403: `{ "error": "Email is not a registered admin" }`
+- 403: `{ "error": "Phone number is not a registered admin" }`
 - 403: `{ "error": "Origin not allowed" }`
 - 429: `{ "error": "Too many OTP requests", "retryAfterSeconds": 30 }`
-- 500: `{ "error": "Failed to send OTP email" }`
+- 500: `{ "error": "Failed to send OTP SMS" }`
 
 ---
 
@@ -60,7 +60,7 @@ Origin: <allowed-origin>
 
 **Endpoint:** `POST /api/admin/verify-otp`
 
-**Description:** Verify the 6-digit code sent to the admin email.
+**Description:** Verify the 6-digit code sent to the admin phone.
 
 **Request Headers:**
 
@@ -73,7 +73,7 @@ Origin: http://localhost:5173
 
 ```json
 {
-  "email": "admin@example.com",
+  "phone": "+919876543210",
   "otp": "123456"
 }
 ```
@@ -85,7 +85,7 @@ Origin: http://localhost:5173
   "success": true,
   "verified": true,
   "admin": {
-    "email": "admin@example.com",
+    "phone": "+919876543210",
     "name": "Admin Name"
   }
 }
@@ -93,11 +93,11 @@ Origin: http://localhost:5173
 
 **Error Responses:**
 
-- 400: `{ "error": "Email and verification code are required" }`
+- 400: `{ "error": "Phone number and verification code are required" }`
 - 400: `{ "error": "Verification code expired. Please request a new one." }`
 - 400: `{ "error": "Incorrect verification code" }`
-- 403: `{ "error": "Access denied" }` (Email is not a registered admin)
-- 404: `{ "error": "No verification request found for this email" }`
+- 403: `{ "error": "Access denied" }` (Phone number is not a registered admin)
+- 404: `{ "error": "No verification request found for this phone number" }`
 - 500: `{ "error": "Unable to verify OTP" }`
 
 ---
@@ -106,7 +106,7 @@ Origin: http://localhost:5173
 
 **Endpoint:** `POST /api/admin/register`
 
-**Description:** Register a new admin. Upon success, a welcome email with a link to the dashboard is sent to the new admin.
+**Description:** Register a new admin. Upon success, a confirmation SMS is sent to the new admin.
 
 **Request Headers:**
 
@@ -119,7 +119,7 @@ Origin: http://localhost:5173
 
 ```json
 {
-  "email": "newadmin@example.com",
+  "phone": "+918888888888",
   "name": "New Admin"
 }
 ```
@@ -129,14 +129,14 @@ Origin: http://localhost:5173
 ```json
 {
   "success": true,
-  "email": "newadmin@example.com",
+  "phone": "+918888888888",
   "name": "New Admin"
 }
 ```
 
 **Error Responses:**
 
-- 400: `{ "error": "Email and name are required" }`
+- 400: `{ "error": "Phone number and name are required" }`
 - 401: `{ "error": "Unauthorized" }`
 - 409: `{ "error": "Failed to register admin (may already exist)" }`
 - 429: `{ "error": "Too many registration requests", "retryAfterSeconds": 30 }`
@@ -161,7 +161,7 @@ Origin: http://localhost:5173
 [
   {
     "id": "550e8400-e29b-41d4-a716-446655440000",
-    "email": "admin@example.com",
+    "phone": "+919876543210",
     "name": "Admin Name",
     "created_at": "2026-04-20T10:25:00.000Z",
     "updated_at": "2026-04-20T10:25:00.000Z"
@@ -181,7 +181,7 @@ Origin: http://localhost:5173
 
 **Endpoint:** `DELETE /api/admin/delete`
 
-**Description:** Remove an administrator from the system by email.
+**Description:** Remove an administrator from the system by phone number.
 
 **Request Headers:**
 
@@ -194,7 +194,7 @@ Origin: http://localhost:5173
 
 ```json
 {
-  "email": "admin@example.com"
+  "phone": "+919876543210"
 }
 ```
 
@@ -203,13 +203,13 @@ Origin: http://localhost:5173
 ```json
 {
   "success": true,
-  "email": "admin@example.com"
+  "phone": "+919876543210"
 }
 ```
 
 **Error Responses:**
 
-- 400: `{ "error": "Admin email is required" }`
+- 400: `{ "error": "Admin phone number is required" }`
 - 401: `{ "error": "Unauthorized" }`
 - 403: `{ "error": "Cannot delete the only remaining administrator" }`
 - 500: `{ "error": "Failed to remove administrator" }`
@@ -225,7 +225,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 CREATE TABLE IF NOT EXISTS admin_users (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  email VARCHAR(255) NOT NULL UNIQUE,
+  phone VARCHAR(255) NOT NULL UNIQUE,
   name VARCHAR(255) NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -233,7 +233,7 @@ CREATE TABLE IF NOT EXISTS admin_users (
 
 CREATE TABLE IF NOT EXISTS admin_otps (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  email VARCHAR(255) NOT NULL UNIQUE REFERENCES admin_users(email) ON DELETE CASCADE,
+  phone VARCHAR(255) NOT NULL UNIQUE REFERENCES admin_users(phone) ON DELETE CASCADE,
   otp_code_hash VARCHAR(255),
   otp_expires_at TIMESTAMP WITH TIME ZONE,
   otp_verified_at TIMESTAMP WITH TIME ZONE,
@@ -249,7 +249,7 @@ CREATE TABLE IF NOT EXISTS admin_otps (
 **Security Measures:**
 
 - Strict CORS (admin origins only)
-- Rate limiting (per IP/email)
+- Rate limiting (per IP/phone)
 - OTPs hashed and never stored in plaintext
 - Session binding and expiration
 - Only registered admins can request OTP
@@ -258,9 +258,7 @@ CREATE TABLE IF NOT EXISTS admin_otps (
 
 ---
 
-# AI Image Generation API Documentation
-
-Complete API reference for the AI Image Generation service. These APIs enable email verification, image generation, and AI-powered image-to-Arcane-style transformation.
+Complete API reference for the Ellavarkkum AI service. These APIs enable phone verification, image generation, and AI-powered image transformation.
 
 ## Base URL
 
@@ -279,10 +277,7 @@ All requests must include the `Origin` header from an allowed domain:
 
 - `http://localhost:3000`
 - `http://localhost:5173`
-- `https://frameforge.one`
-- `https://www.frameforge.one`
-- `https://memento.frameforge.one`
-- `https://frameforge-mauve.vercel.app`
+- `https://ellavarkkumai.frameforge.one`
 
 Requests from other origins will be rejected with a CORS error.
 
@@ -290,11 +285,11 @@ Requests from other origins will be rejected with a CORS error.
 
 ## Endpoints
 
-### 1. Request OTP (Email Verification)
+### 1. Request OTP (Phone Verification)
 
 **Endpoint:** `POST /api/auth/request-otp`
 
-**Description:** Generate and send a One-Time Password (OTP) to the user's email.
+**Description:** Generate and send a One-Time Password (OTP) to the user's phone via SMS (Amazon SNS).
 
 **Request Headers:**
 
@@ -307,7 +302,7 @@ Origin: <allowed-origin>
 
 ```json
 {
-  "email": "user@example.com"
+  "phone": "+919876543210"
 }
 ```
 
@@ -317,10 +312,10 @@ Origin: <allowed-origin>
 {
   "success": true,
   "requestId": "550e8400-e29b-41d4-a716-446655440000",
-  "email": "user@example.com",
+  "phone": "+919876543210",
   "expiresAt": "2026-04-20T10:25:00.000Z",
   "expiresInMinutes": 10,
-  "emailSent": true,
+  "smsSent": true,
   "messageId": "0000014a00007f9c-12345678-1234-1234-1234-123456789012-000000"
 }
 ```
@@ -330,14 +325,14 @@ Origin: <allowed-origin>
 - **400 Bad Request:**
 
   ```json
-  { "error": "Email is required" }
+  { "error": "Phone number is required" }
   ```
 
 - **409 Conflict (Already Completed):**
 
   ```json
   {
-    "error": "This email has already completed generation. Please use a different email."
+    "error": "This phone number has already completed generation."
   }
   ```
 
@@ -352,7 +347,7 @@ Origin: <allowed-origin>
 
 - **500 Internal Server Error:**
   ```json
-  { "error": "Failed to send OTP email" }
+  { "error": "Failed to send OTP SMS" }
   ```
 
 **Example cURL:**
@@ -361,7 +356,7 @@ Origin: <allowed-origin>
 curl -X POST http://localhost:3000/api/auth/request-otp \
   -H "Content-Type: application/json" \
   -H "Origin: http://localhost:3000" \
-  -d '{"email":"user@example.com"}'
+  -d '{"phone":"+919876543210"}'
 ```
 
 **Example JavaScript:**
@@ -372,12 +367,12 @@ const response = await fetch("/api/auth/request-otp", {
   headers: {
     "Content-Type": "application/json",
   },
-  body: JSON.stringify({ email: "user@example.com" }),
+  body: JSON.stringify({ phone: "+919876543210" }),
 });
 
 const data = await response.json();
 if (response.ok) {
-  console.log("OTP sent to:", data.email);
+  console.log("OTP sent to:", data.phone);
   console.log("Expires in:", data.expiresInMinutes, "minutes");
 } else {
   console.error("Error:", data.error);
@@ -386,9 +381,9 @@ if (response.ok) {
 
 **Behavior Note (current):**
 
-- If the email has an existing request that is **not completed**, requesting OTP again will update the existing row (upsert) and send a new code.
-- Only emails with `generation_status = completed` are rejected with `409`.
-- Upon successful generation, the final image is automatically sent to the user's email with a download link.
+- If the phone number has an existing request that is **not completed**, requesting OTP again will update the existing row (upsert) and send a new code.
+- Only phone numbers with `generation_status = completed` are rejected with `409`.
+- Upon successful generation, the final image is stored and the user can download it from the dashboard.
 
 ---
 
@@ -396,7 +391,7 @@ if (response.ok) {
 
 **Endpoint:** `POST /api/auth/verify-otp`
 
-**Description:** Verify the OTP code sent to the user's email.
+**Description:** Verify the OTP code sent to the user's phone.
 
 **Request Headers:**
 
@@ -409,7 +404,7 @@ Origin: <allowed-origin>
 
 ```json
 {
-  "email": "user@example.com",
+  "phone": "+919876543210",
   "otp": "123456"
 }
 ```
@@ -447,7 +442,7 @@ Origin: <allowed-origin>
 - **404 Not Found:**
 
   ```json
-  { "error": "No OTP request found for this email" }
+  { "error": "No OTP request found for this phone number" }
   ```
 
 - **500 Internal Server Error:**
@@ -470,7 +465,7 @@ Origin: <allowed-origin>
 curl -X POST http://localhost:3000/api/auth/verify-otp \
   -H "Content-Type: application/json" \
   -H "Origin: http://localhost:3000" \
-  -d '{"email":"user@example.com","otp":"123456"}'
+  -d '{"phone":"+919876543210","otp":"123456"}'
 ```
 
 **Example JavaScript:**
@@ -482,14 +477,14 @@ const response = await fetch("/api/auth/verify-otp", {
     "Content-Type": "application/json",
   },
   body: JSON.stringify({
-    email: "user@example.com",
+    phone: "+919876543210",
     otp: "123456",
   }),
 });
 
 const data = await response.json();
 if (response.ok && data.verified) {
-  console.log("Email verified! Request ID:", data.requestId);
+  console.log("Phone verified! Request ID:", data.requestId);
 } else {
   console.error("Verification failed:", data.error);
 }
@@ -513,7 +508,7 @@ Origin: <allowed-origin>
 
 ```
 photo: <File>              - Image file (PNG, JPEG, WEBP)
-email: string              - User's verified email
+phone: string              - User's verified phone number (+E.164)
 requestId: string          - OTP request ID from verify-otp response
 name: string               - User's name for prompt
 organization: string       - Organization name for prompt
@@ -528,7 +523,7 @@ gender: string (optional)  - "male", "female", or "neutral" (default: "neutral")
   "uploadedImage": "https://.../uploads/upload-1713607500000.png",
   "generatedImage": "https://.../generated/generated-1713607500000.png",
   "finalImage": "/final/final-1713607500000.png",
-  "finalImageUrl": "https://memento.frameforge.one/api/assets/download?url=...",
+  "finalImageUrl": "https://ellavarkkumai.frameforge.one/api/assets/download?url=...",
   "dbId": "550e8400-e29b-41d4-a716-446655440000",
   "requestId": "550e8400-e29b-41d4-a716-446655440000",
   "prompt": "..."
@@ -540,7 +535,7 @@ gender: string (optional)  - "male", "female", or "neutral" (default: "neutral")
 - **400 Bad Request (Missing Fields):**
 
   ```json
-  { "error": "Email is required" }
+  { "error": "Phone number is required" }
   { "error": "No photo provided" }
   { "error": "Name is required" }
   { "error": "Organization is required" }
@@ -555,13 +550,13 @@ gender: string (optional)  - "male", "female", or "neutral" (default: "neutral")
 - **403 Forbidden (Email Not Verified):**
 
   ```json
-  { "error": "Email is not verified yet" }
+  { "error": "Phone number is not verified yet" }
   ```
 
 - **404 Not Found:**
 
   ```json
-  { "error": "No verified request found for this email" }
+  { "error": "No verified request found for this phone number" }
   { "error": "No matching verified request found" }
   ```
 
@@ -594,7 +589,7 @@ gender: string (optional)  - "male", "female", or "neutral" (default: "neutral")
 // After email verification (verify-otp succeeded)
 const formData = new FormData();
 formData.append("photo", photoFile); // File object from input
-formData.append("email", "user@example.com");
+formData.append("phone", "+919876543210");
 formData.append("requestId", requestId); // from verify-otp response
 formData.append("name", "John Doe");
 formData.append("organization", "Acme Corp");
@@ -634,7 +629,7 @@ canvas.toBlob((blob) => {
 
 **Endpoint:** `POST /api/generate/reset`
 
-**Description:** Clears previously generated image fields for an already-verified email request so the same email can generate again.
+**Description:** Clears previously generated image fields for an already-verified phone request so the same number can generate again.
 
 **Request Headers:**
 
@@ -647,20 +642,20 @@ Origin: <allowed-origin>
 
 ```json
 {
-  "email": "user@example.com",
+  "phone": "+919876543210",
   "requestId": "550e8400-e29b-41d4-a716-446655440000"
 }
 ```
 
-`requestId` is optional. If omitted, the latest request for the email is reset.
+`requestId` is optional. If omitted, the latest request for the phone number is reset.
 
 **Response (200 - Success):**
 
 ```json
 {
   "success": true,
-  "message": "Generation state reset. You can generate again for this email.",
-  "email": "user@example.com",
+  "message": "Generation state reset. You can generate again for this phone number.",
+  "phone": "+919876543210",
   "requestId": "550e8400-e29b-41d4-a716-446655440000",
   "status": "email_verified"
 }
@@ -671,19 +666,19 @@ Origin: <allowed-origin>
 - **400 Bad Request:**
 
   ```json
-  { "error": "Email is required" }
+  { "error": "Phone number is required" }
   ```
 
 - **403 Forbidden:**
 
   ```json
-  { "error": "Email is not verified for this request" }
+  { "error": "Phone number is not verified for this request" }
   ```
 
 - **404 Not Found:**
 
   ```json
-  { "error": "No request found for this email" }
+  { "error": "No request found for this phone number" }
   ```
 
 - **500 Internal Server Error:**
@@ -706,7 +701,7 @@ Origin: <allowed-origin>
 curl -X POST http://localhost:3000/api/generate/reset \
   -H "Content-Type: application/json" \
   -H "Origin: http://localhost:3000" \
-  -d '{"email":"user@example.com","requestId":"550e8400-e29b-41d4-a716-446655440000"}'
+  -d '{"phone":"+919876543210","requestId":"550e8400-e29b-41d4-a716-446655440000"}'
 ```
 
 ---
@@ -802,16 +797,16 @@ x-download-api-key: <key>
 
 ```
 POST /api/auth/request-otp
-Body: { "email": "user@example.com" }
+Body: { "phone": "+919876543210" }
 ↓
 Response: { "requestId": "...", "expiresInMinutes": 10 }
 ```
 
-### Step 2: Verify OTP (User enters 6-digit code from email)
+### Step 2: Verify OTP (User enters 6-digit code from SMS)
 
 ```
 POST /api/auth/verify-otp
-Body: { "email": "user@example.com", "otp": "123456" }
+Body: { "phone": "+919876543210", "otp": "123456" }
 ↓
 Response: { "verified": true, "requestId": "..." }
 ```
@@ -822,7 +817,7 @@ Response: { "verified": true, "requestId": "..." }
 POST /api/generate
 Body: (FormData)
   - photo: <File>
-  - email: "user@example.com"
+  - phone: "+919876543210"
   - requestId: "<from verify response>"
   - name: "John Doe"
   - organization: "Acme Corp"
@@ -831,15 +826,15 @@ Body: (FormData)
 Response: { "success": true, "finalImageUrl": "..." }
 ```
 
-### Optional Step: Reset and Regenerate For Same Email
+### Optional Step: Reset and Regenerate For Same Phone Number
 
 ```
 POST /api/generate/reset
-Body: { "email": "user@example.com", "requestId": "<existing-request-id>" }
+Body: { "phone": "+919876543210", "requestId": "<existing-request-id>" }
 ↓
 Response: { "success": true, "status": "email_verified" }
 
-Then call POST /api/generate again using the same email and requestId.
+Then call POST /api/generate again using the same phone number and requestId.
 ```
 
 ---
@@ -854,11 +849,13 @@ NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 
-# AWS SES (Email)
-AWS_SES_REGION=us-east-1
-AWS_SES_ACCESS_KEY_ID=your-access-key
-AWS_SES_SECRET_ACCESS_KEY=your-secret-key
-AWS_SES_LOGO_URL=https://frameforge.one/favicon.svg
+# AWS SNS (SMS)
+AWS_SNS_REGION=ap-south-1
+AWS_ACCESS_KEY_ID=your-access-key
+AWS_SECRET_ACCESS_KEY=your-secret-key
+
+# AWS SES (Optional - Admin Email)
+AWS_SES_LOGO_URL=https://ellavarkkumai.frameforge.one/favicon.svg
 
 # AWS S3 (Optional - Image Storage)
 AWS_S3_REGION=us-east-1
@@ -908,11 +905,11 @@ Origin header not allowed. Ensure your domain is in the allowlist.
 ## Security Features
 
 1. **CORS Protection:** Only whitelisted origins can call these APIs.
-2. **Email Normalization:** Email addresses are lowercased and trimmed.
-3. **OTP Hashing:** OTPs are never stored in plaintext; hashed with email + salt.
+2. **Phone Normalization:** Phone numbers are formatted to E.164.
+3. **OTP Hashing:** OTPs are never stored in plaintext; hashed with phone + salt.
 4. **Rate Limiting:** OTP attempts are tracked (verification_attempts field).
 5. **Expiration:** OTPs expire after 10 minutes.
-6. **Session Binding:** OTP verification is tied to email + requestId.
+6. **Session Binding:** OTP verification is tied to phone + requestId.
 7. **Strict Validation:** Unexpected JSON/form/query fields are rejected.
 8. **Secret Safety:** API/download key checks use timing-safe comparison.
 
@@ -920,10 +917,10 @@ Origin header not allowed. Ensure your domain is in the allowlist.
 
 ## Rate Limits
 
-- **OTP Request (`/api/auth/request-otp`):** 20/10min per IP, 5/10min per email
-- **OTP Verify (`/api/auth/verify-otp`):** 40/10min per IP, 10/10min per email
-- **Generate (`/api/generate`):** 15/10min per IP, 5/10min per email
-- **Reset (`/api/generate/reset`):** 20/10min per IP, 8/10min per email
+- **OTP Request (`/api/auth/request-otp`):** 20/10min per IP, 5/10min per phone number
+- **OTP Verify (`/api/auth/verify-otp`):** 40/10min per IP, 10/10min per phone number
+- **Generate (`/api/generate`):** 15/10min per IP, 5/10min per phone number
+- **Reset (`/api/generate/reset`):** 20/10min per IP, 8/10min per phone number
 - **Asset Download (`/api/assets/download`):** 120/min per IP, 60/min per key/url
 - **Callback GET:** 120/min per IP, 60/min per jobId
 - **Callback POST:** 60/min per IP, 30/min per jobId
@@ -932,12 +929,12 @@ Origin header not allowed. Ensure your domain is in the allowlist.
 
 ## Database Schema
 
-### image_generation_requests Table
+### elavarkum_requests Table
 
 ```sql
-CREATE TABLE image_generation_requests (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  email VARCHAR(255) NOT NULL UNIQUE,
+CREATE TABLE elavarkum_requests (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  phone VARCHAR(20) NOT NULL UNIQUE,
   otp_code_hash VARCHAR(255),
   otp_expires_at TIMESTAMP WITH TIME ZONE,
   otp_verified_at TIMESTAMP WITH TIME ZONE,
@@ -963,31 +960,31 @@ CREATE TABLE image_generation_requests (
 
 ```typescript
 // lib/api.ts
-export async function requestOtp(email: string) {
+export async function requestOtp(phone: string) {
   const response = await fetch("/api/auth/request-otp", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ email }),
+    body: JSON.stringify({ phone }),
   });
   return response.json();
 }
 
-export async function verifyOtp(email: string, otp: string) {
+export async function verifyOtp(phone: string, otp: string) {
   const response = await fetch("/api/auth/verify-otp", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ email, otp }),
+    body: JSON.stringify({ phone, otp }),
   });
   return response.json();
 }
 
 export async function generateImage(
   photo: File,
-  email: string,
+  phone: string,
   requestId: string,
   name: string,
   organization: string,
@@ -995,7 +992,7 @@ export async function generateImage(
 ) {
   const formData = new FormData();
   formData.append("photo", photo);
-  formData.append("email", email);
+  formData.append("phone", phone);
   formData.append("requestId", requestId);
   formData.append("name", name);
   formData.append("organization", organization);

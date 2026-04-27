@@ -6,6 +6,7 @@ import type { GenderOption } from '@/lib/generationFlow';
 
 const CONTROL_CHARS = /[\u0000-\u001F\u007F]/g;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const PHONE_REGEX = /^\+[1-9]\d{7,14}$/;
 
 const cleanText = (value: string) => value.replace(CONTROL_CHARS, '').trim();
 
@@ -24,13 +25,12 @@ const asRecord = (value: unknown) => {
     return value as Record<string, unknown>;
 };
 
-const requireEmail = (value: unknown) => {
-    if (typeof value !== 'string') return { error: 'Email is required' as const };
-    const email = cleanText(value).toLowerCase();
-    if (!email) return { error: 'Email is required' as const };
-    if (email.length > 254) return { error: 'Email is too long' as const };
-    if (!EMAIL_REGEX.test(email)) return { error: 'Invalid email format' as const };
-    return { email };
+const requirePhone = (value: unknown) => {
+    if (typeof value !== 'string') return { error: 'Phone number is required' as const };
+    const phone = cleanText(value).replace(/\s+/g, '');
+    if (!phone) return { error: 'Phone number is required' as const };
+    if (!PHONE_REGEX.test(phone)) return { error: 'Invalid phone format (E.164 required, e.g. +91XXXXXXXXXX)' as const };
+    return { phone };
 };
 
 const optionalId = (value: unknown, label: string) => {
@@ -59,51 +59,51 @@ export const validateRequestOtpInput = (input: unknown) => {
     const data = asRecord(input);
     if (!data) return { error: 'Invalid JSON payload' };
 
-    const unknownError = assertKnownFields(data, ['email']);
+    const unknownError = assertKnownFields(data, ['phone']);
     if (unknownError) return { error: unknownError };
 
-    const emailResult = requireEmail(data.email);
-    if ('error' in emailResult) return { error: emailResult.error };
+    const phoneResult = requirePhone(data.phone);
+    if ('error' in phoneResult) return { error: phoneResult.error };
 
-    return { data: { email: emailResult.email } };
+    return { data: { phone: phoneResult.phone } };
 };
 
 export const validateVerifyOtpInput = (input: unknown) => {
     const data = asRecord(input);
     if (!data) return { error: 'Invalid JSON payload' };
 
-    const unknownError = assertKnownFields(data, ['email', 'otp']);
+    const unknownError = assertKnownFields(data, ['phone', 'otp']);
     if (unknownError) return { error: unknownError };
 
-    const emailResult = requireEmail(data.email);
-    if ('error' in emailResult) return { error: emailResult.error };
+    const phoneResult = requirePhone(data.phone);
+    if ('error' in phoneResult) return { error: phoneResult.error };
 
     const otp = typeof data.otp === 'string' ? cleanText(data.otp) : '';
     if (!/^\d{6}$/.test(otp)) {
         return { error: 'Enter the 6-digit verification code' };
     }
 
-    return { data: { email: emailResult.email, otp } };
+    return { data: { phone: phoneResult.phone, otp } };
 };
 
 export const validateResetInput = (input: unknown) => {
     const data = asRecord(input);
     if (!data) return { error: 'Invalid JSON payload' };
 
-    const unknownError = assertKnownFields(data, ['email', 'requestId']);
+    const unknownError = assertKnownFields(data, ['phone', 'requestId']);
     if (unknownError) return { error: unknownError };
 
-    const emailResult = requireEmail(data.email);
-    if ('error' in emailResult) return { error: emailResult.error };
+    const phoneResult = requirePhone(data.phone);
+    if ('error' in phoneResult) return { error: phoneResult.error };
 
     const requestIdResult = optionalId(data.requestId, 'requestId');
     if ('error' in requestIdResult) return { error: requestIdResult.error };
 
-    return { data: { email: emailResult.email, requestId: requestIdResult.value } };
+    return { data: { phone: phoneResult.phone, requestId: requestIdResult.value } };
 };
 
 export const validateGenerateFormData = (formData: FormData) => {
-    const allowedFields = ['photo', 'image', 'email', 'requestId', 'name', 'gender'];
+    const allowedFields = ['photo', 'image', 'phone', 'requestId', 'name', 'gender'];
     for (const key of formData.keys()) {
         if (!allowedFields.includes(key)) {
             return { error: `Unexpected field: ${key}` };
@@ -119,8 +119,8 @@ export const validateGenerateFormData = (formData: FormData) => {
         return { error: 'Photo must be between 1 byte and 10 MB' };
     }
 
-    const emailResult = requireEmail(formData.get('email'));
-    if ('error' in emailResult) return { error: emailResult.error };
+    const phoneResult = requirePhone(formData.get('phone'));
+    if ('error' in phoneResult) return { error: phoneResult.error };
 
     const requestIdResult = optionalId(formData.get('requestId'), 'requestId');
     if ('error' in requestIdResult) return { error: requestIdResult.error };
@@ -134,7 +134,7 @@ export const validateGenerateFormData = (formData: FormData) => {
     return {
         data: {
             photo: fileInput,
-            email: emailResult.email,
+            phone: phoneResult.phone,
             requestId: requestIdResult.value,
             name: nameResult.value,
             gender: gender as GenderOption,

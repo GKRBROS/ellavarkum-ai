@@ -64,11 +64,11 @@ export async function POST(request: NextRequest) {
 
   try {
     const formData = await request.formData();
-    const prevalidatedEmail = typeof formData.get('email') === 'string' ? String(formData.get('email')) : '';
+    const prevalidatedPhone = typeof formData.get('phone') === 'string' ? String(formData.get('phone')) : '';
     const rateLimit = enforceRateLimit(request, {
       endpointKey: 'generate',
       limits: RATE_LIMITS.generate,
-      userIdentifier: prevalidatedEmail,
+      userIdentifier: prevalidatedPhone,
     });
     if (rateLimit.limited) {
       return apiJson(
@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
       return apiJson(request, { error: validated.error }, { status: 400 });
     }
 
-    const { photo, email, requestId, name, gender } = validated.data;
+    const { photo, phone, requestId, name, gender } = validated.data;
 
     const supabase = getSupabaseClient();
 
@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
     const requestQuery = supabase
       .from(IMAGE_GENERATION_TABLE)
       .select(requestSelect)
-      .eq('email', email)
+      .eq('phone', phone)
       .order('created_at', { ascending: false })
       .limit(1);
 
@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
     const requestRow = requestRows?.[0] || null;
 
     if (!requestId && !requestRow) {
-      return apiJson(request, { error: 'No verified request found for this email' }, { status: 404 });
+      return apiJson(request, { error: 'No verified request found for this phone number' }, { status: 404 });
     }
 
     const resolvedRequestId = requestId || requestRow?.id || '';
@@ -110,7 +110,7 @@ export async function POST(request: NextRequest) {
     const { data: validatedRequestRow, error: validatedRequestError } = await supabase
       .from(IMAGE_GENERATION_TABLE)
       .select('id, status, tries_left')
-      .eq('email', email)
+      .eq('phone', phone)
       .eq('id', resolvedRequestId)
       .maybeSingle() as { data: any, error: any };
 
@@ -120,7 +120,7 @@ export async function POST(request: NextRequest) {
     }
     if (!validatedRequestRow) return apiJson(request, { error: 'No matching request found' }, { status: 404 });
     if (validatedRequestRow.status !== 'verified' && validatedRequestRow.status !== 'generated') {
-      return apiJson(request, { error: 'Email is not verified yet' }, { status: 403 });
+      return apiJson(request, { error: 'Phone number is not verified yet' }, { status: 403 });
     }
 
     const imageMimeType = (photo.type || '').toLowerCase();
@@ -223,8 +223,8 @@ export async function POST(request: NextRequest) {
     const finalImagePath = await mergeImages(tempGeneratedFile, timestamp.toString(), name);
     const finalImageUrl = buildFinalImageUrl(request, finalImagePath);
 
-    const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'no-reply@frameforge.one';
-    const isUserAdmin = email === ADMIN_EMAIL;
+    const ADMIN_PHONE = process.env.ADMIN_PHONE || '+910000000000';
+    const isUserAdmin = phone === ADMIN_PHONE;
     const currentTries = validatedRequestRow?.tries_left ?? 3;
     const newTries = isUserAdmin ? currentTries : Math.max(0, currentTries - 1);
 
@@ -245,9 +245,9 @@ export async function POST(request: NextRequest) {
         tries_left: newTries,
         updated_at: new Date().toISOString(),
       })
-      .eq('email', email)
+      .eq('phone', phone)
       .eq('id', validatedRequestRow.id)
-      .select('id, email, generated_image_url')
+      .select('id, phone, generated_image_url')
       .single();
 
     if (dbError) {
