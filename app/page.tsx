@@ -50,7 +50,6 @@ const SlideshowFallback = () => {
 export default function EllavarkkumPage() {
   const [step, setStep] = useState<Step>('otp-request');
   const [phone, setPhone] = useState('');
-  const [countryCode, setCountryCode] = useState('+91');
   const [otp, setOtp] = useState('');
   const [name, setName] = useState('');
   const [file, setFile] = useState<File | null>(null);
@@ -245,11 +244,7 @@ export default function EllavarkkumPage() {
 
   const handleRequestOtp = (e: React.FormEvent) => {
     e.preventDefault();
-    const localNumber = phone.replace(/^0+/, '').trim();
-    if (!localNumber) return;
-    // Assemble full phone number before showing confirmation
-    const fullPhone = countryCode + localNumber;
-    setPhone(fullPhone);
+    if (!phone) return;
     setShowSpamModal(true);
   };
 
@@ -310,7 +305,6 @@ export default function EllavarkkumPage() {
     localStorage.removeItem('Ellavarkkum_session');
     setStep('otp-request');
     setPhone('');
-    setCountryCode('+91');
     setOtp('');
     setName('');
     setFile(null);
@@ -334,7 +328,6 @@ export default function EllavarkkumPage() {
         setPreviewUrl(URL.createObjectURL(selectedFile));
       } finally {
         setIsLoading(false);
-        setShowGuidelines(false); // Auto-close modal once image is picked
       }
     }
   };
@@ -594,23 +587,14 @@ export default function EllavarkkumPage() {
                   <form onSubmit={handleRequestOtp} className="space-y-6">
                     <div className="space-y-2">
                       <label className="text-[10px] uppercase tracking-[0.2em] font-bold text-slate-400 ml-4">Phone Number</label>
-                      <div className="flex gap-2 items-stretch">
-                        <CountryCodeDropdown
-                          selectedCode={countryCode}
-                          onSelect={(code) => setCountryCode(code)}
-                        />
-                        <input
-                          type="tel"
-                          required
-                          value={phone.startsWith(countryCode) ? phone.slice(countryCode.length) : phone}
-                          onChange={(e) => setPhone(e.target.value)}
-                          placeholder="98765 43210"
-                          className="flex-1 min-w-0 px-6 py-4 rounded-full border border-slate-200 focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all text-lg"
-                        />
-                      </div>
-                      <p className="text-[11px] text-slate-400 ml-4">
-                        Enter your number without the country code
-                      </p>
+                      <input 
+                        type="tel" 
+                        required
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        placeholder="+91 98765 43210"
+                        className="w-full px-6 py-4 rounded-full border border-slate-200 focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all text-lg"
+                      />
                     </div>
                     <button 
                       disabled={isLoading}
@@ -772,7 +756,7 @@ export default function EllavarkkumPage() {
                     <button 
                       type="button"
                       disabled={!file || !name}
-                      onClick={(e) => file ? handleGenerate(e) : setShowGuidelines(true)}
+                      onClick={() => setShowGuidelines(true)}
                       className="w-full py-5 bg-blue-600 text-white rounded-full font-bold text-lg hover:bg-blue-700 hover:shadow-2xl hover:shadow-blue-300 transition-all active:scale-95 disabled:opacity-40 shadow-xl shadow-blue-100 flex items-center justify-center gap-3"
                     >
                       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
