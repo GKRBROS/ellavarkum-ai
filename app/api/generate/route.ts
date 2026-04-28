@@ -87,6 +87,8 @@ export async function POST(request: NextRequest) {
     }
 
     const { photo, phone, requestId, name, gender } = validated.data;
+    console.log('[GENERATE] Input Phone:', phone);
+    console.log('[GENERATE] Input RequestId:', requestId);
 
     const supabase = getSupabaseClient();
 
@@ -227,6 +229,7 @@ export async function POST(request: NextRequest) {
     const isUserAdmin = phone === ADMIN_PHONE;
     const currentTries = validatedRequestRow?.tries_left ?? 3;
     const newTries = isUserAdmin ? currentTries : Math.max(0, currentTries - 1);
+    console.log('[GENERATE] Admin Status:', isUserAdmin, 'Current Tries:', currentTries, 'New Tries:', newTries);
 
     // Finalize the original image URL (if s3 upload was started, get result)
     if (s3UploadPromise) {

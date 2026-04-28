@@ -1,47 +1,180 @@
 export type GenderOption = 'neutral' | 'male' | 'female';
 
 export const PROMPTS: Record<GenderOption, string> = {
-  neutral: `Reimagine the uploaded person as a cinematic, high-end professional portrait with a refined corporate aesthetic and subtle heroic presence. Use the attached image as the sole identity reference. Preserve exact facial identity, bone structure, proportions, skin tone, natural texture, and hairstyle with high fidelity. Do not alter defining features. Ignore original pose.
-Render as an upper-body shot in a 2:3 vertical aspect ratio, true 4K resolution. Pose: body facing forward, head naturally aligned, eyes looking directly at the camera (no flipping or mirroring). Posture upright, composed, confident, with relaxed shoulders.
-Expression & Smile:
- Strictly preserve the original expression. Do not exaggerate or enhance the smile. Do not increase teeth visibility.
-Age Adjustment:
- Subtle, realistic slight youthfulness (no artificial smoothing).
-Hair:
- Preserve original hairstyle exactly.
-Facial Hair:
-If present, preserve exactly
-If clean-shaven, do not add any
-Makeup / Natural Look:
- Preserve as-is. Do not add artificial or heavy makeup.
-Restrictions:
-No tattoos
-No ornaments or accessories
-Clothing:
- Maintain same outfit with realistic fabric texture and natural folds.
+  neutral: `You are a world-class editorial portrait photographer specializing in dramatic, colorful studio lighting. Your task is to create a powerful, dynamic portrait with a “heroic” feel.
 
-💡 Lighting (Fixed & Optimized)
-Soft, warm editorial studio lighting with balanced exposure:
-Gentle natural warm tone
-Even face lighting
-Soft shadows (no harsh contrast)
-No blown highlights or hotspots
-No glare or shine
-Natural skin tone preservation
+IDENTITY ANCHOR (CRITICAL – STRICT CONSTRAINT):
+Source: Use the person from the attached reference photo.
+Preserve: You must keep their exact facial features, skin tone, hairstyle, and natural likeness perfectly unchanged.
 
-Skin & Realism:
- Natural skin texture only. No smoothing or filters.
-Color Accuracy:
- Neutral + slightly warm skin tones. No color spill.
-Image Quality:
- Sharp, clean, realistic. No artifacts or distortion.
+Any culturally, religiously, or personally significant garments or coverings (e.g., hijab, turban, dupatta, headscarf, veil, cap, or modest clothing) must retain equivalent coverage and meaning, with the suit intelligently adapted to integrate or accommodate them without removal or reinterpretation.if any such things exist in attatched image , it should be there without fail in output image .
+
+Universal Application: Apply the lighting and angle to the subject regardless of gender.
+
+1. SCENE & COMPOSITION
+
 Background:
- Transparent PNG, clean alpha.
+A vibrant, smooth orange-red gradient background.
+No patterns, just a hot, intense atmosphere.
 
-🚫 Negative Prompt (Neutral)
-overexposed face, harsh lighting, blown highlights, hotspots, glare, shiny skin, uneven lighting, neon lighting, color cast, exaggerated smile, teeth enhancement, artificial expression, heavy makeup, skin smoothing, plastic skin, face distortion, asymmetry, blur, low detail, over-sharpening, halos, noise, artifacts, glitch, unrealistic rendering
-`,
+Camera Angle (CRITICAL):
+Low-angle shot camera positioned slightly below the subject.
+This should make the subject look powerful and dominant.
 
-  male: `A chest up studio portrait of this man looking directly into the camera with a calm natural expression and both arms crossed . Maintain the facial features and clothing and any other accessories as is from the image. The background is non existent to be made as png. The lighting is even and flat, without harsh shadows, resembling a natural flash photograph that captures realistic skin texture.`,
-  female: `A chest up studio portrait of this woman looking directly into the camera with a calm natural expression and both arms crossed . Maintain the facial features and clothing and any other accessories as is from the image. The background is non existent to be made as png. The lighting is even and flat, without harsh shadows, resembling a natural flash photograph that captures realistic skin texture.`,
+Framing:
+Medium close-up from bottom chest up with a 35 mm sigma lens with f 2.8 at a distance of 6 feet
+
+2. WARDROBE & STYLING
+
+Attire:
+A black, black ops type of costume , that doesn't cover the neck at all
+
+
+Fit: Fitted and sharp.
+Color: Deep matte black (to contrast with bright background).
+
+Expression:
+Serious, intense, focused.
+Subject looking off-camera into the space above (not directly at the lens).
+
+3. LIGHTING (DRAMATIC & COLORFUL)
+
+Palette:
+Dominated by vibrant orange and deep red hues.
+
+Key Light:
+Strong directional lighting that casts light, shadows on the face (chiaroscuro effect), emphasizing facial structure.
+
+Rim Light:
+A strong dramatic edge light (or subtle color cast) that separates the shoulders and head from the intense background.
+
+Mood:
+Mysterious, intense, high-contrast studio aesthetic.
+
+4. TECHNICAL QUALITY
+
+Style:
+Photorealistic, highly detailed.
+
+Texture:
+Sharp focus on the face, natural skin texture, visible pores retained.
+Background remains smooth with gradient contrast`,
+
+  male: `You are a world-class editorial portrait photographer specializing in dramatic, colorful studio lighting. Your task is to create a powerful, dynamic portrait with a “heroic” feel.
+
+IDENTITY ANCHOR (CRITICAL – STRICT CONSTRAINT):
+Source: Use the man from the attached reference photo.
+Preserve: You must keep their exact facial features, skin tone, hairstyle, and natural likeness perfectly unchanged.
+
+Any culturally, religiously, or personally significant garments or coverings (e.g., hijab, turban, dupatta, headscarf, veil, cap, or modest clothing) must retain equivalent coverage and meaning, with the suit intelligently adapted to integrate or accommodate them without removal or reinterpretation.if any such things exist in attatched image , it should be there without fail in output image .
+
+Universal Application: Apply the lighting and angle to the subject regardless of gender.
+
+1. SCENE & COMPOSITION
+
+Background:
+A vibrant, smooth orange-red gradient background.
+No patterns, just a hot, intense atmosphere.
+
+Camera Angle (CRITICAL):
+Low-angle shot camera positioned slightly below the subject.
+This should make the subject look powerful and dominant.
+
+Framing:
+Medium close-up from bottom chest up with a 35 mm sigma lens with f 2.8 at a distance of 6 feet
+
+2. WARDROBE & STYLING
+
+Attire:
+A black, black ops type of costume , that doesn't cover the neck at all
+
+
+Fit: Fitted and sharp.
+Color: Deep matte black (to contrast with bright background).
+
+Expression:
+Serious, intense, focused.
+Subject looking off-camera into the space above (not directly at the lens).
+
+3. LIGHTING (DRAMATIC & COLORFUL)
+
+Palette:
+Dominated by vibrant orange and deep red hues.
+
+Key Light:
+Strong directional lighting that casts light, shadows on the face (chiaroscuro effect), emphasizing facial structure.
+
+Rim Light:
+A strong dramatic edge light (or subtle color cast) that separates the shoulders and head from the intense background.
+
+Mood:
+Mysterious, intense, high-contrast studio aesthetic.
+
+4. TECHNICAL QUALITY
+
+Style:
+Photorealistic, highly detailed.
+
+Texture:
+Sharp focus on the face, natural skin texture, visible pores retained.
+Background remains smooth with gradient contrast`,
+
+  female: `You are a world-class editorial portrait photographer specializing in dramatic, colorful studio lighting. Your task is to create a powerful, dynamic portrait with a “heroic” feel.
+
+IDENTITY ANCHOR (CRITICAL – STRICT CONSTRAINT):
+Source: Use the woman from the attached reference photo.
+Preserve: You must keep their exact facial features, skin tone, hairstyle, and natural likeness perfectly unchanged.
+
+Any culturally, religiously, or personally significant garments or coverings (e.g., hijab, turban, dupatta, headscarf, veil, cap, or modest clothing) must retain equivalent coverage and meaning, with the suit intelligently adapted to integrate or accommodate them without removal or reinterpretation.if any such things exist in attatched image , it should be there without fail in output image .
+
+Universal Application: Apply the lighting and angle to the subject regardless of gender.
+
+1. SCENE & COMPOSITION
+
+Background:
+A vibrant, smooth orange-red gradient background.
+No patterns, just a hot, intense atmosphere.
+
+Camera Angle (CRITICAL):
+Low-angle shot camera positioned slightly below the subject.
+This should make the subject look powerful and dominant.
+
+Framing:
+Medium close-up from bottom chest up with a 35 mm sigma lens with f 2.8 at a distance of 6 feet
+
+2. WARDROBE & STYLING
+
+Attire:
+A black, black ops type of costume , that doesn't cover the neck at all
+
+
+Fit: Fitted and sharp.
+Color: Deep matte black (to contrast with bright background).
+
+Expression:
+Serious, intense, focused.
+Subject looking off-camera into the space above (not directly at the lens).
+
+3. LIGHTING (DRAMATIC & COLORFUL)
+
+Palette:
+Dominated by vibrant orange and deep red hues.
+
+Key Light:
+Strong directional lighting that casts light, shadows on the face (chiaroscuro effect), emphasizing facial structure.
+
+Rim Light:
+A strong dramatic edge light (or subtle color cast) that separates the shoulders and head from the intense background.
+
+Mood:
+Mysterious, intense, high-contrast studio aesthetic.
+
+4. TECHNICAL QUALITY
+
+Style:
+Photorealistic, highly detailed.
+
+Texture:
+Sharp focus on the face, natural skin texture, visible pores retained.
+Background remains smooth with gradient contrast`,
 };

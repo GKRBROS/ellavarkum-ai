@@ -44,6 +44,7 @@ export async function POST(request: NextRequest) {
 
     const phone = normalizePhone(validated.data.phone);
     const otp = validated.data.otp;
+    console.log('[VERIFY OTP] Normalized Phone:', phone);
     const supabase = getSupabaseClient();
 
     const { data: requestRow, error: selectError } = await supabase

@@ -126,36 +126,42 @@ export default function EllavarkkumPage() {
       const ctx = canvas.getContext('2d');
       if (!ctx) return reject('Ctx not found');
 
-      const bgImg = new Image();
       const userImg = new Image();
       const layerImg = new Image();
 
       if (!isInternal) userImg.crossOrigin = 'anonymous';
-      bgImg.crossOrigin = 'anonymous';
       layerImg.crossOrigin = 'anonymous';
 
-      bgImg.src = '/background.webp';
       userImg.src = photoSrc;
-      layerImg.src = '/layer.webp';
+      layerImg.src = '/layer.png'; // Updated to .png
 
       let loadedCount = 0;
       const onLoad = () => {
         loadedCount++;
-        if (loadedCount === 3) {
+        if (loadedCount === 2) {
           canvas.width = CANVAS_WIDTH;
           canvas.height = CANVAS_HEIGHT;
-          ctx.drawImage(bgImg, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-          const gapWidth = 620;
-          const gapHeight = 620;
-          const gapX = (CANVAS_WIDTH - gapWidth) / 2;
-          const gapY = 160;
-          const scale = Math.max(gapWidth / userImg.width, gapHeight / userImg.height);
+          
+          // Draw generated image to fill canvas
+          const scale = Math.max(CANVAS_WIDTH / userImg.width, CANVAS_HEIGHT / userImg.height);
           const w = userImg.width * scale;
           const h = userImg.height * scale;
-          const dx = gapX + (gapWidth - w) / 2;
-          const dy = gapY + (gapHeight - h) / 2;
+          const dx = (CANVAS_WIDTH - w) / 2;
+          const dy = (CANVAS_HEIGHT - h) / 2;
           ctx.drawImage(userImg, dx, dy, w, h);
+          
+          // Draw branding layer on top
           ctx.drawImage(layerImg, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+          
+          // Draw user name if it's not the example
+          if (!isInternal && name) {
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = '700 64px "Outfit", "Arial", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(name, CANVAS_WIDTH / 2, 785);
+          }
+
           canvas.toBlob((blob) => {
             if (blob) resolve(blob);
             else reject('Blob creation failed');
@@ -163,10 +169,8 @@ export default function EllavarkkumPage() {
         }
       };
 
-      bgImg.onload = onLoad;
       userImg.onload = onLoad;
       layerImg.onload = onLoad;
-      bgImg.onerror = () => reject('Failed to load background asset');
       userImg.onerror = () => reject('Failed to load user photo asset');
       layerImg.onerror = () => reject('Failed to load branding layer asset');
     });
@@ -190,20 +194,22 @@ export default function EllavarkkumPage() {
     const savedSession = localStorage.getItem('Ellavarkkum_session');
     if (savedSession) {
       try {
-        const { phone: savedFullPhone, step: savedStep, imageUrl: savedImageUrl } = JSON.parse(savedSession);
+        const { 
+          phone: savedFullPhone, 
+          step: savedStep, 
+          imageUrl: savedImageUrl, 
+          triesLeft: savedTries 
+        } = JSON.parse(savedSession);
         
         if (savedFullPhone && savedStep !== 'processing') {
-          // Try to split phone into country code and number
-          // For simplicity, if it starts with +, we'll take first 3 chars as code if it matches common ones, 
-          // but better to just store them separately or keep them combined.
-          // Let's assume for now we keep them combined in state or just set phone to the full thing if we can't split easily.
-          // Actually, let's just use the full phone for now and if we want to split, we'd need more logic.
-          setPhone(savedFullPhone); 
+          const normalizedSavedPhone = savedFullPhone.trim().replace(/\s+/g, '');
+          setPhone(normalizedSavedPhone); 
           setStep(savedStep);
           if (savedImageUrl) setFinalImageUrl(savedImageUrl);
+          if (savedTries !== undefined) setTriesLeft(savedTries);
           
           const syncTries = async () => {
-            const { data } = await supabase.from('elavarkkum_requests').select('tries_left, generated_image_url').eq('phone', savedFullPhone).maybeSingle();
+            const { data } = await supabase.from('elavarkkum_requests').select('tries_left, generated_image_url').eq('phone', normalizedSavedPhone).maybeSingle();
             if (data) {
               setTriesLeft(data.tries_left);
             }
@@ -245,6 +251,13 @@ export default function EllavarkkumPage() {
     };
   }, [generateExamplePreview]);
 
+  // --- Helpers ---
+
+  const normalizePhoneNumber = (rawPhone: string, code: string) => {
+    const combined = rawPhone.startsWith('+') ? rawPhone : (code + rawPhone.replace(/^\+/, ''));
+    return combined.trim().replace(/\s+/g, '');
+  };
+
   // --- Handlers ---
 
   const handleRequestOtp = async (e: React.FormEvent) => {
@@ -253,8 +266,7 @@ export default function EllavarkkumPage() {
     setIsLoading(true);
 
     try {
-      const currentTries = 3;
-      const fullPhone = countryCode + phone.replace(/^\+/, '');
+      const fullPhone = normalizePhoneNumber(phone, countryCode);
       const response = await fetch('/api/auth/request-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -266,7 +278,7 @@ export default function EllavarkkumPage() {
 
       toast.success('OTP sent!');
       setStep('otp-verify');
-      setTriesLeft(resData.triesLeft ?? currentTries);
+      setTriesLeft(resData.triesLeft ?? 3);
     } catch (err: any) {
       toast.error(err instanceof Error ? err.message : (typeof err === 'string' ? err : 'Failed to send OTP'));
     } finally {
@@ -279,7 +291,7 @@ export default function EllavarkkumPage() {
     setIsLoading(true);
 
     try {
-      const fullPhone = countryCode + phone.replace(/^\+/, '');
+      const fullPhone = normalizePhoneNumber(phone, countryCode);
       const response = await fetch('/api/auth/verify-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -289,12 +301,16 @@ export default function EllavarkkumPage() {
       const resData = await response.json();
       if (!response.ok) throw new Error(resData.error || 'Verification failed');
 
-      setTriesLeft(resData.triesLeft ?? 5);
-      setPhone(fullPhone);
+      const updatedTries = resData.triesLeft ?? 5;
+      setTriesLeft(updatedTries);
       setStep('form');
       
       // Save session with step
-      localStorage.setItem('Ellavarkkum_session', JSON.stringify({ phone: fullPhone, step: 'form' }));
+      localStorage.setItem('Ellavarkkum_session', JSON.stringify({ 
+        phone: fullPhone, 
+        step: 'form',
+        triesLeft: updatedTries
+      }));
       
       toast.success('Identity verified!');
     } catch (err: any) {
@@ -324,6 +340,7 @@ export default function EllavarkkumPage() {
         const compressed = await compressImage(selectedFile);
         setFile(compressed);
         setPreviewUrl(URL.createObjectURL(compressed));
+        setShowGuidelines(false);
         toast.success(compressed.size < selectedFile.size ? 'Photo optimized for upload!' : 'Photo uploaded!');
       } catch (err) {
         console.error('Compression failed:', err);
@@ -342,8 +359,8 @@ export default function EllavarkkumPage() {
       toast.error('No tries left');
       return;
     }
-
-    const fullPhone = countryCode + phone.replace(/^\+/, '');
+    
+    const fullPhone = normalizePhoneNumber(phone, countryCode);
     setStep('processing');
     localStorage.setItem('Ellavarkkum_session', JSON.stringify({ phone: fullPhone, step: 'processing' }));
     setTimer(GEN_TIME);
@@ -402,7 +419,8 @@ export default function EllavarkkumPage() {
       localStorage.setItem('Ellavarkkum_session', JSON.stringify({ 
         phone: fullPhone, 
         step: 'result', 
-        imageUrl: data.finalImageUrl 
+        imageUrl: data.finalImageUrl,
+        triesLeft: updatedTries
       }));
 
       // Wait for progress effect
@@ -438,7 +456,7 @@ export default function EllavarkkumPage() {
     }
   };
 
-  const handleTryAgain = () => {
+  const handleTryAgain = async () => {
     if (triesLeft > 0) {
       setStep('form');
       setFile(null);
@@ -446,9 +464,35 @@ export default function EllavarkkumPage() {
       setFinalImageUrl(null);
       setName('');
       
-      const fullPhone = countryCode + phone.replace(/^\+/, '');
-      // Update session to form state
-      localStorage.setItem('Ellavarkkum_session', JSON.stringify({ phone: fullPhone, step: 'form' }));
+      const currentFullPhone = normalizePhoneNumber(phone, countryCode);
+      
+      // Explicitly sync tries from DB to ensure UI is fresh
+      try {
+        const { data } = await supabase
+          .from('elavarkkum_requests')
+          .select('tries_left')
+          .eq('phone', currentFullPhone)
+          .maybeSingle();
+        
+        if (data) {
+          setTriesLeft(data.tries_left);
+          localStorage.setItem('Ellavarkkum_session', JSON.stringify({ 
+            phone: currentFullPhone, 
+            step: 'form',
+            triesLeft: data.tries_left
+          }));
+        } else {
+          localStorage.setItem('Ellavarkkum_session', JSON.stringify({ 
+            phone: currentFullPhone, 
+            step: 'form'
+          }));
+        }
+      } catch (e) {
+        localStorage.setItem('Ellavarkkum_session', JSON.stringify({ 
+          phone: currentFullPhone, 
+          step: 'form'
+        }));
+      }
     } else {
       toast.error('No tries left. Please contact support.');
     }
@@ -729,19 +773,19 @@ export default function EllavarkkumPage() {
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between px-2">
-                      <div className="flex items-center gap-2">
-                        <div className={`w-2 h-2 rounded-full ${triesLeft > 1 ? 'bg-green-500' : 'bg-orange-500'} animate-pulse`} />
-                        <span className="text-sm font-bold text-slate-600">
-                          {triesLeft} {triesLeft === 1 ? 'try' : 'tries'} left
-                        </span>
-                      </div>
-                    </div>
+                    {/* Tries count removed from UI as per request */}
+
 
                     <button 
                       type="button"
-                      disabled={!file || !name}
-                      onClick={() => setShowGuidelines(true)}
+                      disabled={!name}
+                      onClick={(e) => {
+                        if (file) {
+                          handleGenerate(e);
+                        } else {
+                          setShowGuidelines(true);
+                        }
+                      }}
                       className="w-full py-5 bg-blue-600 text-white rounded-full font-bold text-lg hover:bg-blue-700 hover:shadow-2xl hover:shadow-blue-300 transition-all active:scale-95 disabled:opacity-40 shadow-xl shadow-blue-100 flex items-center justify-center gap-3"
                     >
                       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -865,7 +909,7 @@ export default function EllavarkkumPage() {
                       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                       </svg>
-                      Try Again ({triesLeft})
+                      Try Again
                     </button>
                   </div>
 
