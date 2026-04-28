@@ -619,7 +619,7 @@ export default function EllavarkkumPage() {
         </div>
       </nav>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-12 pt-28 pb-16 md:py-32 relative z-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-12 pt-24 pb-12 md:py-32 relative z-10">
         <AnimatePresence mode="wait">
           {/* STEP: OTP REQUEST */}
           {step === "otp-request" && (
@@ -628,7 +628,7 @@ export default function EllavarkkumPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center max-w-6xl w-full"
+              className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-20 items-center max-w-6xl w-full"
             >
               {/* Left Side: Showcase */}
               <div className="space-y-8 order-1 lg:order-1">
@@ -667,7 +667,7 @@ export default function EllavarkkumPage() {
                 className="flex justify-center order-2 lg:order-2 w-full px-2"
                 id="main-action"
               >
-                <div className="w-full max-w-md glass-panel p-6 sm:p-10 rounded-[40px] shadow-2xl border border-slate-100 relative mx-auto">
+                <div className="w-full max-w-md glass-panel p-5 sm:p-10 rounded-[32px] sm:rounded-[40px] shadow-2xl border border-slate-100 relative mx-auto">
                   <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-[#e1007a] via-[#0077ff] to-[#e1007a]" />
 
                   <div className="mb-8 sm:mb-10 text-center">
@@ -692,7 +692,7 @@ export default function EllavarkkumPage() {
                           value={phone}
                           onChange={(e) => setPhone(e.target.value)}
                           placeholder="98765 43210"
-                          className="flex-1 px-6 py-4 rounded-full border border-slate-200 focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all text-lg"
+                          className="flex-1 min-w-0 px-4 sm:px-6 py-4 rounded-full border border-slate-200 focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all text-base sm:text-lg"
                         />
                       </div>
                     </div>
@@ -745,7 +745,7 @@ export default function EllavarkkumPage() {
                       value={otp}
                       onChange={(e) => setOtp(e.target.value)}
                       placeholder="000000"
-                      className="w-full px-6 py-5 rounded-full border border-blue-200 text-center text-3xl font-black tracking-[0.5em] focus:outline-none focus:ring-4 focus:ring-blue-50/50 focus:border-blue-600 transition-all"
+                      className="w-full px-4 sm:px-6 py-5 rounded-full border border-blue-200 text-center text-2xl sm:text-3xl font-black tracking-[0.2em] sm:tracking-[0.5em] focus:outline-none focus:ring-4 focus:ring-blue-50/50 focus:border-blue-600 transition-all"
                     />
                   </div>
                   <button
@@ -805,7 +805,7 @@ export default function EllavarkkumPage() {
 
                 <div
                   id="main-action"
-                  className="glass-panel p-10 rounded-[40px] border border-slate-100 shadow-xl space-y-8 h-full"
+                  className="glass-panel p-5 sm:p-10 rounded-[32px] sm:rounded-[40px] border border-slate-100 shadow-xl space-y-8 h-full"
                 >
                   <form className="space-y-6">
                     <div className="space-y-4">
@@ -840,7 +840,7 @@ export default function EllavarkkumPage() {
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         placeholder="Johnathan Doe"
-                        className="w-full px-6 py-4 rounded-full border border-slate-200 focus:outline-none focus:ring-4 focus:ring-blue-50 focus:border-blue-500 transition-all"
+                        className="w-full px-5 sm:px-6 py-4 rounded-full border border-slate-200 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all text-base sm:text-lg"
                       />
                     </div>
 
