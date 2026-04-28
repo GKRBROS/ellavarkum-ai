@@ -183,7 +183,7 @@ export async function POST(request: NextRequest) {
         const timeoutId = setTimeout(() => controller.abort(), OPENROUTER_TIMEOUT_MS);
         try {
           console.log(`[GENERATE] Attempting model: ${model} with Key Index: ${OPENROUTER_API_KEYS.indexOf(apiKey)}`);
-          
+
           const apiResponse = await fetch('https://openrouter.ai/api/v1/chat/completions', {
             method: 'POST',
             headers: {
@@ -196,12 +196,12 @@ export async function POST(request: NextRequest) {
             body: JSON.stringify({
               model,
               messages: [
-                { 
-                  role: 'user', 
+                {
+                  role: 'user',
                   content: [
-                    { type: 'text', text: prompt }, 
+                    { type: 'text', text: prompt },
                     { type: 'image_url', image_url: { url: dataUrl } }
-                  ] 
+                  ]
                 }
               ],
               modalities: ['image'],
@@ -229,13 +229,13 @@ export async function POST(request: NextRequest) {
 
           lastOpenRouterError = `Model ${model} failed (${apiResponse.status}): ${errorDetail}`;
           console.error(`[GENERATE] OpenRouter Error (${apiResponse.status}):`, errorDetail);
-          
+
           if (!RETRYABLE_OPENROUTER_STATUS.has(apiResponse.status)) {
             console.log(`[GENERATE] Non-retryable status ${apiResponse.status} for model ${model}. Skipping to next.`);
           }
         } catch (error: any) {
-          lastOpenRouterError = error?.name === 'AbortError' 
-            ? `Model ${model} timed out after ${OPENROUTER_TIMEOUT_MS}ms` 
+          lastOpenRouterError = error?.name === 'AbortError'
+            ? `Model ${model} timed out after ${OPENROUTER_TIMEOUT_MS}ms`
             : `Model ${model} request failed: ${error?.message || 'Unknown request error'}`;
           console.error(`[GENERATE] Fetch Exception:`, lastOpenRouterError);
         } finally {

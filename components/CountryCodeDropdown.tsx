@@ -157,13 +157,18 @@ const countryCodes = [
   { code: "+599", country: "Curacao" },
 ];
 
-export default function CountryCodeDropdown({ onSelect }: { onSelect: (code: string) => void }) {
+export default function CountryCodeDropdown({
+  onSelect,
+}: {
+  onSelect: (code: string) => void;
+}) {
   const [search, setSearch] = useState("");
   const [show, setShow] = useState(false);
 
-  const filtered = countryCodes.filter(c =>
-    c.country.toLowerCase().includes(search.toLowerCase()) ||
-    c.code.includes(search)
+  const filtered = countryCodes.filter(
+    (c) =>
+      c.country.toLowerCase().includes(search.toLowerCase()) ||
+      c.code.includes(search),
   );
 
   return (
@@ -174,7 +179,7 @@ export default function CountryCodeDropdown({ onSelect }: { onSelect: (code: str
         placeholder="Search country or code"
         value={search}
         onFocus={() => setShow(true)}
-        onChange={e => setSearch(e.target.value)}
+        onChange={(e) => setSearch(e.target.value)}
         onBlur={() => setTimeout(() => setShow(false), 150)}
       />
       {show && (
