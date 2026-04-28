@@ -60,6 +60,7 @@ const SlideshowFallback = () => {
 
 export default function EllavarkkumPage() {
   const [step, setStep] = useState<Step>("otp-request");
+  const [countryCode, setCountryCode] = useState("+91");
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
   const [name, setName] = useState("");
@@ -71,18 +72,25 @@ export default function EllavarkkumPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [gender, setGender] = useState<"male" | "female">("male");
   const [showGuidelines, setShowGuidelines] = useState(false);
-  const [showSpamModal, setShowSpamModal] = useState(false);
   const [scrollPosition, setScrollPosition] = useState<
     "top" | "bottom" | "middle"
   >("top");
-  const [isVideoLoaded, setIsVideoLoaded] = useState(false);
+
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [requestId, setRequestId] = useState<string | null>(null);
+
+  const normalizePhoneNumber = (rawPhone: string, code: string) => {
+    const combined = rawPhone.startsWith("+")
+      ? rawPhone
+      : code + rawPhone.replace(/^\+/, "");
+    return combined.trim().replace(/\s+/g, "");
+  };
 
   const compressImage = (file: File): Promise<File> => {
     return new Promise((resolve, reject) => {
-      const maxSize = 1.5 * 1024 * 1024; // 1.5MB limit
+      const maxSize = 0.8 * 1024 * 1024; // 800KB limit to prevent 413 errors
       if (file.size <= maxSize) return resolve(file);
 
       const reader = new FileReader();
@@ -95,8 +103,8 @@ export default function EllavarkkumPage() {
           let width = img.width;
           let height = img.height;
 
-          // Max dimension 2048px to keep quality high but size low
-          const maxDim = 2048;
+          // Max dimension 1536px for high quality but reliable server handling
+          const maxDim = 1536;
           if (width > height) {
             if (width > maxDim) {
               height *= maxDim / width;
@@ -127,8 +135,8 @@ export default function EllavarkkumPage() {
               }
             },
             "image/jpeg",
-            0.85,
-          ); // High quality JPEG
+            0.8,
+          ); // Optimized size
         };
         img.onerror = () => resolve(file);
       };
@@ -154,17 +162,33 @@ export default function EllavarkkumPage() {
       bgImg.crossOrigin = "anonymous";
       layerImg.crossOrigin = "anonymous";
 
-      bgImg.src = "/background.webp";
+      bgImg.src = "/background.png"; // Changed from .webp to match docs
       userImg.src = photoSrc;
-      layerImg.src = "/layer.webp";
+      layerImg.src = "/layer.png"; // Changed from .webp to match actual file
 
       let loadedCount = 0;
-      const onLoad = () => {
+      let bgFailed = false;
+      let layerFailed = false;
+
+      const onAllAttempted = () => {
         loadedCount++;
         if (loadedCount === 3) {
           canvas.width = CANVAS_WIDTH;
           canvas.height = CANVAS_HEIGHT;
-          ctx.drawImage(bgImg, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+          if (!bgFailed) {
+            ctx.drawImage(bgImg, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+          } else {
+            // Fallback: Premium Gradient if background.png is missing
+            const gradient = ctx.createLinearGradient(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+            gradient.addColorStop(0, "#e1007a"); // Pink
+            gradient.addColorStop(0.5, "#0077ff"); // Blue
+            gradient.addColorStop(1, "#e1007a"); // Pink
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+            console.warn("Using fallback gradient because /background.png was not found");
+          }
+
           const gapWidth = 620;
           const gapHeight = 620;
           const gapX = (CANVAS_WIDTH - gapWidth) / 2;
@@ -178,7 +202,11 @@ export default function EllavarkkumPage() {
           const dx = gapX + (gapWidth - w) / 2;
           const dy = gapY + (gapHeight - h) / 2;
           ctx.drawImage(userImg, dx, dy, w, h);
-          ctx.drawImage(layerImg, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+          if (!layerFailed) {
+            ctx.drawImage(layerImg, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+          }
+
           canvas.toBlob((blob) => {
             if (blob) resolve(blob);
             else reject("Blob creation failed");
@@ -186,12 +214,19 @@ export default function EllavarkkumPage() {
         }
       };
 
-      bgImg.onload = onLoad;
-      userImg.onload = onLoad;
-      layerImg.onload = onLoad;
-      bgImg.onerror = () => reject("Failed to load background asset");
+      bgImg.onload = onAllAttempted;
+      userImg.onload = onAllAttempted;
+      layerImg.onload = onAllAttempted;
+      
+      bgImg.onerror = () => {
+        bgFailed = true;
+        onAllAttempted();
+      };
       userImg.onerror = () => reject("Failed to load user photo asset");
-      layerImg.onerror = () => reject("Failed to load branding layer asset");
+      layerImg.onerror = () => {
+        layerFailed = true;
+        onAllAttempted();
+      };
     });
   };
 
@@ -217,16 +252,18 @@ export default function EllavarkkumPage() {
           phone: savedPhone,
           step: savedStep,
           imageUrl: savedImageUrl,
+          requestId: savedRequestId,
         } = JSON.parse(savedSession);
 
         if (savedPhone && savedStep !== "processing") {
           setPhone(savedPhone);
           setStep(savedStep);
+          if (savedRequestId) setRequestId(savedRequestId);
           if (savedImageUrl) setFinalImageUrl(savedImageUrl);
 
           const syncTries = async () => {
             const { data } = await supabase
-              .from("elavarkkum_requests")
+              .from("elavarkum_requests")
               .select("tries_left, generated_image_url")
               .eq("phone", savedPhone)
               .maybeSingle();
@@ -273,22 +310,18 @@ export default function EllavarkkumPage() {
 
   // --- Handlers ---
 
-  const handleRequestOtp = (e: React.FormEvent) => {
+  const handleRequestOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!phone) return;
-    setShowSpamModal(true);
-  };
-
-  const confirmRequestOtp = async () => {
-    setShowSpamModal(false);
     setIsLoading(true);
 
     try {
+      const fullPhone = normalizePhoneNumber(phone, countryCode);
       const currentTries = 3;
       const response = await fetch("/api/auth/request-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone }),
+        body: JSON.stringify({ phone: fullPhone }),
       });
 
       const resData = await response.json();
@@ -313,24 +346,31 @@ export default function EllavarkkumPage() {
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-
     try {
+
+      const fullPhone = normalizePhoneNumber(phone, countryCode);
       const response = await fetch("/api/auth/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone, otp }),
+        body: JSON.stringify({ phone: fullPhone, otp }),
       });
 
       const resData = await response.json();
       if (!response.ok) throw new Error(resData.error || "Verification failed");
 
+      const verifiedRequestId = resData.requestId;
       setTriesLeft(resData.triesLeft ?? 5);
+      if (verifiedRequestId) setRequestId(verifiedRequestId);
       setStep("form");
 
       // Save session with step
       localStorage.setItem(
         "Ellavarkkum_session",
-        JSON.stringify({ phone, step: "form" }),
+        JSON.stringify({
+          phone: fullPhone,
+          step: "form",
+          requestId: verifiedRequestId,
+        }),
       );
 
       toast.success("Identity verified!");
@@ -404,11 +444,13 @@ export default function EllavarkkumPage() {
 
     try {
       // 1. Prepare form data
+      const fullPhone = normalizePhoneNumber(phone, countryCode);
       const formData = new FormData();
-      formData.append("phone", phone);
+      formData.append("phone", fullPhone);
       formData.append("name", name);
       formData.append("gender", gender);
       formData.append("photo", file);
+      if (requestId) formData.append("requestId", requestId);
 
       // 2. Call AI Generation API
       const response = await fetch("/api/generate", {
@@ -559,48 +601,7 @@ export default function EllavarkkumPage() {
         </div>
       )}
 
-      {/* Spam Modal */}
-      {showSpamModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-          <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="bg-white p-8 rounded-[40px] max-w-sm w-full shadow-2xl text-center"
-          >
-            <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
-              <svg
-                className="w-8 h-8"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                />
-              </svg>
-            </div>
-            <h3 className="text-2xl font-black mb-3 text-slate-900">
-              Check Your Inbox
-            </h3>
-            <p className="text-slate-500 mb-8 leading-relaxed">
-              If you don&apos;t see the email within a minute, please check your{" "}
-              <span className="font-bold text-slate-900">
-                Spam or Junk folder
-              </span>
-              .
-            </p>
-            <button
-              onClick={confirmRequestOtp}
-              className="w-full py-4 bg-blue-600 text-white rounded-full font-bold text-lg hover:bg-blue-700 shadow-lg shadow-blue-100 transition-all active:scale-95"
-            >
-              Okay
-            </button>
-          </motion.div>
-        </div>
-      )}
+
 
       <nav className="fixed top-0 left-0 right-0 z-50 px-4 md:px-8 py-3 md:py-4 flex justify-between items-center glass-panel">
         <div className="flex items-center gap-2 md:gap-4">
@@ -642,29 +643,14 @@ export default function EllavarkkumPage() {
                 </div>
 
                 <div className="relative rounded-[32px] overflow-hidden shadow-2xl bg-black border border-slate-100 group">
-                  <AnimatePresence>
-                    {!isVideoLoaded && (
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="absolute inset-0 z-20 bg-slate-900"
-                      >
-                        <SlideshowFallback />
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-
-                  <video
-                    autoPlay
-                    muted
-                    loop
-                    playsInline
-                    onCanPlay={() => setIsVideoLoaded(true)}
-                    className={`w-full h-auto relative z-10 block transition-opacity duration-1000 ${isVideoLoaded ? "opacity-100" : "opacity-0"}`}
-                  >
-                    <source src="/before_after.mp4" type="video/mp4" />
-                  </video>
+                  <NextImage
+                    src="/main.gif"
+                    alt="How it works"
+                    width={1080}
+                    height={1350}
+                    className="w-full h-auto relative z-10 block"
+                    unoptimized
+                  />
 
                   <div className="absolute bottom-6 left-6 right-6 flex justify-between items-center z-30">
                     <div className="px-4 py-1.5 bg-black/40 backdrop-blur-md rounded-full border border-white/20">
@@ -681,7 +667,7 @@ export default function EllavarkkumPage() {
                 className="flex justify-center order-2 lg:order-2 w-full px-2"
                 id="main-action"
               >
-                <div className="w-full max-w-md glass-panel p-6 sm:p-10 rounded-[40px] shadow-2xl border border-slate-100 relative overflow-hidden mx-auto">
+                <div className="w-full max-w-md glass-panel p-6 sm:p-10 rounded-[40px] shadow-2xl border border-slate-100 relative mx-auto">
                   <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-[#e1007a] via-[#0077ff] to-[#e1007a]" />
 
                   <div className="mb-8 sm:mb-10 text-center">
@@ -698,14 +684,17 @@ export default function EllavarkkumPage() {
                       <label className="text-[10px] uppercase tracking-[0.2em] font-bold text-slate-400 ml-4">
                         Phone Number
                       </label>
-                      <input
-                        type="tel"
-                        required
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        placeholder="+91 98765 43210"
-                        className="w-full px-6 py-4 rounded-full border border-slate-200 focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all text-lg"
-                      />
+                      <div className="flex gap-2 items-stretch">
+                        <CountryCodeDropdown onSelect={(code) => setCountryCode(code)} />
+                        <input
+                          type="tel"
+                          required
+                          value={phone}
+                          onChange={(e) => setPhone(e.target.value)}
+                          placeholder="98765 43210"
+                          className="flex-1 px-6 py-4 rounded-full border border-slate-200 focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all text-lg"
+                        />
+                      </div>
                     </div>
                     <button
                       disabled={isLoading}
@@ -740,7 +729,7 @@ export default function EllavarkkumPage() {
                   </h2>
                   <p className="text-slate-500 text-center mb-6">
                     We&apos;ve sent a code to{" "}
-                    <span className="font-semibold">{phone}</span>
+                    <span className="font-semibold">{countryCode + phone.replace(/^\+/, "")}</span>
                   </p>
                 </div>
 
@@ -871,10 +860,28 @@ export default function EllavarkkumPage() {
                           className="hidden"
                         />
                         <div className="w-full h-full border-2 border-dashed border-slate-200 rounded-[30px] flex flex-col items-center justify-center bg-slate-50 group-hover:bg-blue-50 group-hover:border-blue-300 transition-all group-hover:scale-[1.01]">
-                          {previewUrl ? (
-                            <span className="text-blue-600 font-bold text-sm">
-                              Image selected!
-                            </span>
+                          {file ? (
+                            <div className="flex flex-col items-center">
+                              <span className="text-blue-600 font-bold text-sm mb-2">
+                                Image selected!
+                              </span>
+                              <div className="w-12 h-12 bg-white rounded-2xl shadow-sm flex items-center justify-center group-hover:text-blue-600 transition-colors">
+                                <svg
+                                  className="w-6 h-6"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
+                                  />
+                                </svg>
+                              </div>
+                              <span className="text-slate-400 text-[10px] mt-2">Click to change photo</span>
+                            </div>
                           ) : (
                             <>
                               <div className="w-12 h-12 bg-white rounded-2xl shadow-sm flex items-center justify-center mb-4 group-hover:text-blue-600 transition-colors">
@@ -896,7 +903,7 @@ export default function EllavarkkumPage() {
                                 Drop your photo here or click to browse
                               </span>
                               <span className="text-slate-400 text-xs mt-1">
-                                PNG or JPG, max 5MB
+                                PNG or JPG, max 10MB
                               </span>
                             </>
                           )}
@@ -918,7 +925,13 @@ export default function EllavarkkumPage() {
                     <button
                       type="button"
                       disabled={!file || !name}
-                      onClick={() => setShowGuidelines(true)}
+                      onClick={(e) => {
+                        if (file) {
+                          handleGenerate(e);
+                        } else {
+                          setShowGuidelines(true);
+                        }
+                      }}
                       className="w-full py-5 bg-blue-600 text-white rounded-full font-bold text-lg hover:bg-blue-700 hover:shadow-2xl hover:shadow-blue-300 transition-all active:scale-95 disabled:opacity-40 shadow-xl shadow-blue-100 flex items-center justify-center gap-3"
                     >
                       <svg
@@ -949,16 +962,14 @@ export default function EllavarkkumPage() {
                 </div>
 
                 <div className="relative rounded-[40px] overflow-hidden shadow-2xl bg-black border border-slate-200 group">
-                  <video
-                    autoPlay
-                    muted
-                    loop
-                    playsInline
-                    poster="/AFTER.webp"
+                  <NextImage
+                    src="/main.gif"
+                    alt="Reference Portrait"
+                    width={1080}
+                    height={1350}
                     className="w-full h-auto object-contain block"
-                  >
-                    <source src="/before_after.mp4" type="video/mp4" />
-                  </video>
+                    unoptimized
+                  />
                 </div>
               </div>
             </motion.div>

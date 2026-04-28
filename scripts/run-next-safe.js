@@ -6,10 +6,10 @@ const mode = process.argv[2] || 'dev'
 const nextBin = require.resolve('next/dist/bin/next')
 const nextCmd = process.execPath
 const nextArgs = [nextBin, mode, ...process.argv.slice(3)]
-const nextDir = path.join(process.cwd(), '.next')
+const nextDir = path.join(process.cwd(), process.env.NEXT_DIST_DIR || '.next')
 const devMarkerPath = path.join(nextDir, '.safe-next-dev.json')
 
-const missingChunkRegex = /Cannot find module '\.\/chunks\/vendor-chunks|Cannot find module '\.\/chunks\/vendor-chunks\/@smithy|MODULE_NOT_FOUND[\s\S]*\.next\\server|MODULE_NOT_FOUND[\s\S]*\.next\/server|ENOENT[\s\S]*next-font-manifest\.json|ENOENT[\s\S]*routes-manifest\.json/i
+const missingChunkRegex = /Cannot find module '\.\/chunks\/vendor-chunks|Cannot find module '\.\/chunks\/vendor-chunks\/@smithy|MODULE_NOT_FOUND[\s\S]*\.next\\server|MODULE_NOT_FOUND[\s\S]*\.next\/server|ENOENT[\s\S]*next-font-manifest\.json|ENOENT[\s\S]*routes-manifest\.json|__webpack_modules__\[moduleId\] is not a function|SegmentViewNode/i
 
 const clearNextDir = () => {
   try {

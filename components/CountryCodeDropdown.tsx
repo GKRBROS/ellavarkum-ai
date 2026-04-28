@@ -1,8 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 
 // Reference: https://countrycode.org/ and libphonenumber
 const countryCodes = [
-  { code: "+1", country: "United States" },
+  { code: "+1", country: "USA" },
   { code: "+7", country: "Russia" },
   { code: "+20", country: "Egypt" },
   { code: "+27", country: "South Africa" },
@@ -16,7 +16,7 @@ const countryCodes = [
   { code: "+40", country: "Romania" },
   { code: "+41", country: "Switzerland" },
   { code: "+43", country: "Austria" },
-  { code: "+44", country: "United Kingdom" },
+  { code: "+44", country: "UK" },
   { code: "+45", country: "Denmark" },
   { code: "+46", country: "Sweden" },
   { code: "+47", country: "Norway" },
@@ -164,6 +164,18 @@ export default function CountryCodeDropdown({
 }) {
   const [search, setSearch] = useState("");
   const [show, setShow] = useState(false);
+  const [selectedCode, setSelectedCode] = useState("+91");
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShow(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const filtered = countryCodes.filter(
     (c) =>
@@ -172,38 +184,60 @@ export default function CountryCodeDropdown({
   );
 
   return (
-    <div className="relative w-64">
-      <input
-        type="text"
-        className="w-full border px-3 py-2 rounded focus:outline-none"
-        placeholder="Search country or code"
-        value={search}
-        onFocus={() => setShow(true)}
-        onChange={(e) => setSearch(e.target.value)}
-        onBlur={() => setTimeout(() => setShow(false), 150)}
-      />
-      {show && (
-        <div
-          className="absolute z-10 mt-1 w-full bg-white border rounded shadow max-h-72 overflow-y-auto"
-          style={{ minHeight: "3rem" }}
+    <div className="relative flex-shrink-0" ref={dropdownRef}>
+      <button
+        type="button"
+        onClick={() => setShow(!show)}
+        className="h-full px-4 py-4 rounded-full border border-slate-200 bg-white flex items-center justify-center gap-2 hover:border-blue-500 hover:ring-4 hover:ring-blue-50 transition-all font-black text-slate-700 min-w-[100px] shadow-sm active:scale-95"
+      >
+        <span>{selectedCode}</span>
+        <svg 
+          className={`w-4 h-4 text-slate-400 transition-transform duration-300 ${show ? 'rotate-180' : ''}`} 
+          fill="none" 
+          viewBox="0 0 24 24" 
+          stroke="currentColor"
         >
-          {filtered.length === 0 && (
-            <div className="p-2 text-gray-400">No results</div>
-          )}
-          {filtered.slice(0, 8).map((c, idx) => (
-            <div
-              key={c.code + c.country}
-              className="p-2 hover:bg-blue-100 cursor-pointer"
-              onMouseDown={() => {
-                onSelect(c.code);
-                setShow(false);
-                setSearch(c.code + " " + c.country);
-              }}
-            >
-              <span className="font-mono mr-2">{c.code}</span>
-              <span>{c.country}</span>
-            </div>
-          ))}
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {show && (
+        <div className="absolute z-[100] mt-3 w-72 bg-white/95 backdrop-blur-xl border border-slate-200 rounded-[32px] shadow-2xl p-4 animate-in fade-in zoom-in slide-in-from-top-2 duration-300 origin-top-left">
+           <div className="relative mb-3">
+             <input
+              type="text"
+              autoFocus
+              className="w-full px-5 py-3 rounded-2xl border border-slate-100 bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all text-slate-900 placeholder:text-slate-400"
+              placeholder="Search country..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            <svg className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+          
+          <div className="max-h-[400px] overflow-y-auto custom-scrollbar pr-1">
+            {filtered.length === 0 ? (
+              <div className="p-4 text-center text-slate-400 italic">No countries found</div>
+            ) : (
+              filtered.map((c) => (
+                <div
+                  key={c.code + c.country}
+                  className="p-3 hover:bg-blue-50 rounded-2xl cursor-pointer flex justify-between items-center group transition-all"
+                  onClick={() => {
+                    onSelect(c.code);
+                    setSelectedCode(c.code);
+                    setShow(false);
+                    setSearch("");
+                  }}
+                >
+                  <span className="font-bold text-slate-700 group-hover:text-blue-700 transition-colors">{c.country}</span>
+                  <span className="bg-blue-50 text-blue-600 px-2 py-1 rounded-lg font-mono text-xs font-black">{c.code}</span>
+                </div>
+              ))
+            )}
+          </div>
         </div>
       )}
     </div>
