@@ -12,7 +12,11 @@
 # next.js
 /.next/
 /.next_prod/
+/.next_prod*/
 /out/
+BUILD_ID
+.next_prod/BUILD_ID
+.next_prod*/BUILD_ID
 
 # production
 /build

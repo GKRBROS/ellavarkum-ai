@@ -20,7 +20,7 @@ const CountryCodeDropdown = dynamic(
 type Step = "otp-request" | "otp-verify" | "form" | "processing" | "result";
 
 // --- Constants ---
-const GEN_TIME = 40; // seconds
+const GEN_TIME = 50; // seconds
 const CANVAS_WIDTH = 1080;
 const CANVAS_HEIGHT = 1350;
 
