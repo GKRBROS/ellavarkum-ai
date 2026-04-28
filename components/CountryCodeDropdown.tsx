@@ -202,7 +202,7 @@ export default function CountryCodeDropdown({
       </button>
 
       {show && (
-        <div className="absolute z-[100] mt-3 w-72 bg-white/95 backdrop-blur-xl border border-slate-200 rounded-[32px] shadow-2xl p-4 animate-in fade-in zoom-in slide-in-from-top-2 duration-300 origin-top-left">
+        <div className="absolute z-[100] mt-3 w-[280px] max-w-[calc(100vw-2.5rem)] bg-white/95 backdrop-blur-xl border border-slate-200 rounded-[32px] shadow-2xl p-4 animate-in fade-in zoom-in slide-in-from-top-2 duration-300 origin-top-left">
            <div className="relative mb-3">
              <input
               type="text"

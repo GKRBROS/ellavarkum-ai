@@ -327,7 +327,7 @@ export default function EllavarkkumPage() {
       const resData = await response.json();
       if (!response.ok) throw new Error(resData.error || "Failed to send OTP");
 
-      toast.success("OTP sent! Please check your inbox.");
+      toast.success("OTP sent!");
       setStep("otp-verify");
       setTriesLeft(resData.triesLeft ?? currentTries);
     } catch (err: any) {
@@ -401,6 +401,7 @@ export default function EllavarkkumPage() {
         const compressed = await compressImage(selectedFile);
         setFile(compressed);
         setPreviewUrl(URL.createObjectURL(compressed));
+        setShowGuidelines(false);
         toast.success(
           compressed.size < selectedFile.size
             ? "Photo optimized for upload!"
@@ -410,6 +411,7 @@ export default function EllavarkkumPage() {
         console.error("Compression failed:", err);
         setFile(selectedFile);
         setPreviewUrl(URL.createObjectURL(selectedFile));
+        setShowGuidelines(false);
       } finally {
         setIsLoading(false);
       }
@@ -601,8 +603,6 @@ export default function EllavarkkumPage() {
         </div>
       )}
 
-
-
       <nav className="fixed top-0 left-0 right-0 z-50 px-4 md:px-8 py-3 md:py-4 flex justify-between items-center glass-panel">
         <div className="flex items-center gap-2 md:gap-4">
           <NextImage
@@ -619,7 +619,7 @@ export default function EllavarkkumPage() {
         </div>
       </nav>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-12 py-16 md:py-32 relative z-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-12 pt-28 pb-16 md:py-32 relative z-10">
         <AnimatePresence mode="wait">
           {/* STEP: OTP REQUEST */}
           {step === "otp-request" && (
@@ -849,7 +849,10 @@ export default function EllavarkkumPage() {
                         Upload Professional Photo
                       </label>
                       <div
-                        onClick={() => setShowGuidelines(true)}
+                        onClick={() => {
+                          if (!file) setShowGuidelines(true);
+                          else fileInputRef.current?.click();
+                        }}
                         className="relative group cursor-pointer h-48"
                       >
                         <input
@@ -1138,18 +1141,17 @@ export default function EllavarkkumPage() {
                 </div>
               </div>
 
-              <div className="relative aspect-[1080/1350] bg-slate-50 rounded-[50px] overflow-hidden shadow-[0_50px_100px_-20px_rgba(0,0,0,0.15)] border border-slate-100 order-1 lg:order-2 p-4">
-                <div className="w-full h-full rounded-[36px] overflow-hidden relative group bg-slate-100 flex items-center justify-center">
-                  {finalImageUrl ? (
-                    <NextImage
-                      src={finalImageUrl}
-                      alt="Final AI Persona"
-                      width={1080}
-                      height={1350}
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                      unoptimized
-                    />
-                  ) : (
+              <div className="relative rounded-[32px] overflow-hidden shadow-2xl bg-black border border-slate-100 group order-1 lg:order-2">
+                {finalImageUrl ? (
+                  <NextImage
+                    src={finalImageUrl}
+                    alt="Final AI Persona"
+                    width={1080}
+                    height={1350}
+                    className="w-full h-auto relative z-10 block"
+                    unoptimized
+                  />
+                ) : (
                     <div className="animate-pulse flex flex-col items-center gap-4 text-slate-400">
                       <div className="w-12 h-12 rounded-full border-4 border-slate-200 border-t-blue-500 animate-spin" />
                       <p className="text-sm font-medium">
@@ -1159,9 +1161,8 @@ export default function EllavarkkumPage() {
                   )}
                   <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/20 via-transparent to-transparent pointer-events-none" />
                 </div>
-              </div>
-            </motion.div>
-          )}
+              </motion.div>
+            )}
         </AnimatePresence>
       </div>
 

@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
 
     const { data: existingRequest, error: selectError } = await supabase
       .from(IMAGE_GENERATION_TABLE)
-      .select('id, status')
+      .select('id, status, tries_left')
       .eq('phone', phone)
       .maybeSingle();
 
@@ -57,10 +57,10 @@ export async function POST(request: NextRequest) {
       return apiJson(request, { error: 'Unable to process OTP request' }, { status: 500 });
     }
 
-    if (existingRequest?.status === 'generated') {
+    if (existingRequest?.status === 'generated' && (existingRequest.tries_left ?? 0) <= 0) {
       return apiJson(
         request,
-        { error: 'This phone number has already completed generation.' },
+        { error: 'This phone number has already completed all generation attempts.' },
         { status: 409 }
       );
     }
