@@ -262,25 +262,64 @@ export default function EllavarkkumPage() {
           if (savedImageUrl) setFinalImageUrl(savedImageUrl);
 
           const syncTries = async () => {
-            const { data } = await supabase
-              .from("elavarkum_requests")
-              .select("tries_left, generated_image_url")
-              .eq("phone", savedPhone)
-              .maybeSingle();
-            if (data) {
-              setTriesLeft(data.tries_left);
+            try {
+              const { data, error } = await supabase
+                .from("elavarkum_requests")
+                .select("tries_left, generated_image_url")
+                .eq("phone", savedPhone)
+                .maybeSingle();
+              
+              if (error) throw error;
+
+              if (data) {
+                setTriesLeft(data.tries_left);
+                // AUTO-RECOVERY: If the image was generated while user was away/reloading
+                if (data.generated_image_url && savedStep !== "result") {
+                  console.log("Auto-recovering session from Supabase result");
+                  setFinalImageUrl(data.generated_image_url);
+                  setStep("result");
+                  localStorage.setItem(
+                    "Ellavarkkum_session",
+                    JSON.stringify({
+                      phone: savedPhone,
+                      step: "result",
+                      imageUrl: data.generated_image_url,
+                      requestId: savedRequestId
+                    })
+                  );
+                }
+              }
+            } catch (err) {
+              console.error("Session sync failed:", err);
             }
           };
           syncTries();
         } else if (savedPhone && savedStep === "processing") {
           setPhone(savedPhone);
+          // If we reloaded while processing, go to form but check for result
           setStep("form");
+          const recover = async () => {
+             const { data } = await supabase
+                .from("elavarkum_requests")
+                .select("tries_left, generated_image_url")
+                .eq("phone", savedPhone)
+                .maybeSingle();
+             if (data?.generated_image_url) {
+                setFinalImageUrl(data.generated_image_url);
+                setStep("result");
+             }
+          };
+          recover();
         } else {
+          console.warn("Invalid session found, removing:", savedSession);
           localStorage.removeItem("Ellavarkkum_session");
         }
       } catch (e) {
+        console.error("Failed to parse session:", e);
         localStorage.removeItem("Ellavarkkum_session");
       }
+    } else {
+      console.log("No saved session found in localStorage");
     }
     let scrollTimer: any;
     const handleScroll = () => {
@@ -330,6 +369,15 @@ export default function EllavarkkumPage() {
       toast.success("OTP sent!");
       setStep("otp-verify");
       setTriesLeft(resData.triesLeft ?? currentTries);
+      
+      // Save phone early to prevent redirect to start on refresh
+      localStorage.setItem(
+        "Ellavarkkum_session",
+        JSON.stringify({ 
+          phone: fullPhone, 
+          step: "otp-verify" 
+        }),
+      );
     } catch (err: any) {
       toast.error(
         err instanceof Error
