@@ -1,7 +1,7 @@
 export type GenderOption = 'neutral' | 'male' | 'female';
 
 export const PROMPTS: Record<GenderOption, string> = {
-  neutral: `You are a world-class editorial portrait photographer specializing in dramatic, colorful studio lighting. Your task is to create a powerful, dynamic portrait with a “heroic” feel.
+  neutral: `You are a world-class editorial portrait photographer specializing in dramatic, colorful studio lighting. Your task is to create a powerful, dynamic portrait with a “heroic” feel.x
 
 IDENTITY ANCHOR (CRITICAL – STRICT CONSTRAINT):
 Source: Use the person from the attached reference photo.
@@ -29,13 +29,12 @@ Medium close-up from bottom chest up with a 35 mm sigma lens with f 2.8 at a dis
 Attire:
 A black, black ops type of costume , that doesn't cover the neck at all
 
-
 Fit: Fitted and sharp.
 Color: Deep matte black (to contrast with bright background).
 
 Expression:
 Serious, intense, focused.
-Subject looking off-camera into the space above (not directly at the lens).
+Subject looking off-camera into the space at a 25 degree angle above (not directly at the lens).
 
 3. LIGHTING (DRAMATIC & COLORFUL)
 
@@ -60,7 +59,7 @@ Texture:
 Sharp focus on the face, natural skin texture, visible pores retained.
 Background remains smooth with gradient contrast`,
 
-  male: `You are a world-class editorial portrait photographer specializing in dramatic, colorful studio lighting. Your task is to create a powerful, dynamic portrait with a “heroic” feel.
+  male: `You are a world-class editorial portrait photographer specializing in dramatic, colorful studio lighting. Your task is to create a powerful, dynamic portrait with a “heroic” feel.x
 
 IDENTITY ANCHOR (CRITICAL – STRICT CONSTRAINT):
 Source: Use the man from the attached reference photo.
@@ -88,13 +87,12 @@ Medium close-up from bottom chest up with a 35 mm sigma lens with f 2.8 at a dis
 Attire:
 A black, black ops type of costume , that doesn't cover the neck at all
 
-
 Fit: Fitted and sharp.
 Color: Deep matte black (to contrast with bright background).
 
 Expression:
 Serious, intense, focused.
-Subject looking off-camera into the space above (not directly at the lens).
+Subject looking off-camera into the space at a 25 degree angle above (not directly at the lens).
 
 3. LIGHTING (DRAMATIC & COLORFUL)
 
@@ -119,7 +117,7 @@ Texture:
 Sharp focus on the face, natural skin texture, visible pores retained.
 Background remains smooth with gradient contrast`,
 
-  female: `You are a world-class editorial portrait photographer specializing in dramatic, colorful studio lighting. Your task is to create a powerful, dynamic portrait with a “heroic” feel.
+  female: `You are a world-class editorial portrait photographer specializing in dramatic, colorful studio lighting. Your task is to create a powerful, dynamic portrait with a “heroic” feel.x
 
 IDENTITY ANCHOR (CRITICAL – STRICT CONSTRAINT):
 Source: Use the woman from the attached reference photo.
@@ -147,13 +145,12 @@ Medium close-up from bottom chest up with a 35 mm sigma lens with f 2.8 at a dis
 Attire:
 A black, black ops type of costume , that doesn't cover the neck at all
 
-
 Fit: Fitted and sharp.
 Color: Deep matte black (to contrast with bright background).
 
 Expression:
 Serious, intense, focused.
-Subject looking off-camera into the space above (not directly at the lens).
+Subject looking off-camera into the space at a 25 degree angle above (not directly at the lens).
 
 3. LIGHTING (DRAMATIC & COLORFUL)
 
