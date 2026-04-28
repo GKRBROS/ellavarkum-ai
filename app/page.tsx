@@ -82,8 +82,8 @@ export default function EllavarkkumPage() {
           let width = img.width;
           let height = img.height;
           
-          // Max dimension 2048px to keep quality high but size low
-          const maxDim = 2048;
+          // Max dimension 1200px to keep quality high but size low (prevents 413 errors)
+          const maxDim = 1200;
           if (width > height) {
             if (width > maxDim) {
               height *= maxDim / width;
@@ -111,7 +111,7 @@ export default function EllavarkkumPage() {
             } else {
               resolve(file); // Fallback to original
             }
-          }, 'image/jpeg', 0.85); // High quality JPEG
+          }, 'image/jpeg', 0.75); // Optimized for server limits
         };
         img.onerror = () => resolve(file);
       };
@@ -333,6 +333,7 @@ export default function EllavarkkumPage() {
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    setShowGuidelines(false);
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
       setIsLoading(true);
@@ -340,7 +341,6 @@ export default function EllavarkkumPage() {
         const compressed = await compressImage(selectedFile);
         setFile(compressed);
         setPreviewUrl(URL.createObjectURL(compressed));
-        setShowGuidelines(false);
         toast.success(compressed.size < selectedFile.size ? 'Photo optimized for upload!' : 'Photo uploaded!');
       } catch (err) {
         console.error('Compression failed:', err);
@@ -354,6 +354,7 @@ export default function EllavarkkumPage() {
 
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
+    setShowGuidelines(false);
     if (!file || !name) return;
     if (triesLeft <= 0) {
       toast.error('No tries left');
@@ -519,17 +520,13 @@ export default function EllavarkkumPage() {
             <div className="flex gap-4 mt-8">
               <button onClick={() => setShowGuidelines(false)} className="flex-1 py-3 bg-slate-100 text-slate-600 rounded-full font-bold">Back</button>
               <button 
-                onClick={(e) => { 
+                onClick={() => { 
                   setShowGuidelines(false); 
-                  if (file) {
-                    handleGenerate(e);
-                  } else {
-                    fileInputRef.current?.click();
-                  }
+                  fileInputRef.current?.click();
                 }} 
                 className="flex-1 py-3 bg-blue-600 text-white rounded-full font-bold"
               >
-                {file ? 'Generate Now' : 'Proceed to Upload'}
+                Proceed to Upload
               </button>
             </div>
           </motion.div>
@@ -745,7 +742,13 @@ export default function EllavarkkumPage() {
                     <div className="space-y-2">
                       <label className="text-[10px] uppercase tracking-[0.2em] font-bold text-slate-400 ml-4">Upload Professional Photo</label>
                       <div 
-                        onClick={() => setShowGuidelines(true)}
+                        onClick={() => {
+                          if (file) {
+                            fileInputRef.current?.click();
+                          } else {
+                            setShowGuidelines(true);
+                          }
+                        }}
                         className="relative group cursor-pointer h-48"
                       >
                         <input 

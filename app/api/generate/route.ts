@@ -2,6 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { mkdir, writeFile } from 'fs/promises';
 import { join } from 'path';
 
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '10mb',
+    },
+  },
+};
+
 import sharp from 'sharp';
 
 import { apiJson, handleCorsPreflight, rejectIfOriginNotAllowed } from '@/lib/apiSecurity';
