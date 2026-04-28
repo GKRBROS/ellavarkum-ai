@@ -44,12 +44,11 @@ export async function POST(request: NextRequest) {
     }
 
     const phone = normalizePhone(validated.data.phone);
-    console.log('[OTP REQUEST] Normalized Phone:', phone);
     const supabase = getSupabaseClient();
 
     const { data: existingRequest, error: selectError } = await supabase
       .from(IMAGE_GENERATION_TABLE)
-      .select('id, status, tries_left')
+      .select('id, status')
       .eq('phone', phone)
       .maybeSingle();
 
@@ -58,10 +57,10 @@ export async function POST(request: NextRequest) {
       return apiJson(request, { error: 'Unable to process OTP request' }, { status: 500 });
     }
 
-    if (existingRequest?.status === 'generated' && (existingRequest.tries_left ?? 0) <= 0) {
+    if (existingRequest?.status === 'generated') {
       return apiJson(
         request,
-        { error: 'This phone number has no remaining tries.' },
+        { error: 'This phone number has already completed generation.' },
         { status: 409 }
       );
     }
@@ -77,7 +76,7 @@ export async function POST(request: NextRequest) {
           phone,
           otp_hash: otpHash,
           otp_expires_at: otpExpiresAt,
-          tries_left: existingRequest ? existingRequest.tries_left : 5,
+          tries_left: 5,
           status: 'pending',
           updated_at: new Date().toISOString(),
         },

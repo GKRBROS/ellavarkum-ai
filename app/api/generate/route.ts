@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { mkdir, writeFile } from 'fs/promises';
 import { join } from 'path';
 
+// Next.js App Router Route Handler - Body size limits are typically handled at the infrastructure level (e.g., Vercel's 4.5MB limit).
+// The config object below is for Page Router and is ignored in App Router, but kept for documentation if needed.
 export const config = {
   api: {
     bodyParser: {
@@ -35,16 +37,20 @@ export async function OPTIONS(request: NextRequest) {
 }
 
 const OPENROUTER_TIMEOUT_MS = 60000; // Reduced from 120s to 60s for faster failure recovery
-const DEFAULT_OPENROUTER_IMAGE_MODELS = ['bytedance-seed/seedream-4.5'];
+const DEFAULT_OPENROUTER_IMAGE_MODELS = [
+  'bytedance-seed/seedream-4.5',
+  'google/gemini-pro-1.5-vision-latest',
+  'openai/gpt-4o-mini',
+  'anthropic/claude-3-haiku:beta'
+];
 const OPENROUTER_IMAGE_MODELS = (process.env.OPENROUTER_IMAGE_MODELS || '')
   .split(',')
   .map((model) => model.trim())
   .filter(Boolean);
 const OPENROUTER_API_KEYS = getOpenRouterApiKeys();
-const IMAGE_MODEL_CANDIDATES = OPENROUTER_IMAGE_MODELS.length
-  ? OPENROUTER_IMAGE_MODELS
-  : DEFAULT_OPENROUTER_IMAGE_MODELS;
-const RETRYABLE_OPENROUTER_STATUS = new Set([429, 500, 502, 503, 504]);
+// Prioritize custom models from ENV, then fall back to known vision-capable defaults
+const IMAGE_MODEL_CANDIDATES = [...OPENROUTER_IMAGE_MODELS, ...DEFAULT_OPENROUTER_IMAGE_MODELS];
+const RETRYABLE_OPENROUTER_STATUS = new Set([408, 429, 500, 502, 503, 504]);
 const SKIP_OPTIONAL_STORAGE_UPLOADS = process.env.NETLIFY === 'true' || process.env.NODE_ENV === 'production';
 const ALLOWED_IMAGE_MIME_TYPES = new Set([
   'image/png',
@@ -176,35 +182,62 @@ export async function POST(request: NextRequest) {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), OPENROUTER_TIMEOUT_MS);
         try {
+          console.log(`[GENERATE] Attempting model: ${model} with Key Index: ${OPENROUTER_API_KEYS.indexOf(apiKey)}`);
+          
           const apiResponse = await fetch('https://openrouter.ai/api/v1/chat/completions', {
             method: 'POST',
             headers: {
               Authorization: `Bearer ${apiKey}`,
               'Content-Type': 'application/json',
+              'HTTP-Referer': 'https://ellavarkkumai.frameforge.one',
+              'X-Title': 'Ellavarkkum AI',
             },
             signal: controller.signal,
             body: JSON.stringify({
               model,
-              messages: [{ role: 'user', content: [{ type: 'text', text: prompt }, { type: 'image_url', image_url: { url: dataUrl } }] }],
+              messages: [
+                { 
+                  role: 'user', 
+                  content: [
+                    { type: 'text', text: prompt }, 
+                    { type: 'image_url', image_url: { url: dataUrl } }
+                  ] 
+                }
+              ],
               modalities: ['image'],
             }),
           });
+
           if (apiResponse.ok) {
             result = await apiResponse.json();
+            console.log(`[GENERATE] Success with model: ${model}`);
             break;
           }
+
           let errorDetail = 'Unknown error';
           try {
             const contentType = apiResponse.headers.get('content-type') || '';
-            if (contentType.includes('application/json')) errorDetail = JSON.stringify(await apiResponse.json());
-            else errorDetail = (await apiResponse.text()).slice(0, 300) || 'Non-JSON upstream error';
+            if (contentType.includes('application/json')) {
+              const errJson = await apiResponse.json();
+              errorDetail = JSON.stringify(errJson);
+            } else {
+              errorDetail = (await apiResponse.text()).slice(0, 500);
+            }
           } catch {
-            errorDetail = 'Failed to parse upstream error response';
+            errorDetail = 'Failed to parse upstream error body';
           }
+
           lastOpenRouterError = `Model ${model} failed (${apiResponse.status}): ${errorDetail}`;
-          if (!RETRYABLE_OPENROUTER_STATUS.has(apiResponse.status)) break;
+          console.error(`[GENERATE] OpenRouter Error (${apiResponse.status}):`, errorDetail);
+          
+          if (!RETRYABLE_OPENROUTER_STATUS.has(apiResponse.status)) {
+            console.log(`[GENERATE] Non-retryable status ${apiResponse.status} for model ${model}. Skipping to next.`);
+          }
         } catch (error: any) {
-          lastOpenRouterError = error?.name === 'AbortError' ? `Model ${model} timed out` : `Model ${model} request failed: ${error?.message || 'Unknown request error'}`;
+          lastOpenRouterError = error?.name === 'AbortError' 
+            ? `Model ${model} timed out after ${OPENROUTER_TIMEOUT_MS}ms` 
+            : `Model ${model} request failed: ${error?.message || 'Unknown request error'}`;
+          console.error(`[GENERATE] Fetch Exception:`, lastOpenRouterError);
         } finally {
           clearTimeout(timeoutId);
         }
@@ -233,11 +266,9 @@ export async function POST(request: NextRequest) {
     const finalImagePath = await mergeImages(tempGeneratedFile, timestamp.toString(), name);
     const finalImageUrl = buildFinalImageUrl(request, finalImagePath);
 
-    const ADMIN_PHONE = process.env.ADMIN_PHONE || '+910000000000';
-    const isUserAdmin = phone === ADMIN_PHONE;
     const currentTries = validatedRequestRow?.tries_left ?? 3;
-    const newTries = isUserAdmin ? currentTries : Math.max(0, currentTries - 1);
-    console.log('[GENERATE] Admin Status:', isUserAdmin, 'Current Tries:', currentTries, 'New Tries:', newTries);
+    const newTries = Math.max(0, currentTries - 1);
+    console.log('[GENERATE] Tries update: Current Tries:', currentTries, 'New Tries:', newTries);
 
     // Finalize the original image URL (if s3 upload was started, get result)
     if (s3UploadPromise) {
