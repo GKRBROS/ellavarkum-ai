@@ -116,7 +116,7 @@ export async function GET(request: NextRequest) {
 
         const contentType = upstreamResponse.headers.get('content-type') || 'application/octet-stream';
         const contentLength = upstreamResponse.headers.get('content-length');
-        const extension = contentType.includes('png') ? '.png' : contentType.includes('jpeg') || contentType.includes('jpg') ? '.jpg' : '.bin';
+        const extension = contentType.includes('webp') ? '.webp' : contentType.includes('png') ? '.png' : contentType.includes('jpeg') || contentType.includes('jpg') ? '.jpg' : '.bin';
         const filename = sanitizeFileName(requestedName || `ellavarkkum-ai-final${extension}`);
 
         const response = new NextResponse(upstreamResponse.body, {

@@ -88,6 +88,7 @@ export default function EllavarkkumPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [gender, setGender] = useState<"male" | "female">("male");
   const [showGuidelines, setShowGuidelines] = useState(false);
+  const [otpTimestamp, setOtpTimestamp] = useState<number | null>(null);
   const [scrollPosition, setScrollPosition] = useState<
     "top" | "bottom" | "middle"
   >("top");
@@ -132,10 +133,18 @@ export default function EllavarkkumPage() {
   const t = translations[lang];
 
   const normalizePhoneNumber = (rawPhone: string, code: string) => {
-    const combined = rawPhone.startsWith("+")
-      ? rawPhone
-      : code + rawPhone.replace(/^\+/, "");
-    return combined.trim().replace(/\s+/g, "");
+    // Remove all non-digits from rawPhone except +
+    const digitsOnly = rawPhone.replace(/[^\d+]/g, "");
+    
+    // If it already starts with +, assume it's fully qualified
+    if (digitsOnly.startsWith("+")) return digitsOnly;
+    
+    // If it starts with the country code without +, prepend +
+    const codeNoPlus = code.replace("+", "");
+    if (digitsOnly.startsWith(codeNoPlus)) return "+" + digitsOnly;
+    
+    // Otherwise prepend the code
+    return code + digitsOnly;
   };
 
   const compressImage = (file: File): Promise<File> => {
@@ -212,9 +221,9 @@ export default function EllavarkkumPage() {
       bgImg.crossOrigin = "anonymous";
       layerImg.crossOrigin = "anonymous";
 
-      bgImg.src = "/background.png"; // Changed from .webp to match docs
+      bgImg.src = "/bg.png"; // Kept as PNG as per user request
       userImg.src = photoSrc;
-      layerImg.src = "/layer.png"; // Changed from .webp to match actual file
+      layerImg.src = "/layer.webp"; // Switched to WebP
 
       let loadedCount = 0;
       let bgFailed = false;
@@ -260,7 +269,7 @@ export default function EllavarkkumPage() {
           canvas.toBlob((blob) => {
             if (blob) resolve(blob);
             else reject("Blob creation failed");
-          }, "image/png");
+          }, "image/webp");
         }
       };
 
@@ -296,13 +305,17 @@ export default function EllavarkkumPage() {
       try {
         const {
           phone: savedPhone,
+          countryCode: savedCountryCode,
           step: savedStep,
           imageUrl: savedImageUrl,
           requestId: savedRequestId,
+          otpTimestamp: savedOtpTimestamp,
         } = JSON.parse(savedSession);
 
         if (savedPhone && savedStep !== "processing") {
           setPhone(savedPhone);
+          if (savedCountryCode) setCountryCode(savedCountryCode);
+          if (savedOtpTimestamp) setOtpTimestamp(savedOtpTimestamp);
           setStep(savedStep);
           if (savedRequestId) setRequestId(savedRequestId);
           if (savedImageUrl) setFinalImageUrl(savedImageUrl);
@@ -394,11 +407,48 @@ export default function EllavarkkumPage() {
     };
   }, []);
 
+  // --- OTP Timeout Check (10 Minutes) ---
+  useEffect(() => {
+    if (step === "otp-verify" && otpTimestamp) {
+      const checkTimeout = () => {
+        const elapsed = Date.now() - otpTimestamp;
+        if (elapsed > 10 * 60 * 1000) {
+          toast.error(lang === "en" ? "OTP session expired" : "സമയം കഴിഞ്ഞു. വീണ്ടും ശ്രമിക്കുക");
+          handleLogout();
+        }
+      };
+      const timer = setInterval(checkTimeout, 5000);
+      return () => clearInterval(timer);
+    }
+  }, [step, otpTimestamp, lang]);
+
   // --- Handlers ---
 
   const handleRequestOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!phone) return;
+
+    // --- Country-based Length Validation ---
+    const rawDigits = phone.replace(/\D/g, "");
+    let minL = 8;
+    let maxL = 13;
+    
+    if (countryCode === "+91" || countryCode === "+1") {
+      minL = 10;
+      maxL = 10;
+    } else if (countryCode === "+971" || countryCode === "+966") {
+      minL = 9;
+      maxL = 9;
+    }
+
+    if (rawDigits.length < minL || rawDigits.length > maxL) {
+       const msg = lang === "en" 
+         ? `Number must be ${minL === maxL ? minL : minL + "-" + maxL} digits` 
+         : `നമ്പർ ${minL === maxL ? minL : minL + "-" + maxL} അക്കങ്ങൾ വേണം`;
+       toast.error(msg);
+       return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -414,15 +464,19 @@ export default function EllavarkkumPage() {
       if (!response.ok) throw new Error(resData.error || "Failed to send OTP");
 
       toast.success("OTP sent!");
+      const now = Date.now();
       setStep("otp-verify");
+      setOtpTimestamp(now);
       setTriesLeft(resData.triesLeft ?? currentTries);
       
       // Save phone early to prevent redirect to start on refresh
       localStorage.setItem(
         "Ellavarkkum_session",
         JSON.stringify({ 
-          phone: fullPhone, 
-          step: "otp-verify" 
+          phone: phone, // Save raw input
+          countryCode: countryCode,
+          step: "otp-verify",
+          otpTimestamp: now
         }),
       );
     } catch (err: any) {
@@ -462,7 +516,8 @@ export default function EllavarkkumPage() {
       localStorage.setItem(
         "Ellavarkkum_session",
         JSON.stringify({
-          phone: fullPhone,
+          phone: phone, // Save raw input
+          countryCode: countryCode,
           step: "form",
           requestId: verifiedRequestId,
         }),
@@ -485,6 +540,7 @@ export default function EllavarkkumPage() {
     setFile(null);
     setPreviewUrl(null);
     setFinalImageUrl(null);
+    setOtpTimestamp(null);
     toast.success("Logged out successfully");
   };
 
@@ -515,7 +571,19 @@ export default function EllavarkkumPage() {
 
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!file || !name) return;
+
+    // --- Validation ---
+    if (!name.trim()) {
+      toast.error(lang === "en" ? "Please enter your name" : "ദയവായി പേര് നൽകുക");
+      return;
+    }
+    if (!file) {
+      toast.error(lang === "en" ? "Please upload a photo" : "ദയവായി ഫോട്ടോ നൽകുക");
+      // If no file, show guidelines to help them
+      setShowGuidelines(true);
+      return;
+    }
+
     if (triesLeft <= 0) {
       toast.error("No tries left");
       return;
@@ -584,7 +652,8 @@ export default function EllavarkkumPage() {
       localStorage.setItem(
         "Ellavarkkum_session",
         JSON.stringify({
-          phone,
+          phone, // Raw input
+          countryCode,
           step: "result",
           imageUrl: data.finalImageUrl,
         }),
@@ -682,6 +751,7 @@ export default function EllavarkkumPage() {
               <p>• {t.guideline2}</p>
               <p>• {t.guideline3}</p>
               <p>• {t.guideline4}</p>
+              <p>• {t.guideline5}</p>
             </div>
             <div className="flex gap-3">
               <button
@@ -711,7 +781,7 @@ export default function EllavarkkumPage() {
       <nav className="fixed top-0 left-0 right-0 z-50 px-4 md:px-8 py-4 flex justify-between items-center glass-panel">
         <div className="flex items-center gap-2 md:gap-4">
           <NextImage
-            src="https://ellavarkkumai.frameforge.one/LOGO.png"
+            src="/LOGO.webp"
             alt="Logo"
             width={48}
             height={48}
@@ -719,7 +789,7 @@ export default function EllavarkkumPage() {
             unoptimized
           />
           <span className="font-heading text-xl md:text-2xl font-black tracking-tighter sm:block">
-            {lang === "en" ? "ELLAVARKKUM" : "എല്ലാവരും"} <span className="text-blue-600">AI</span>
+            {lang === "en" ? "ELLAVARKKUM" : "എല്ലാവർക്കും"} <span className="text-blue-600">AI</span>
           </span>
         </div>
 
@@ -747,7 +817,7 @@ export default function EllavarkkumPage() {
             >
               <div className="w-full max-w-6xl mx-auto px-4 relative z-10 flex flex-col items-center">
                 <div className="text-center mb-6 space-y-2 max-w-4xl mx-auto -mt-6 sm:-mt-10">
-                  <h1 className="text-4xl sm:text-7xl lg:text-9xl font-heading font-black tracking-tighter leading-[0.85] text-slate-900 whitespace-nowrap">
+                  <h1 className="text-4xl sm:text-7xl lg:text-9xl font-heading font-black tracking-tighter leading-[0.85] text-slate-900 sm:whitespace-nowrap">
                     {lang === "ml" ? "എല്ലാവർക്കും" : "Ellavarkkum"} <span className="text-blue-600">AI</span>
                   </h1>
                   <p className="text-xs sm:text-base text-slate-600 font-medium leading-relaxed max-w-xl mx-auto px-4">
@@ -793,6 +863,7 @@ export default function EllavarkkumPage() {
                       </label>
                       <div className="flex gap-3 items-stretch">
                         <CountryCodeDropdown
+                          value={countryCode}
                           onSelect={(code) => setCountryCode(code)}
                         />
                         <input
@@ -801,7 +872,7 @@ export default function EllavarkkumPage() {
                           value={phone}
                           onChange={(e) => setPhone(e.target.value)}
                           placeholder="98765 43210"
-                          className="flex-1 min-w-0 px-6 py-4.5 rounded-2xl border border-slate-100 bg-slate-50/50 focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all text-lg font-bold"
+                          className="flex-1 min-w-0 px-6 py-4.5 rounded-2xl border border-slate-200 bg-white focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all text-lg font-bold shadow-sm"
                         />
                       </div>
                     </div>
@@ -841,9 +912,9 @@ export default function EllavarkkumPage() {
                            {item.step}
                          </div>
                       </div>
-                      <div className="space-y-1">
-                        <h4 className="font-bold text-slate-900 text-sm sm:text-base">{item.text}</h4>
-                        <div className="w-5 h-0.5 bg-gradient-to-r from-blue-600 to-[#e1007a] rounded-full" />
+                      <div className="space-y-2 flex flex-col items-center">
+                        <h4 className="font-bold text-slate-900 text-sm sm:text-base text-center leading-tight">{item.text}</h4>
+                        <div className="w-8 h-1 bg-gradient-to-r from-blue-600 to-[#e1007a] rounded-full shadow-sm" />
                       </div>
                     </div>
                   ))}
@@ -868,16 +939,25 @@ export default function EllavarkkumPage() {
               >
                 <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-[#e1007a] via-[#0077ff] to-[#e1007a]" />
 
-                <div className="mb-10 text-center">
-                  <h2 className="text-4xl font-heading font-black mb-3 text-slate-900">
+                <div className="mb-6 text-center">
+                  <h2 className="text-2xl sm:text-3xl font-heading font-black mb-1 text-slate-900">
                     {t.otpVerify}
                   </h2>
-                  <p className="text-slate-500 text-center mb-6 font-medium">
-                    {t.otpSent}{" "}
-                    <span className="font-bold text-blue-600">
-                      {countryCode + phone.replace(/^\+/, "")}
-                    </span>
-                  </p>
+                  <div className="space-y-3">
+                    <p className="text-slate-500 text-center font-medium text-xs sm:text-sm">
+                      {t.otpSent}{" "}
+                      <span className="font-bold text-blue-600 block sm:inline mt-1 sm:mt-0">
+                        {normalizePhoneNumber(phone, countryCode)}
+                      </span>
+                    </p>
+                    <button
+                      onClick={() => setStep("otp-request")}
+                      className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-slate-50 text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-all text-[11px] font-bold border border-slate-100"
+                    >
+                      <RotateCcw className="w-3 h-3" />
+                      {lang === "en" ? "Change Number" : "നമ്പർ മാറ്റുക"}
+                    </button>
+                  </div>
                 </div>
 
                 <form onSubmit={handleVerifyOtp} className="space-y-6">
@@ -892,7 +972,7 @@ export default function EllavarkkumPage() {
                       value={otp}
                       onChange={(e) => setOtp(e.target.value)}
                       placeholder="000000"
-                      className="w-full px-4 sm:px-6 py-5 rounded-full border border-blue-200 text-center text-2xl sm:text-3xl font-black tracking-[0.2em] sm:tracking-[0.5em] focus:outline-none focus:ring-4 focus:ring-blue-50/50 focus:border-blue-600 transition-all"
+                      className="w-full px-4 sm:px-6 py-5 rounded-full border border-blue-300 bg-white text-center text-2xl sm:text-3xl font-black tracking-[0.2em] sm:tracking-[0.5em] focus:outline-none focus:ring-4 focus:ring-blue-50/50 focus:border-blue-600 transition-all shadow-sm"
                     />
                   </div>
                   <button
@@ -901,7 +981,7 @@ export default function EllavarkkumPage() {
                   >
                     {isLoading
                       ? t.verifying
-                      : t.title + " IMAGE GENERATOR"}
+                      : t.getStarted}
                   </button>
                 </form>
               </div>
@@ -986,7 +1066,7 @@ export default function EllavarkkumPage() {
                           type="text"
                           value={name}
                           onChange={(e) => setName(e.target.value)}
-                          className="w-full pl-12 pr-6 py-4 bg-slate-50/30 border border-slate-100 rounded-[24px] text-base font-bold placeholder:text-slate-300 focus:outline-none focus:ring-4 focus:ring-blue-50/50 focus:border-blue-200 transition-all"
+                          className="w-full pl-12 pr-6 py-4 bg-white border border-slate-200 rounded-[24px] text-base font-bold placeholder:text-slate-300 focus:outline-none focus:ring-4 focus:ring-blue-50/50 focus:border-blue-200 transition-all shadow-sm"
                           placeholder="Your Name"
                         />
                       </div>
@@ -1060,10 +1140,10 @@ export default function EllavarkkumPage() {
                           <div className="w-20 h-20 bg-white rounded-3xl shadow-lg flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-500">
                             <Upload className="w-8 h-8 text-blue-600" />
                           </div>
-                          <span className="text-slate-700 font-black text-xl mb-2">
+                          <span className="text-slate-700 font-black text-xl mb-2 text-center px-6">
                             {t.dropPhoto}
                           </span>
-                          <span className="text-slate-400 font-bold text-sm">
+                          <span className="text-slate-400 font-bold text-sm text-center">
                             PNG or JPG up to 10MB
                           </span>
                         </div>

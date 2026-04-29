@@ -159,13 +159,20 @@ const countryCodes = [
 
 export default function CountryCodeDropdown({
   onSelect,
+  value,
 }: {
   onSelect: (code: string) => void;
+  value?: string;
 }) {
   const [search, setSearch] = useState("");
   const [show, setShow] = useState(false);
-  const [selectedCode, setSelectedCode] = useState("+91");
+  const [selectedCode, setSelectedCode] = useState(value || "+91");
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Keep internal state in sync with prop
+  useEffect(() => {
+    if (value) setSelectedCode(value);
+  }, [value]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
