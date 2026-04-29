@@ -2,23 +2,37 @@
 @tailwind components;
 @tailwind utilities;
 
+@font-face {
+  font-family: 'CalSans';
+  src: url('/CalSans-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
-  --accent: #0077ff; /* Vibrant Blue from Logo */
-  --secondary: #e1007a; /* Magenta/Pink from Logo Border */
+  --accent: #0077ff;
+  --secondary: #e1007a;
   --accent-dark: #0056b3;
   --bg: #ffffff;
   --text: #0f172a;
+  --font-heading: 'CalSans', 'Outfit', sans-serif;
 }
 
 body {
-  background-color: var(--bg);
+  background-color: #ffffff;
+  background-image: url('/bg.png');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
   color: var(--text);
   font-family: 'Inter', sans-serif;
   overflow-x: hidden;
 }
 
 h1, h2, h3, .font-heading {
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--font-heading);
 }
 
 /* Glassmorphism */

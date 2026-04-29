@@ -280,15 +280,7 @@ export default function EllavarkkumPage() {
     });
   };
 
-  const generateExamplePreview = useCallback(async () => {
-    try {
-      const blob = await combineImages("/example.png", true);
-      const url = URL.createObjectURL(blob);
-      setPreviewUrl(url);
-    } catch (e) {
-      console.error("Example preview failed:", e);
-    }
-  }, []);
+
 
   useEffect(() => {
     if (step === "form" && phone) {
@@ -299,8 +291,6 @@ export default function EllavarkkumPage() {
   // --- Effects ---
 
   useEffect(() => {
-    generateExamplePreview();
-
     const savedSession = localStorage.getItem("Ellavarkkum_session");
     if (savedSession) {
       try {
@@ -402,7 +392,7 @@ export default function EllavarkkumPage() {
       window.removeEventListener("scroll", handleScroll);
       if (scrollTimer) clearTimeout(scrollTimer);
     };
-  }, [generateExamplePreview]);
+  }, []);
 
   // --- Handlers ---
 
@@ -413,7 +403,7 @@ export default function EllavarkkumPage() {
 
     try {
       const fullPhone = normalizePhoneNumber(phone, countryCode);
-      const currentTries = 3;
+      const currentTries = 5;
       const response = await fetch("/api/auth/request-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -679,24 +669,24 @@ export default function EllavarkkumPage() {
             animate={{ scale: 1, opacity: 1 }}
             className="bg-white p-8 rounded-[40px] max-w-lg w-full shadow-2xl border border-slate-100"
           >
-            <h3 className="text-2xl font-black mb-4">{t.photoGuidelines}</h3>
+            <h3 className="text-xl font-heading font-black mb-4">{t.photoGuidelines}</h3>
             <NextImage
               src="/Image to use.webp"
               alt="Guidelines"
               width={500}
               height={400}
-              className="w-full h-auto rounded-3xl mb-6 shadow-md border"
+              className="w-full h-auto rounded-[32px] mb-6 shadow-sm border"
             />
-            <div className="text-slate-600 mb-8 space-y-2 font-medium">
+            <div className="text-slate-500 mb-8 space-y-1.5 font-medium text-sm">
               <p>• {t.guideline1}</p>
               <p>• {t.guideline2}</p>
               <p>• {t.guideline3}</p>
               <p>• {t.guideline4}</p>
             </div>
-            <div className="flex gap-4 mt-8">
+            <div className="flex gap-3">
               <button
                 onClick={() => setShowGuidelines(false)}
-                className="flex-1 py-4 bg-slate-100 text-slate-600 rounded-full font-bold transition-colors hover:bg-slate-200"
+                className="flex-1 py-3.5 bg-slate-50 text-slate-500 rounded-full font-bold transition-colors hover:bg-slate-100 text-sm"
               >
                 {t.back}
               </button>
@@ -709,7 +699,7 @@ export default function EllavarkkumPage() {
                     fileInputRef.current?.click();
                   }
                 }}
-                className="flex-1 py-4 bg-blue-600 text-white rounded-full font-bold transition-all hover:bg-blue-700 shadow-xl shadow-blue-200"
+                className="flex-1 py-3.5 bg-blue-600 text-white rounded-full font-bold transition-all hover:bg-blue-700 shadow-lg shadow-blue-100 text-sm"
               >
                 {file ? t.generateNow : t.proceed}
               </button>
@@ -753,62 +743,55 @@ export default function EllavarkkumPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-20 items-center max-w-6xl w-full"
+              className="relative w-full min-h-screen flex flex-col items-center justify-start pt-16 pb-20 overflow-hidden"
             >
-              {/* Left Side: Showcase */}
-              <div className="space-y-8 order-1 lg:order-1">
-                <div className="text-center lg:text-left">
-                  <h1 className="text-4xl sm:text-5xl lg:text-7xl font-heading font-black tracking-tight leading-[1.1] mb-6">
-                    {lang === "ml" ? "എല്ലാവരും" : "Everyone"} <span className="text-blue-600">AI</span> – <span className="text-[#e1007a]">{lang === "en" ? "AI for Everyone" : "എല്ലാവർക്കും AI"}</span>
+              <div className="w-full max-w-6xl mx-auto px-4 relative z-10 flex flex-col items-center">
+                <div className="text-center mb-6 space-y-2 max-w-4xl mx-auto -mt-6 sm:-mt-10">
+                  <h1 className="text-4xl sm:text-7xl lg:text-9xl font-heading font-black tracking-tighter leading-[0.85] text-slate-900 whitespace-nowrap">
+                    {lang === "ml" ? "എല്ലാവർക്കും" : "Ellavarkkum"} <span className="text-blue-600">AI</span>
                   </h1>
-                  <p className="text-lg sm:text-xl text-slate-600 max-w-md mx-auto lg:mx-0 font-medium">
+                  <p className="text-xs sm:text-base text-slate-600 font-medium leading-relaxed max-w-xl mx-auto px-4">
                     {t.subtext}
                   </p>
                 </div>
 
-                <div className="relative rounded-[32px] overflow-hidden shadow-2xl bg-black border border-slate-100 group">
-                  <NextImage
-                    src="/main.gif"
-                    alt="How it works"
-                    width={1080}
-                    height={1350}
-                    className="w-full h-auto relative z-10 block"
-                    unoptimized
-                  />
-
-                  <div className="absolute bottom-6 left-6 right-6 flex justify-between items-center z-30">
-                    <div className="px-4 py-1.5 bg-black/40 backdrop-blur-md rounded-full border border-white/20">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-white">
-                        How it Works
-                      </p>
-                    </div>
+                {/* Single High-Impact Promo Card - 4:5 Aspect Ratio */}
+                <div className="w-full mb-0 relative px-4 transform scale-90 sm:scale-95 origin-top z-10">
+                  <div className="max-w-[320px] sm:max-w-[420px] mx-auto aspect-[4/5] rounded-[40px] sm:rounded-[48px] overflow-hidden shadow-[0_40px_100px_rgba(0,0,0,0.15)] border-[8px] sm:border-[12px] border-white bg-black relative ring-1 ring-slate-200">
+                    <NextImage 
+                      src="/main.gif" 
+                      alt="Ellavarkkum AI Promo" 
+                      fill 
+                      className="object-cover" 
+                      unoptimized 
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none" />
                   </div>
                 </div>
-              </div>
 
-              {/* Right Side: Login Form */}
-              <div
-                className="flex justify-center order-2 lg:order-2 w-full px-2"
-                id="main-action"
-              >
-                <div className="w-full max-w-md glass-panel p-5 sm:p-10 rounded-[32px] sm:rounded-[40px] shadow-2xl border border-slate-100 relative mx-auto">
-                  <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-[#e1007a] via-[#0077ff] to-[#e1007a]" />
+                {/* Login Card - Reduced overlap for better GIF visibility */}
+                <div
+                  className="w-full max-w-md mx-auto relative z-30 -mt-6 sm:-mt-10"
+                  id="main-action"
+                >
+                <div className="w-full glass-panel p-6 sm:p-10 rounded-[48px] shadow-[0_50px_120px_rgba(0,0,0,0.1)] border border-white/60 bg-white/95 backdrop-blur-3xl relative">
+                  <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-blue-600 via-[#e1007a] to-blue-600 rounded-t-full" />
 
-                  <div className="mb-8 sm:mb-10 text-center">
-                    <h2 className="text-3xl sm:text-4xl font-heading font-black mb-3 text-slate-900">
+                  <div className="mb-8 text-center">
+                    <h2 className="text-2xl sm:text-3xl font-heading font-black mb-1 text-slate-900">
                       {t.continueMobile}
                     </h2>
-                    <p className="text-slate-500 text-sm sm:text-base font-medium">
-                      {t.otpSent}
+                    <p className="text-slate-500 font-medium text-xs">
+                      {lang === "en" ? "Enter your number to get started" : "തുടങ്ങാൻ നമ്പർ നൽകുക"}
                     </p>
                   </div>
 
                   <form onSubmit={handleRequestOtp} className="space-y-6">
                     <div className="space-y-2">
-                      <label className="text-[10px] uppercase tracking-[0.2em] font-bold text-slate-400 ml-4">
+                      <label className="text-[9px] uppercase tracking-[0.2em] font-bold text-slate-400 ml-4">
                         Phone Number
                       </label>
-                      <div className="flex gap-2 items-stretch">
+                      <div className="flex gap-3 items-stretch">
                         <CountryCodeDropdown
                           onSelect={(code) => setCountryCode(code)}
                         />
@@ -818,21 +801,57 @@ export default function EllavarkkumPage() {
                           value={phone}
                           onChange={(e) => setPhone(e.target.value)}
                           placeholder="98765 43210"
-                          className="flex-1 min-w-0 px-4 sm:px-6 py-4 rounded-full border border-slate-200 focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all text-base sm:text-lg"
+                          className="flex-1 min-w-0 px-6 py-4.5 rounded-2xl border border-slate-100 bg-slate-50/50 focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all text-lg font-bold"
                         />
                       </div>
                     </div>
                     <button
                       disabled={isLoading}
-                      className="w-full py-5 bg-blue-600 text-white rounded-full font-bold text-lg hover:bg-blue-700 hover:shadow-xl hover:shadow-blue-200 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                      className="w-full py-5 bg-blue-600 text-white rounded-2xl font-black text-lg hover:bg-blue-700 hover:shadow-2xl hover:shadow-blue-200 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3 shadow-xl shadow-blue-100"
                     >
                       {isLoading ? t.sendingOtp : t.getStarted}
+                      <Sparkles className="w-6 h-6" />
                     </button>
                   </form>
                 </div>
               </div>
-            </motion.div>
-          )}
+
+              {/* How it Works Section */}
+              <div className="w-full mt-20 mb-10">
+                <div className="text-center mb-10 space-y-2">
+                  <h2 className="text-3xl sm:text-4xl font-heading font-black text-slate-900">
+                    {t.howItWorksTitle}
+                  </h2>
+                  <p className="text-base text-slate-500 font-medium max-w-2xl mx-auto">
+                    {t.howItWorksSub}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 px-4">
+                  {[
+                    { step: "01", text: t.signIn },
+                    { step: "02", text: t.fillDetails },
+                    { step: "03", text: t.photoLabel },
+                    { step: "04", text: t.generateBtn }
+                  ].map((item, idx) => (
+                    <div key={idx} className="glass-panel p-5 rounded-[28px] border border-white/40 shadow-lg flex flex-col gap-4 group hover:-translate-y-1 transition-all duration-500">
+                      <div className="relative aspect-video rounded-xl overflow-hidden bg-slate-100">
+                         <NextImage src="/main.gif" alt={`Step ${item.step}`} fill className="object-cover opacity-60 group-hover:scale-110 transition-transform duration-700" unoptimized />
+                         <div className="absolute top-2.5 left-2.5 w-7 h-7 bg-blue-600 text-white rounded-full flex items-center justify-center font-black text-[10px] shadow-lg shadow-blue-200">
+                           {item.step}
+                         </div>
+                      </div>
+                      <div className="space-y-1">
+                        <h4 className="font-bold text-slate-900 text-sm sm:text-base">{item.text}</h4>
+                        <div className="w-5 h-0.5 bg-gradient-to-r from-blue-600 to-[#e1007a] rounded-full" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
 
           {/* STEP: OTP VERIFY */}
           {step === "otp-verify" && (
@@ -845,7 +864,7 @@ export default function EllavarkkumPage() {
             >
               <div
                 id="main-action"
-                className="w-full max-w-md glass-panel p-10 rounded-[40px] shadow-2xl border border-slate-100 relative overflow-hidden"
+                className="w-full max-w-md glass-panel p-6 sm:p-10 rounded-[40px] shadow-2xl border border-slate-100 relative overflow-hidden"
               >
                 <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-[#e1007a] via-[#0077ff] to-[#e1007a]" />
 
@@ -921,11 +940,6 @@ export default function EllavarkkumPage() {
                     <h2 className="text-3xl sm:text-5xl font-heading font-black tracking-tight leading-[1.1] text-slate-900">
                       {t.createFrame}
                     </h2>
-                    <div className="px-4 py-2 bg-blue-50 rounded-full border border-blue-100 shadow-sm">
-                      <span className="text-blue-600 font-black text-xs uppercase tracking-wider">
-                        {triesLeft} {t.triesLeft}
-                      </span>
-                    </div>
                   </div>
                   <p className="text-lg sm:text-xl text-slate-500 font-medium max-w-lg">
                     {t.fillDetails}
@@ -933,27 +947,27 @@ export default function EllavarkkumPage() {
                 </div>
 
                 <div
-                  className="bg-white p-8 sm:p-10 rounded-[40px] shadow-2xl shadow-blue-900/5 border border-slate-100 relative overflow-hidden"
+                  className="bg-white p-6 sm:p-10 rounded-[40px] shadow-2xl shadow-blue-900/5 border border-slate-100 relative overflow-hidden"
                 >
                   <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-600 via-[#e1007a] to-blue-600" />
                   
                   <form className="space-y-8">
-                    <div className="space-y-4">
-                      <label className="text-[11px] uppercase tracking-[0.2em] font-black text-slate-400 ml-2">
+                    <div className="space-y-3">
+                      <label className="text-[10px] uppercase tracking-[0.15em] font-black text-slate-400 ml-2">
                         {t.genderLabel}
                       </label>
-                      <div className="flex gap-4 p-2 bg-slate-50/50 rounded-3xl border border-slate-100">
+                      <div className="flex gap-3 p-1.5 bg-slate-50/50 rounded-[24px] border border-slate-100">
                         <button
                           type="button"
                           onClick={() => setGender("male")}
-                          className={`flex-1 py-4 rounded-2xl text-sm font-black transition-all ${gender === "male" ? "bg-blue-600 text-white shadow-xl shadow-blue-200" : "text-slate-400 hover:text-slate-600 hover:bg-white"}`}
+                          className={`flex-1 py-3.5 rounded-[18px] text-xs font-black transition-all ${gender === "male" ? "bg-blue-600 text-white shadow-lg shadow-blue-100" : "text-slate-400 hover:text-slate-600 hover:bg-white"}`}
                         >
                           {t.male}
                         </button>
                         <button
                           type="button"
                           onClick={() => setGender("female")}
-                          className={`flex-1 py-4 rounded-2xl text-sm font-black transition-all ${gender === "female" ? "bg-[#e1007a] text-white shadow-xl shadow-pink-200" : "text-slate-400 hover:text-slate-600 hover:bg-white"}`}
+                          className={`flex-1 py-3.5 rounded-[18px] text-xs font-black transition-all ${gender === "female" ? "bg-[#e1007a] text-white shadow-lg shadow-pink-100" : "text-slate-400 hover:text-slate-600 hover:bg-white"}`}
                         >
                           {t.female}
                         </button>
@@ -961,19 +975,19 @@ export default function EllavarkkumPage() {
                     </div>
 
                     <div className="space-y-4">
-                      <label className="text-[11px] uppercase tracking-[0.2em] font-black text-slate-400 ml-2">
+                      <label className="text-[10px] uppercase tracking-[0.15em] font-black text-slate-400 ml-2">
                         {t.nameLabel}
                       </label>
                       <div className="relative group">
-                        <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-blue-600 transition-colors">
-                          <User className="w-5 h-5" />
+                        <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none text-slate-300 group-focus-within:text-blue-600 transition-colors">
+                          <User className="w-4 h-4" />
                         </div>
                         <input
                           type="text"
                           value={name}
                           onChange={(e) => setName(e.target.value)}
-                          className="w-full pl-14 pr-6 py-5 bg-slate-50/50 border border-slate-100 rounded-3xl text-lg font-bold placeholder:text-slate-300 focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-300 transition-all"
-                          placeholder="Your full name"
+                          className="w-full pl-12 pr-6 py-4 bg-slate-50/30 border border-slate-100 rounded-[24px] text-base font-bold placeholder:text-slate-300 focus:outline-none focus:ring-4 focus:ring-blue-50/50 focus:border-blue-200 transition-all"
+                          placeholder="Your Name"
                         />
                       </div>
                     </div>
@@ -1060,15 +1074,10 @@ export default function EllavarkkumPage() {
                       type="button"
                       onClick={handleGenerate}
                       disabled={isLoading}
-                      className="w-full py-6 bg-blue-600 text-white rounded-[32px] font-black text-xl hover:bg-blue-700 shadow-2xl shadow-blue-200 transition-all active:scale-[0.98] disabled:opacity-50 flex flex-col items-center justify-center gap-1 mt-8"
+                      className="w-full py-5 bg-blue-600 text-white rounded-[28px] font-black text-lg hover:bg-blue-700 shadow-xl shadow-blue-100 transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-3 mt-6"
                     >
-                      <div className="flex items-center gap-3">
-                        <Sparkles className="w-6 h-6" />
-                        {t.generateBtn}
-                      </div>
-                      <span className="text-xs font-bold opacity-60 uppercase tracking-widest">
-                        {t.generateNote}
-                      </span>
+                      <Sparkles className="w-5 h-5" />
+                      {t.generateBtn}
                     </button>
                   </form>
                 </div>
@@ -1241,7 +1250,7 @@ export default function EllavarkkumPage() {
                           d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
                         />
                       </svg>
-                      {t.tryAgain} ({triesLeft} {t.triesLeft})
+                      {t.tryAgain}
                     </button>
                   </div>
 
@@ -1268,14 +1277,6 @@ export default function EllavarkkumPage() {
               </div>
 
               <div className="space-y-6 order-1 lg:order-2">
-                <div className="text-center mb-4">
-                  <p className="text-slate-500 font-bold text-sm">
-                    {t.selectionHint}
-                  </p>
-                  <p className="text-blue-600 font-black text-lg">
-                    {t.selectFavorite}
-                  </p>
-                </div>
                 <div className="relative rounded-[32px] overflow-hidden shadow-2xl bg-black border border-slate-100 group">
                 {finalImageUrl ? (
                   <NextImage
@@ -1307,62 +1308,82 @@ export default function EllavarkkumPage() {
         {showResultModal && (
           <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
             <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="bg-white rounded-[40px] p-8 md:p-12 max-w-lg w-full shadow-2xl relative overflow-hidden"
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="bg-white rounded-[40px] p-6 md:p-10 max-w-[480px] w-[95%] md:w-full shadow-2xl relative max-h-[92vh] flex flex-col"
             >
-              <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-600 via-[#e1007a] to-blue-600" />
+              <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-blue-600 via-[#e1007a] to-blue-600 z-10" />
               
               <button 
                 onClick={() => setShowResultModal(false)}
-                className="absolute top-6 right-6 w-10 h-10 flex items-center justify-center rounded-full bg-slate-50 text-slate-400 hover:text-slate-900 transition-colors"
+                className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center rounded-full bg-slate-50/80 backdrop-blur-sm text-slate-400 hover:text-slate-900 transition-colors z-20"
               >
-                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <X className="w-6 h-6" />
               </button>
 
-              <div className="text-center space-y-6">
-                <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-2 text-green-500">
-                  <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
+              <div className="flex-1 overflow-y-auto custom-scrollbar pt-2 pr-1">
+                <div className="text-center space-y-6">
+                  {/* Image Preview */}
+                  <div className="relative mx-auto w-full max-w-[240px] aspect-[4/5] rounded-[28px] overflow-hidden shadow-xl border-4 border-white ring-1 ring-slate-100">
+                     {finalImageUrl ? (
+                       <NextImage
+                         src={finalImageUrl}
+                         alt="Preview"
+                         fill
+                         className="object-cover"
+                         unoptimized
+                       />
+                     ) : (
+                       <div className="w-full h-full bg-slate-50 animate-pulse flex items-center justify-center">
+                         <Sparkles className="w-8 h-8 text-slate-200" />
+                       </div>
+                     )}
+                  </div>
 
-                <h3 className="text-3xl font-heading font-black text-slate-900 leading-tight">
-                  {t.resultTitle}
-                </h3>
+                  <div className="space-y-2 px-2">
+                    <h3 className="text-2xl sm:text-3xl font-heading font-black text-slate-900 leading-tight">
+                      {t.resultTitle}
+                    </h3>
+                    <p className="text-slate-500 font-medium text-base leading-relaxed">{t.resultSub}</p>
+                  </div>
 
-                <div className="space-y-4 pt-2">
-                  <button
-                    onClick={() => {
-                      handleDownload();
-                      setShowResultModal(false);
-                    }}
-                    className="w-full py-5 bg-blue-600 text-white rounded-full font-bold text-lg hover:bg-blue-700 shadow-xl shadow-blue-100 transition-all flex items-center justify-center gap-3 active:scale-95"
-                  >
-                    <Download className="w-6 h-6" />
-                    {t.download}
-                  </button>
+                  <div className="grid grid-cols-1 gap-3 px-2">
+                    <button
+                      onClick={() => {
+                        handleDownload();
+                        setShowResultModal(false);
+                      }}
+                      className="group relative w-full py-4 bg-blue-600 text-white rounded-2xl font-bold text-lg hover:bg-blue-700 shadow-lg shadow-blue-100 transition-all flex items-center justify-center gap-3 active:scale-[0.98] overflow-hidden"
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                      <Download className="w-5 h-5" />
+                      {t.download}
+                    </button>
 
-                  <button
-                    onClick={() => {
-                      setShowResultModal(false);
-                      handleTryAgain();
-                    }}
-                    className="w-full py-5 bg-white text-slate-900 border-2 border-slate-200 rounded-full font-bold text-lg hover:bg-slate-50 transition-all flex items-center justify-center gap-3 active:scale-95"
-                  >
-                    <RotateCcw className="w-5 h-5" />
-                    {t.tryAgain} ({triesLeft} {t.triesLeft})
-                  </button>
-                </div>
+                    <button
+                      onClick={() => {
+                        setShowResultModal(false);
+                        handleTryAgain();
+                      }}
+                      className="w-full py-4 bg-slate-50 text-slate-600 border border-slate-100 rounded-2xl font-bold text-base hover:bg-slate-100 hover:text-slate-900 transition-all flex items-center justify-center gap-2 active:scale-[0.98]"
+                    >
+                      <RotateCcw className="w-4 h-4" />
+                      {t.tryAgain}
+                    </button>
+                  </div>
 
-                <div className="pt-4 p-4 bg-orange-50 rounded-2xl border border-orange-100">
-                  <p className="text-xs text-orange-800 font-bold leading-relaxed">
-                    <span className="uppercase tracking-widest text-[10px] block mb-1 text-orange-600">Notice:</span>
-                    {t.aiDisclaimer}
-                  </p>
+                  <div className="pt-4 border-t border-slate-50 px-2">
+                    <div className="flex items-start gap-3 p-3 bg-slate-50/50 rounded-2xl text-left border border-slate-100/50">
+                      <AlertTriangle className="w-4 h-4 text-slate-300 shrink-0 mt-0.5" />
+                      <div className="space-y-0.5">
+                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Disclaimer</p>
+                        <p className="text-[10px] text-slate-400 font-medium leading-relaxed italic">
+                          {t.aiDisclaimer}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </motion.div>
@@ -1370,8 +1391,8 @@ export default function EllavarkkumPage() {
         )}
       </AnimatePresence>
 
-      {/* Mobile Scroll Navigator */}
-      <div className="fixed bottom-10 right-6 z-[9999] md:hidden pointer-events-auto">
+      {/* Floating Scroll Navigator - Unified */}
+      <div className="fixed bottom-10 right-6 z-[9999] pointer-events-auto">
         <AnimatePresence mode="wait">
           {scrollPosition === "top" ? (
             <motion.button
@@ -1379,8 +1400,7 @@ export default function EllavarkkumPage() {
               initial={{ opacity: 0, scale: 0.8, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.8, y: 20 }}
-              onPointerDown={(e) => {
-                e.preventDefault();
+              onClick={() => {
                 const section = document.getElementById("main-action");
                 if (section) {
                   section.scrollIntoView({
@@ -1389,55 +1409,31 @@ export default function EllavarkkumPage() {
                   });
                 }
               }}
-              className="w-16 h-16 bg-blue-600 rounded-full shadow-[0_20px_50px_rgba(37,99,235,0.4)] flex flex-col items-center justify-center text-white active:scale-90 transition-all border-4 border-white cursor-pointer touch-none"
+              className="w-16 h-16 bg-blue-600 rounded-full shadow-[0_20px_50px_rgba(37,99,235,0.4)] flex flex-col items-center justify-center text-white active:scale-90 transition-all border-4 border-white cursor-pointer"
             >
-              <svg
-                className="w-7 h-7"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
+              <motion.div
+                animate={{ y: [0, 4, 0] }}
+                transition={{ repeat: Infinity, duration: 2 }}
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={3}
-                  d="M19 9l-7 7-7-7"
-                />
-              </svg>
-              <span className="text-[9px] font-black uppercase tracking-tighter">
-                {t.scrollDown}
-              </span>
+                <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" />
+                </svg>
+              </motion.div>
             </motion.button>
-          ) : scrollPosition === "bottom" ? (
+          ) : (
             <motion.button
               key="scroll-up"
               initial={{ opacity: 0, scale: 0.8, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.8, y: 20 }}
-              onPointerDown={(e) => {
-                e.preventDefault();
-                window.scrollTo({ top: 0, behavior: "smooth" });
-              }}
-              className="w-16 h-16 bg-white rounded-full shadow-[0_20px_50px_rgba(0,0,0,0.1)] flex flex-col items-center justify-center text-slate-600 active:scale-90 transition-all border-4 border-blue-50 cursor-pointer touch-none"
+              onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+              className="w-16 h-16 bg-white rounded-full shadow-[0_20px_50px_rgba(0,0,0,0.1)] flex flex-col items-center justify-center text-slate-600 active:scale-90 transition-all border-4 border-blue-50 cursor-pointer"
             >
-              <svg
-                className="w-7 h-7"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={3}
-                  d="M5 15l7-7 7 7"
-                />
+              <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 15l7-7 7 7" />
               </svg>
-              <span className="text-[9px] font-black uppercase tracking-tighter text-slate-400">
-                {t.scrollTop}
-              </span>
             </motion.button>
-          ) : null}
+          )}
         </AnimatePresence>
       </div>
 
