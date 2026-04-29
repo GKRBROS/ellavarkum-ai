@@ -21,12 +21,15 @@ h1, h2, h3, .font-heading {
   font-family: 'Outfit', sans-serif;
 }
 
-/* Glassmorphism Blue */
+/* Glassmorphism */
 .glass-panel {
-  background: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.8);
   backdrop-filter: blur(12px);
-  border: 1px solid rgba(59, 130, 246, 0.1);
-  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 
+    0 4px 6px -1px rgba(0, 0, 0, 0.05), 
+    0 2px 4px -1px rgba(0, 0, 0, 0.03),
+    0 20px 25px -5px rgba(0, 0, 0, 0.05);
 }
 
 .glass-panel-blue {

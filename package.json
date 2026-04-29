@@ -24,13 +24,16 @@
     "autoprefixer": "^10.4.23",
     "bytez.js": "^3.0.0",
     "canvas": "^3.2.1",
+    "clsx": "^2.1.1",
     "framer-motion": "^12.38.0",
+    "lucide-react": "^1.14.0",
     "next": "^15.1.0",
     "openai": "^6.17.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-hot-toast": "^2.6.0",
-    "sharp": "^0.33.5"
+    "sharp": "^0.33.5",
+    "tailwind-merge": "^3.5.0"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",

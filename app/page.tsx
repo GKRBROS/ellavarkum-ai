@@ -10,6 +10,22 @@ import {
 } from "@/lib/supabase";
 import { toast, Toaster } from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
+import { translations, type Language } from "@/lib/i18n";
+import {
+  Globe,
+  Trash2,
+  Camera,
+  User,
+  LogOut,
+  Download,
+  RotateCcw,
+  CheckCircle2,
+  AlertTriangle,
+  X,
+  Upload,
+  Sparkles,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 import dynamic from "next/dynamic";
 const CountryCodeDropdown = dynamic(
   () => import("../components/CountryCodeDropdown"),
@@ -80,6 +96,40 @@ export default function EllavarkkumPage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [requestId, setRequestId] = useState<string | null>(null);
+  const [showResultModal, setShowResultModal] = useState(false);
+  const [lang, setLang] = useState<Language>("en");
+
+  // Load language preference
+  useEffect(() => {
+    const savedLang = localStorage.getItem("Ellavarkkum_lang") as Language;
+    if (savedLang) setLang(savedLang);
+  }, []);
+
+  const toggleLang = () => {
+    const newLang = lang === "en" ? "ml" : "en";
+    setLang(newLang);
+    localStorage.setItem("Ellavarkkum_lang", newLang);
+  };
+
+  const fetchTries = async (phoneToFetch: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("elavarkum_requests")
+        .select("tries_left")
+        .eq("phone", phoneToFetch)
+        .single();
+
+      if (data && !error) {
+        setTriesLeft(data.tries_left);
+        return data.tries_left;
+      }
+    } catch (err) {
+      console.error("Error fetching tries:", err);
+    }
+    return triesLeft;
+  };
+
+  const t = translations[lang];
 
   const normalizePhoneNumber = (rawPhone: string, code: string) => {
     const combined = rawPhone.startsWith("+")
@@ -240,6 +290,12 @@ export default function EllavarkkumPage() {
     }
   }, []);
 
+  useEffect(() => {
+    if (step === "form" && phone) {
+      fetchTries(phone);
+    }
+  }, [step, phone]);
+
   // --- Effects ---
 
   useEffect(() => {
@@ -278,6 +334,7 @@ export default function EllavarkkumPage() {
                   console.log("Auto-recovering session from Supabase result");
                   setFinalImageUrl(data.generated_image_url);
                   setStep("result");
+                  setShowResultModal(true);
                   localStorage.setItem(
                     "Ellavarkkum_session",
                     JSON.stringify({
@@ -546,6 +603,7 @@ export default function EllavarkkumPage() {
       // Wait for progress effect
       setTimeout(() => {
         setStep("result");
+        setShowResultModal(true);
         toast.success(`Generated! ${updatedTries} tries remaining.`);
       }, 2000);
     } catch (err: any) {
@@ -580,6 +638,14 @@ export default function EllavarkkumPage() {
     }
   };
 
+  const removePhoto = () => {
+    setFile(null);
+    setPreviewUrl(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
   const handleTryAgain = () => {
     if (triesLeft > 0) {
       setStep("form");
@@ -601,37 +667,38 @@ export default function EllavarkkumPage() {
   // --- Render ---
 
   return (
-    <main className="min-h-screen bg-white text-slate-900 selection:bg-blue-100">
-      <div className="noise-overlay" />
+    <main className="min-h-screen bg-slate-50/50 text-slate-900 selection:bg-blue-100 font-inter">
+      <div className="noise-overlay opacity-[0.03]" />
       <Toaster position="bottom-center" />
 
       {/* Guidelines Modal */}
       {showGuidelines && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
           <motion.div
-            initial={{ scale: 0.9 }}
-            animate={{ scale: 1 }}
-            className="bg-white p-8 rounded-3xl max-w-lg w-full shadow-2xl"
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="bg-white p-8 rounded-[40px] max-w-lg w-full shadow-2xl border border-slate-100"
           >
-            <h3 className="text-2xl font-black mb-4">Photo Guidelines</h3>
+            <h3 className="text-2xl font-black mb-4">{t.photoGuidelines}</h3>
             <NextImage
               src="/Image to use.webp"
               alt="Guidelines"
               width={500}
               height={400}
-              className="w-full h-auto rounded-2xl mb-6 shadow-md"
+              className="w-full h-auto rounded-3xl mb-6 shadow-md border"
             />
-            <div className="text-slate-600 mb-8 space-y-2">
-              <p>• Ensure your face is clearly visible.</p>
-              <p>• Use a photo with neutral lighting.</p>
-              <p>• Look directly at the camera.</p>
+            <div className="text-slate-600 mb-8 space-y-2 font-medium">
+              <p>• {t.guideline1}</p>
+              <p>• {t.guideline2}</p>
+              <p>• {t.guideline3}</p>
+              <p>• {t.guideline4}</p>
             </div>
             <div className="flex gap-4 mt-8">
               <button
                 onClick={() => setShowGuidelines(false)}
-                className="flex-1 py-3 bg-slate-100 text-slate-600 rounded-full font-bold"
+                className="flex-1 py-4 bg-slate-100 text-slate-600 rounded-full font-bold transition-colors hover:bg-slate-200"
               >
-                Back
+                {t.back}
               </button>
               <button
                 onClick={(e) => {
@@ -642,28 +709,38 @@ export default function EllavarkkumPage() {
                     fileInputRef.current?.click();
                   }
                 }}
-                className="flex-1 py-3 bg-blue-600 text-white rounded-full font-bold"
+                className="flex-1 py-4 bg-blue-600 text-white rounded-full font-bold transition-all hover:bg-blue-700 shadow-xl shadow-blue-200"
               >
-                {file ? "Generate Now" : "Proceed to Upload"}
+                {file ? t.generateNow : t.proceed}
               </button>
             </div>
           </motion.div>
         </div>
       )}
 
-      <nav className="fixed top-0 left-0 right-0 z-50 px-4 md:px-8 py-3 md:py-4 flex justify-between items-center glass-panel">
+      <nav className="fixed top-0 left-0 right-0 z-50 px-4 md:px-8 py-4 flex justify-between items-center glass-panel">
         <div className="flex items-center gap-2 md:gap-4">
           <NextImage
             src="https://ellavarkkumai.frameforge.one/LOGO.png"
             alt="Logo"
             width={48}
             height={48}
-            className="h-7 md:h-12 w-auto"
+            className="h-10 md:h-12 w-auto"
             unoptimized
           />
-          <span className="font-heading text-lg md:text-2xl font-black tracking-tighter hidden sm:block">
-            ELLAVARKKUM <span className="text-blue-600">AI</span>
+          <span className="font-heading text-xl md:text-2xl font-black tracking-tighter sm:block">
+            {lang === "en" ? "ELLAVARKKUM" : "എല്ലാവരും"} <span className="text-blue-600">AI</span>
           </span>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <button
+            onClick={toggleLang}
+            className="flex items-center gap-2 px-4 py-2 rounded-full bg-white text-slate-700 font-bold text-sm hover:bg-slate-50 transition-all border border-slate-200 shadow-sm"
+          >
+            <Globe className="w-4 h-4 text-blue-600" />
+            <span>{lang === "en" ? "മലയാളം" : "English"}</span>
+          </button>
         </div>
       </nav>
 
@@ -682,11 +759,10 @@ export default function EllavarkkumPage() {
               <div className="space-y-8 order-1 lg:order-1">
                 <div className="text-center lg:text-left">
                   <h1 className="text-4xl sm:text-5xl lg:text-7xl font-heading font-black tracking-tight leading-[1.1] mb-6">
-                    Ellavarkkum{" "}
-                    <span className="text-[#e1007a]">AI Frames</span>
+                    {lang === "ml" ? "എല്ലാവരും" : "Everyone"} <span className="text-blue-600">AI</span> – <span className="text-[#e1007a]">{lang === "en" ? "AI for Everyone" : "എല്ലാവർക്കും AI"}</span>
                   </h1>
-                  <p className="text-lg sm:text-xl text-slate-500 max-w-md mx-auto lg:mx-0">
-                    Generate creative images for you.
+                  <p className="text-lg sm:text-xl text-slate-600 max-w-md mx-auto lg:mx-0 font-medium">
+                    {t.subtext}
                   </p>
                 </div>
 
@@ -719,11 +795,11 @@ export default function EllavarkkumPage() {
                   <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-[#e1007a] via-[#0077ff] to-[#e1007a]" />
 
                   <div className="mb-8 sm:mb-10 text-center">
-                    <h2 className="text-3xl sm:text-4xl font-heading font-black mb-3">
-                      Sign In.
+                    <h2 className="text-3xl sm:text-4xl font-heading font-black mb-3 text-slate-900">
+                      {t.continueMobile}
                     </h2>
-                    <p className="text-slate-500 text-sm sm:text-base">
-                      Access your Ellavarkkum AI Generator.
+                    <p className="text-slate-500 text-sm sm:text-base font-medium">
+                      {t.otpSent}
                     </p>
                   </div>
 
@@ -733,7 +809,9 @@ export default function EllavarkkumPage() {
                         Phone Number
                       </label>
                       <div className="flex gap-2 items-stretch">
-                        <CountryCodeDropdown onSelect={(code) => setCountryCode(code)} />
+                        <CountryCodeDropdown
+                          onSelect={(code) => setCountryCode(code)}
+                        />
                         <input
                           type="tel"
                           required
@@ -748,7 +826,7 @@ export default function EllavarkkumPage() {
                       disabled={isLoading}
                       className="w-full py-5 bg-blue-600 text-white rounded-full font-bold text-lg hover:bg-blue-700 hover:shadow-xl hover:shadow-blue-200 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
                     >
-                      {isLoading ? "Sending OTP..." : "Send Access Code"}
+                      {isLoading ? t.sendingOtp : t.getStarted}
                     </button>
                   </form>
                 </div>
@@ -772,12 +850,14 @@ export default function EllavarkkumPage() {
                 <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-[#e1007a] via-[#0077ff] to-[#e1007a]" />
 
                 <div className="mb-10 text-center">
-                  <h2 className="text-4xl font-heading font-black mb-3">
-                    Verify.
+                  <h2 className="text-4xl font-heading font-black mb-3 text-slate-900">
+                    {t.otpVerify}
                   </h2>
-                  <p className="text-slate-500 text-center mb-6">
-                    We&apos;ve sent a code to{" "}
-                    <span className="font-semibold">{countryCode + phone.replace(/^\+/, "")}</span>
+                  <p className="text-slate-500 text-center mb-6 font-medium">
+                    {t.otpSent}{" "}
+                    <span className="font-bold text-blue-600">
+                      {countryCode + phone.replace(/^\+/, "")}
+                    </span>
                   </p>
                 </div>
 
@@ -801,8 +881,8 @@ export default function EllavarkkumPage() {
                     className="w-full py-5 bg-blue-600 text-white rounded-full font-bold text-lg hover:bg-blue-700 hover:shadow-xl hover:shadow-blue-200 transition-all active:scale-95 disabled:opacity-50"
                   >
                     {isLoading
-                      ? "Verifying..."
-                      : "ELLAVARKKUM AI IMAGE GENERATOR"}
+                      ? t.verifying
+                      : t.title + " IMAGE GENERATOR"}
                   </button>
                 </form>
               </div>
@@ -822,7 +902,7 @@ export default function EllavarkkumPage() {
                 <div className="flex justify-between items-center mb-8 bg-white/50 p-6 rounded-3xl border border-white shadow-sm backdrop-blur-sm">
                   <div>
                     <h2 className="text-2xl font-heading font-black tracking-tight text-slate-800">
-                      Welcome Back
+                      {t.welcome}
                     </h2>
                     <p className="text-sm text-slate-500 font-medium">
                       {phone}
@@ -832,173 +912,163 @@ export default function EllavarkkumPage() {
                     onClick={handleLogout}
                     className="px-5 py-2.5 text-xs font-bold text-slate-500 hover:text-[#e1007a] transition-all bg-white border border-slate-100 rounded-2xl hover:border-[#e1007a]/20 shadow-sm hover:shadow-md"
                   >
-                    Logout
+                    {t.logout}
                   </button>
                 </div>
 
-                <div className="mb-8 text-center lg:text-left">
-                  <h2 className="text-3xl sm:text-4xl font-heading font-black mb-1 tracking-tight leading-[1.1]">
-                    Ellavarkkum AI{" "}
-                    <span className="text-[#e1007a]">Frame Generator</span>
-                  </h2>
-                  <p className="text-[10px] uppercase tracking-[0.3em] font-bold text-slate-400 mb-6">
-                    Experience the Magic
-                  </p>
-                  <p className="text-lg sm:text-xl text-slate-500">
-                    Fill the form and upload your photo to generate the frame
-                    for Ellavarkkum AI. You can see the preview down in a better
-                    way.
+                <div className="mb-10 text-center lg:text-left">
+                  <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 mb-3">
+                    <h2 className="text-3xl sm:text-5xl font-heading font-black tracking-tight leading-[1.1] text-slate-900">
+                      {t.createFrame}
+                    </h2>
+                    <div className="px-4 py-2 bg-blue-50 rounded-full border border-blue-100 shadow-sm">
+                      <span className="text-blue-600 font-black text-xs uppercase tracking-wider">
+                        {triesLeft} {t.triesLeft}
+                      </span>
+                    </div>
+                  </div>
+                  <p className="text-lg sm:text-xl text-slate-500 font-medium max-w-lg">
+                    {t.fillDetails}
                   </p>
                 </div>
 
                 <div
-                  id="main-action"
-                  className="glass-panel p-5 sm:p-10 rounded-[32px] sm:rounded-[40px] border border-slate-100 shadow-xl space-y-8 h-full"
+                  className="bg-white p-8 sm:p-10 rounded-[40px] shadow-2xl shadow-blue-900/5 border border-slate-100 relative overflow-hidden"
                 >
-                  <form className="space-y-6">
+                  <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-600 via-[#e1007a] to-blue-600" />
+                  
+                  <form className="space-y-8">
                     <div className="space-y-4">
-                      <label className="text-[10px] uppercase tracking-[0.2em] font-bold text-slate-400 ml-4">
-                        Gender
+                      <label className="text-[11px] uppercase tracking-[0.2em] font-black text-slate-400 ml-2">
+                        {t.genderLabel}
                       </label>
-                      <div className="flex gap-4 p-2 bg-slate-50 rounded-[24px] border border-slate-100">
+                      <div className="flex gap-4 p-2 bg-slate-50/50 rounded-3xl border border-slate-100">
                         <button
                           type="button"
                           onClick={() => setGender("male")}
-                          className={`flex-1 py-3 rounded-[18px] text-sm font-bold transition-all ${gender === "male" ? "bg-[#0077ff] text-white shadow-lg" : "text-slate-500 hover:bg-slate-100"}`}
+                          className={`flex-1 py-4 rounded-2xl text-sm font-black transition-all ${gender === "male" ? "bg-blue-600 text-white shadow-xl shadow-blue-200" : "text-slate-400 hover:text-slate-600 hover:bg-white"}`}
                         >
-                          Male
+                          {t.male}
                         </button>
                         <button
                           type="button"
                           onClick={() => setGender("female")}
-                          className={`flex-1 py-3 rounded-[18px] text-sm font-bold transition-all ${gender === "female" ? "bg-[#e1007a] text-white shadow-lg" : "text-slate-500 hover:bg-slate-100"}`}
+                          className={`flex-1 py-4 rounded-2xl text-sm font-black transition-all ${gender === "female" ? "bg-[#e1007a] text-white shadow-xl shadow-pink-200" : "text-slate-400 hover:text-slate-600 hover:bg-white"}`}
                         >
-                          Female
+                          {t.female}
                         </button>
                       </div>
                     </div>
 
-                    <div className="space-y-2">
-                      <label className="text-[10px] uppercase tracking-[0.2em] font-bold text-slate-400 ml-4">
-                        Full Name
+                    <div className="space-y-4">
+                      <label className="text-[11px] uppercase tracking-[0.2em] font-black text-slate-400 ml-2">
+                        {t.nameLabel}
                       </label>
-                      <input
-                        type="text"
-                        required
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        placeholder="Johnathan Doe"
-                        className="w-full px-5 sm:px-6 py-4 rounded-full border border-slate-200 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all text-base sm:text-lg"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-[10px] uppercase tracking-[0.2em] font-bold text-slate-400 ml-4">
-                        Upload Professional Photo
-                      </label>
-                      <div
-                        onClick={() => {
-                          if (!file) setShowGuidelines(true);
-                          else fileInputRef.current?.click();
-                        }}
-                        className="relative group cursor-pointer h-48"
-                      >
-                        <input
-                          type="file"
-                          ref={fileInputRef}
-                          accept="image/*"
-                          onChange={handleFileUpload}
-                          className="hidden"
-                        />
-                        <div className="w-full h-full border-2 border-dashed border-slate-200 rounded-[30px] flex flex-col items-center justify-center bg-slate-50 group-hover:bg-blue-50 group-hover:border-blue-300 transition-all group-hover:scale-[1.01]">
-                          {file ? (
-                            <div className="flex flex-col items-center">
-                              <span className="text-blue-600 font-bold text-sm mb-2">
-                                Image selected!
-                              </span>
-                              <div className="w-12 h-12 bg-white rounded-2xl shadow-sm flex items-center justify-center group-hover:text-blue-600 transition-colors">
-                                <svg
-                                  className="w-6 h-6"
-                                  fill="none"
-                                  viewBox="0 0 24 24"
-                                  stroke="currentColor"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
-                                  />
-                                </svg>
-                              </div>
-                              <span className="text-slate-400 text-[10px] mt-2">Click to change photo</span>
-                            </div>
-                          ) : (
-                            <>
-                              <div className="w-12 h-12 bg-white rounded-2xl shadow-sm flex items-center justify-center mb-4 group-hover:text-blue-600 transition-colors">
-                                <svg
-                                  className="w-6 h-6"
-                                  fill="none"
-                                  viewBox="0 0 24 24"
-                                  stroke="currentColor"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
-                                  />
-                                </svg>
-                              </div>
-                              <span className="text-slate-500 font-bold text-sm">
-                                Drop your photo here or click to browse
-                              </span>
-                              <span className="text-slate-400 text-xs mt-1">
-                                PNG or JPG, max 10MB
-                              </span>
-                            </>
-                          )}
+                      <div className="relative group">
+                        <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-blue-600 transition-colors">
+                          <User className="w-5 h-5" />
                         </div>
+                        <input
+                          type="text"
+                          value={name}
+                          onChange={(e) => setName(e.target.value)}
+                          className="w-full pl-14 pr-6 py-5 bg-slate-50/50 border border-slate-100 rounded-3xl text-lg font-bold placeholder:text-slate-300 focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-300 transition-all"
+                          placeholder="Your full name"
+                        />
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between px-2">
-                      <div className="flex items-center gap-2">
+                    <div className="space-y-4">
+                      <label className="text-[11px] uppercase tracking-[0.2em] font-black text-slate-400 ml-2">
+                        {t.photoLabel}
+                      </label>
+                      
+                      {file ? (
+                        <motion.div 
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="relative group/preview w-full aspect-[4/3] rounded-[40px] overflow-hidden shadow-2xl border-4 border-white ring-1 ring-slate-100"
+                        >
+                          {previewUrl && (
+                            <NextImage
+                              src={previewUrl}
+                              alt="Preview"
+                              fill
+                              className="object-cover transition-transform duration-700 group-hover/preview:scale-110"
+                              unoptimized
+                            />
+                          )}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20" />
+                          
+                          {/* Floating Cross Button */}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              removePhoto();
+                            }}
+                            className="absolute top-6 right-6 w-12 h-12 bg-white/95 backdrop-blur-md rounded-full shadow-2xl flex items-center justify-center text-red-500 hover:bg-red-500 hover:text-white transition-all active:scale-90 z-20 group-hover/preview:rotate-90"
+                          >
+                            <X className="w-6 h-6" />
+                          </button>
+
+                          <div className="absolute bottom-6 left-6 right-6 flex flex-col gap-2">
+                            <button
+                              type="button"
+                              onClick={() => fileInputRef.current?.click()}
+                              className="w-full py-4 bg-white/95 backdrop-blur-md rounded-2xl text-center shadow-xl flex items-center justify-center gap-3 text-slate-900 font-black text-sm uppercase tracking-widest hover:bg-white transition-colors"
+                            >
+                              <Camera className="w-5 h-5 text-blue-600" />
+                              {t.changePhoto}
+                            </button>
+                            <div className="px-4 py-2 bg-blue-600/90 backdrop-blur-sm rounded-xl text-center">
+                               <span className="text-[10px] font-black uppercase tracking-widest text-white">
+                                 {t.imageSelected}
+                               </span>
+                            </div>
+                          </div>
+                        </motion.div>
+                      ) : (
                         <div
-                          className={`w-2 h-2 rounded-full ${triesLeft > 1 ? "bg-green-500" : "bg-orange-500"} animate-pulse`}
-                        />
-                        <span className="text-sm font-bold text-slate-600">
-                          {triesLeft} {triesLeft === 1 ? "try" : "tries"} left
-                        </span>
-                      </div>
+                          onClick={() => {
+                            if (file) handleGenerate(null as any);
+                            else setShowGuidelines(true);
+                          }}
+                          className="w-full aspect-[4/3] border-4 border-dashed border-slate-200 rounded-[40px] flex flex-col items-center justify-center bg-slate-50/50 group hover:bg-blue-50/50 hover:border-blue-300 transition-all cursor-pointer relative overflow-hidden"
+                        >
+                          <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*"
+                            onChange={handleFileUpload}
+                            className="hidden"
+                          />
+                          <div className="w-20 h-20 bg-white rounded-3xl shadow-lg flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-500">
+                            <Upload className="w-8 h-8 text-blue-600" />
+                          </div>
+                          <span className="text-slate-700 font-black text-xl mb-2">
+                            {t.dropPhoto}
+                          </span>
+                          <span className="text-slate-400 font-bold text-sm">
+                            PNG or JPG up to 10MB
+                          </span>
+                        </div>
+                      )}
                     </div>
 
                     <button
                       type="button"
-                      disabled={!file || !name}
-                      onClick={(e) => {
-                        if (file) {
-                          handleGenerate(e);
-                        } else {
-                          setShowGuidelines(true);
-                        }
-                      }}
-                      className="w-full py-5 bg-blue-600 text-white rounded-full font-bold text-lg hover:bg-blue-700 hover:shadow-2xl hover:shadow-blue-300 transition-all active:scale-95 disabled:opacity-40 shadow-xl shadow-blue-100 flex items-center justify-center gap-3"
+                      onClick={handleGenerate}
+                      disabled={isLoading}
+                      className="w-full py-6 bg-blue-600 text-white rounded-[32px] font-black text-xl hover:bg-blue-700 shadow-2xl shadow-blue-200 transition-all active:scale-[0.98] disabled:opacity-50 flex flex-col items-center justify-center gap-1 mt-8"
                     >
-                      <svg
-                        className="w-5 h-5"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M13 10V3L4 14h7v7l9-11h-7z"
-                        />
-                      </svg>
-                      Generate AI Portrait
+                      <div className="flex items-center gap-3">
+                        <Sparkles className="w-6 h-6" />
+                        {t.generateBtn}
+                      </div>
+                      <span className="text-xs font-bold opacity-60 uppercase tracking-widest">
+                        {t.generateNote}
+                      </span>
                     </button>
                   </form>
                 </div>
@@ -1065,7 +1135,7 @@ export default function EllavarkkumPage() {
                     {timer}s
                   </span>
                   <span className="text-slate-400 font-bold uppercase tracking-widest text-xs mt-2">
-                    Sculpting...
+                    {t.sculpting}
                   </span>
                 </div>
 
@@ -1077,11 +1147,10 @@ export default function EllavarkkumPage() {
 
               <div className="text-center space-y-4 max-w-md">
                 <h2 className="text-3xl font-heading font-black text-slate-900">
-                  Magical things take time.
+                  {t.processingTitle}
                 </h2>
-                <p className="text-slate-500 leading-relaxed text-lg">
-                  Our AI is meticulously combining your photo with our premium
-                  professional assets. Almost there!
+                <p className="text-slate-500 leading-relaxed text-lg font-medium">
+                  {t.processingSub}
                 </p>
               </div>
             </motion.div>
@@ -1110,18 +1179,27 @@ export default function EllavarkkumPage() {
                       d="M5 13l4 4L19 7"
                     />
                   </svg>
-                  Generation Complete
+                  {t.generationComplete}
                 </div>
 
                 <div className="text-center lg:text-left">
                   <h2 className="text-4xl sm:text-6xl font-heading font-black mb-6 tracking-tight leading-[1.1]">
-                    Your Persona is{" "}
-                    <span className="text-[#e1007a]">Perfect</span>.
+                    {t.resultTitle}
                   </h2>
-                  <p className="text-lg sm:text-xl text-slate-500 leading-relaxed">
-                    We&apos;ve generated your custom AI portrait. It&apos;s
-                    high-resolution, professional, and ready to share.
-                  </p>
+                  <div className="text-lg sm:text-xl text-slate-500 leading-relaxed font-medium space-y-4">
+                    <p>{t.shareInst}</p>
+                    <ul className="text-base space-y-2 list-none">
+                      <li className="flex items-center gap-2">
+                        <span className="text-blue-600">📸</span> {t.collaborate}
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <span className="text-blue-600">#️⃣</span> {t.hashtag}
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <span className="text-[#e1007a]">👥</span> {t.inviteFriends}
+                      </li>
+                    </ul>
+                  </div>
                 </div>
 
                 <div className="flex flex-col gap-4 mt-8">
@@ -1143,7 +1221,7 @@ export default function EllavarkkumPage() {
                           d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
                         />
                       </svg>
-                      Download Portrait
+                      {t.download}
                     </button>
 
                     <button
@@ -1163,7 +1241,7 @@ export default function EllavarkkumPage() {
                           d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
                         />
                       </svg>
-                      Try Again ({triesLeft})
+                      {t.tryAgain} ({triesLeft} {t.triesLeft})
                     </button>
                   </div>
 
@@ -1184,12 +1262,21 @@ export default function EllavarkkumPage() {
                         d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
                       />
                     </svg>
-                    Logout & Exit
+                    {t.logoutExit}
                   </button>
                 </div>
               </div>
 
-              <div className="relative rounded-[32px] overflow-hidden shadow-2xl bg-black border border-slate-100 group order-1 lg:order-2">
+              <div className="space-y-6 order-1 lg:order-2">
+                <div className="text-center mb-4">
+                  <p className="text-slate-500 font-bold text-sm">
+                    {t.selectionHint}
+                  </p>
+                  <p className="text-blue-600 font-black text-lg">
+                    {t.selectFavorite}
+                  </p>
+                </div>
+                <div className="relative rounded-[32px] overflow-hidden shadow-2xl bg-black border border-slate-100 group">
                 {finalImageUrl ? (
                   <NextImage
                     src={finalImageUrl}
@@ -1200,19 +1287,88 @@ export default function EllavarkkumPage() {
                     unoptimized
                   />
                 ) : (
-                    <div className="animate-pulse flex flex-col items-center gap-4 text-slate-400">
-                      <div className="w-12 h-12 rounded-full border-4 border-slate-200 border-t-blue-500 animate-spin" />
-                      <p className="text-sm font-medium">
-                        Finalizing your portrait...
-                      </p>
-                    </div>
-                  )}
-                  <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/20 via-transparent to-transparent pointer-events-none" />
+                  <div className="animate-pulse flex flex-col items-center gap-4 text-slate-400">
+                    <div className="w-12 h-12 rounded-full border-4 border-slate-200 border-t-blue-500 animate-spin" />
+                    <p className="text-sm font-medium">
+                      {t.finalizing}
+                    </p>
+                  </div>
+                )}
+                <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/20 via-transparent to-transparent pointer-events-none" />
                 </div>
-              </motion.div>
-            )}
+              </div>
+            </motion.div>
+          )}
         </AnimatePresence>
       </div>
+
+      {/* Result Action Modal */}
+      <AnimatePresence>
+        {showResultModal && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="bg-white rounded-[40px] p-8 md:p-12 max-w-lg w-full shadow-2xl relative overflow-hidden"
+            >
+              <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-600 via-[#e1007a] to-blue-600" />
+              
+              <button 
+                onClick={() => setShowResultModal(false)}
+                className="absolute top-6 right-6 w-10 h-10 flex items-center justify-center rounded-full bg-slate-50 text-slate-400 hover:text-slate-900 transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+
+              <div className="text-center space-y-6">
+                <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-2 text-green-500">
+                  <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+
+                <h3 className="text-3xl font-heading font-black text-slate-900 leading-tight">
+                  {t.resultTitle}
+                </h3>
+
+                <div className="space-y-4 pt-2">
+                  <button
+                    onClick={() => {
+                      handleDownload();
+                      setShowResultModal(false);
+                    }}
+                    className="w-full py-5 bg-blue-600 text-white rounded-full font-bold text-lg hover:bg-blue-700 shadow-xl shadow-blue-100 transition-all flex items-center justify-center gap-3 active:scale-95"
+                  >
+                    <Download className="w-6 h-6" />
+                    {t.download}
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setShowResultModal(false);
+                      handleTryAgain();
+                    }}
+                    className="w-full py-5 bg-white text-slate-900 border-2 border-slate-200 rounded-full font-bold text-lg hover:bg-slate-50 transition-all flex items-center justify-center gap-3 active:scale-95"
+                  >
+                    <RotateCcw className="w-5 h-5" />
+                    {t.tryAgain} ({triesLeft} {t.triesLeft})
+                  </button>
+                </div>
+
+                <div className="pt-4 p-4 bg-orange-50 rounded-2xl border border-orange-100">
+                  <p className="text-xs text-orange-800 font-bold leading-relaxed">
+                    <span className="uppercase tracking-widest text-[10px] block mb-1 text-orange-600">Notice:</span>
+                    {t.aiDisclaimer}
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Mobile Scroll Navigator */}
       <div className="fixed bottom-10 right-6 z-[9999] md:hidden pointer-events-auto">
@@ -1249,7 +1405,7 @@ export default function EllavarkkumPage() {
                 />
               </svg>
               <span className="text-[9px] font-black uppercase tracking-tighter">
-                Down
+                {t.scrollDown}
               </span>
             </motion.button>
           ) : scrollPosition === "bottom" ? (
@@ -1278,7 +1434,7 @@ export default function EllavarkkumPage() {
                 />
               </svg>
               <span className="text-[9px] font-black uppercase tracking-tighter text-slate-400">
-                Top
+                {t.scrollTop}
               </span>
             </motion.button>
           ) : null}
