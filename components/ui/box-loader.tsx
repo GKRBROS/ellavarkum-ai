@@ -2,7 +2,7 @@ import type React from "react"
 
 const BoxLoader: React.FC = () => {
   return (
-    <div style={{ perspective: "600px" }} className="flex items-center justify-center">
+    <div className="flex items-center justify-center">
       <div className="boxes">
         <div className="box box-1">
           <div className="face face-front" />

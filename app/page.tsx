@@ -31,7 +31,7 @@ const CountryCodeDropdown = dynamic(
   () => import("../components/CountryCodeDropdown"),
   { ssr: false },
 );
-import BoxLoader from "@/components/ui/box-loader";
+import AnimatedLoader1 from "@/components/ui/animated-loader-1";
 
 // --- Types ---
 type Step = "otp-request" | "otp-verify" | "form" | "processing" | "result";
@@ -90,9 +90,14 @@ export default function EllavarkkumPage() {
   const [gender, setGender] = useState<"male" | "female">("male");
   const [showGuidelines, setShowGuidelines] = useState(false);
   const [otpTimestamp, setOtpTimestamp] = useState<number | null>(null);
+  const [mounted, setMounted] = useState(false);
   const [scrollPosition, setScrollPosition] = useState<
     "top" | "bottom" | "middle"
   >("top");
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -130,6 +135,14 @@ export default function EllavarkkumPage() {
     }
     return triesLeft;
   };
+
+  if (!mounted) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   const t = translations[lang];
 
@@ -1222,12 +1235,9 @@ export default function EllavarkkumPage() {
               <div className="relative bg-white rounded-[40px] shadow-2xl border border-slate-100 p-10 sm:p-16 flex flex-col items-center gap-10 max-w-sm w-[90%]">
                 <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-blue-600 via-[#e1007a] to-blue-600 rounded-t-[40px]" />
 
-                {/* 3D Box Loader */}
-                <div
-                  className="flex items-center justify-center"
-                  style={{ perspective: "600px", height: "140px", width: "160px" }}
-                >
-                  <BoxLoader />
+                {/* Animated Square Loader */}
+                <div className="flex items-center justify-center h-32 mb-4">
+                  <AnimatedLoader1 />
                 </div>
 
                 {/* Timer */}
