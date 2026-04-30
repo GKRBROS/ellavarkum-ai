@@ -31,6 +31,7 @@ const CountryCodeDropdown = dynamic(
   () => import("../components/CountryCodeDropdown"),
   { ssr: false },
 );
+import BoxLoader from "@/components/ui/box-loader";
 
 // --- Types ---
 type Step = "otp-request" | "otp-verify" | "form" | "processing" | "result";
@@ -918,15 +919,19 @@ export default function EllavarkkumPage() {
                         </p>
                       </div>
 
-                      <div className="hidden sm:block relative aspect-square rounded-[40px] overflow-hidden shadow-2xl border-4 border-white rotate-2 group hover:rotate-0 transition-transform duration-700">
-                        <NextImage 
-                          src="/main.gif" 
-                          alt="About Us" 
-                          fill 
-                          className="object-cover" 
-                          unoptimized 
+                      <div className="hidden sm:flex flex-col items-center justify-center relative aspect-square rounded-[40px] overflow-hidden shadow-2xl border-4 border-white bg-gradient-to-br from-blue-50 via-white to-pink-50 rotate-2 group hover:rotate-0 transition-transform duration-700">
+                        <div className="absolute inset-0 bg-gradient-to-br from-blue-600/5 to-[#e1007a]/5" />
+                        <NextImage
+                          src="/LOGO.webp"
+                          alt="Ellavarkkum AI Logo"
+                          width={200}
+                          height={200}
+                          className="w-2/3 h-auto object-contain relative z-10 drop-shadow-2xl"
+                          unoptimized
                         />
-                        <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/20 to-transparent" />
+                        <div className="absolute bottom-6 text-center px-6">
+                          <p className="text-sm font-black text-slate-400 tracking-widest uppercase">Ellavarkkum AI</p>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1205,53 +1210,40 @@ export default function EllavarkkumPage() {
               exit={{ opacity: 0 }}
               className="flex flex-col items-center justify-center min-h-[60vh] pt-20"
             >
-              <div className="relative w-72 h-72 mb-16">
-                {/* Circular Progress */}
-                <svg className="w-full h-full transform -rotate-90">
-                  <circle
-                    cx="144"
-                    cy="144"
-                    r="130"
-                    className="stroke-slate-100"
-                    strokeWidth="8"
-                    fill="transparent"
-                  />
-                  <motion.circle
-                    cx="144"
-                    cy="144"
-                    r="130"
-                    className="stroke-[#e1007a]"
-                    strokeWidth="8"
-                    fill="transparent"
-                    strokeDasharray="816.8"
-                    initial={{ strokeDashoffset: 816.8 }}
-                    animate={{ strokeDashoffset: 816.8 * (timer / GEN_TIME) }}
-                    transition={{ duration: 1, ease: "linear" }}
-                  />
-                </svg>
+              {/* White Card with Loader */}
+              <div className="relative bg-white rounded-[40px] shadow-2xl border border-slate-100 p-10 sm:p-16 flex flex-col items-center gap-10 max-w-sm w-[90%]">
+                <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-blue-600 via-[#e1007a] to-blue-600 rounded-t-[40px]" />
 
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-7xl font-heading font-black text-[#e1007a] tracking-tighter">
+                {/* 3D Box Loader */}
+                <div
+                  className="flex items-center justify-center"
+                  style={{ perspective: "600px", height: "140px", width: "160px" }}
+                >
+                  <BoxLoader />
+                </div>
+
+                {/* Timer */}
+                <div className="text-center space-y-2">
+                  <span className="text-6xl font-heading font-black text-[#e1007a] tracking-tighter tabular-nums">
                     {timer}s
                   </span>
-                  <span className="text-slate-400 font-bold uppercase tracking-widest text-xs mt-2">
+                  <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">
                     {t.sculpting}
-                  </span>
+                  </p>
                 </div>
 
-                {/* Decorative dots */}
-                <div className="absolute inset-0 animate-spin-slow pointer-events-none">
-                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-4 h-4 bg-[#e1007a] rounded-full blur-sm" />
-                </div>
-              </div>
+                {/* Divider */}
+                <div className="w-full h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
 
-              <div className="text-center space-y-4 max-w-md">
-                <h2 className="text-3xl font-heading font-black text-slate-900">
-                  {t.processingTitle}
-                </h2>
-                <p className="text-slate-500 leading-relaxed text-lg font-medium">
-                  {t.processingSub}
-                </p>
+                {/* Text */}
+                <div className="text-center space-y-2">
+                  <h2 className="text-2xl font-heading font-black text-slate-900">
+                    {t.processingTitle}
+                  </h2>
+                  <p className="text-slate-500 leading-relaxed text-sm font-medium">
+                    {t.processingSub}
+                  </p>
+                </div>
               </div>
             </motion.div>
           )}
