@@ -785,10 +785,10 @@ export default function EllavarkkumPage() {
             alt="Logo"
             width={48}
             height={48}
-            className="h-10 md:h-12 w-auto"
+            className="h-8 sm:h-10 md:h-12 w-auto"
             unoptimized
           />
-          <span className="font-heading text-xl md:text-2xl font-black tracking-tighter sm:block">
+          <span className="hidden sm:block font-heading text-xl md:text-2xl font-black tracking-tighter">
             {lang === "en" ? "ELLAVARKKUM" : "എല്ലാവർക്കും"} <span className="text-blue-600">AI</span>
           </span>
         </div>
@@ -819,7 +819,7 @@ export default function EllavarkkumPage() {
                 <div className="text-center mb-8 space-y-4 max-w-4xl mx-auto -mt-6 sm:-mt-10">
                   <h1 className={cn(
                     "font-heading font-black tracking-tighter leading-[1.1] text-black whitespace-nowrap",
-                    lang === "ml" ? "text-3xl sm:text-6xl lg:text-8xl" : "text-4xl sm:text-7xl lg:text-9xl"
+                    lang === "ml" ? "text-2xl sm:text-5xl lg:text-8xl" : "text-4xl sm:text-7xl lg:text-9xl"
                   )}>
                     {lang === "ml" ? "എല്ലാവർക്കും" : "Ellavarkkum"} <span className="text-blue-600">AI</span>
                   </h1>
@@ -854,7 +854,7 @@ export default function EllavarkkumPage() {
                   {/* Login Form Section */}
                   <div className="w-full px-2 sm:px-4">
                     <div className="mb-8 text-center">
-                      <h2 className="text-3xl sm:text-4xl font-heading font-black mb-2 text-black leading-tight">
+                      <h2 className="text-2xl sm:text-4xl font-heading font-black mb-2 text-black leading-tight">
                         {t.continueMobile}
                       </h2>
                       <p className="text-slate-600 font-bold text-xs sm:text-sm">
@@ -878,13 +878,13 @@ export default function EllavarkkumPage() {
                             value={phone}
                             onChange={(e) => setPhone(e.target.value)}
                             placeholder="98765 43210"
-                            className="flex-1 min-w-0 px-6 py-5 rounded-[24px] border border-slate-200 bg-white focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all text-xl font-black shadow-sm placeholder:text-slate-300"
+                            className="flex-1 min-w-0 px-4 sm:px-6 py-4 sm:py-5 rounded-[24px] border border-slate-200 bg-white focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all text-base sm:text-xl font-black shadow-sm placeholder:text-slate-300"
                           />
                         </div>
                       </div>
                       <button
                         disabled={isLoading}
-                        className="group relative w-full py-6 bg-blue-600 text-white rounded-[24px] font-black text-xl hover:bg-blue-700 hover:shadow-2xl hover:shadow-blue-200 transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-4 shadow-xl shadow-blue-100 overflow-hidden"
+                        className="group relative w-full py-4 sm:py-6 bg-blue-600 text-white rounded-[24px] font-black text-base sm:text-xl hover:bg-blue-700 hover:shadow-2xl hover:shadow-blue-200 transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-3 sm:gap-4 shadow-xl shadow-blue-100 overflow-hidden"
                       >
                         <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
                         {isLoading ? t.sendingOtp : t.getStarted}
@@ -902,23 +902,23 @@ export default function EllavarkkumPage() {
                     <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-[#e1007a] via-blue-600 to-[#e1007a] opacity-50" />
                     
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-                      <div className="space-y-6 text-center lg:text-left">
+                      <div className="space-y-4 text-center lg:text-left">
                         <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-full text-xs font-black uppercase tracking-widest border border-blue-100">
                           <Sparkles className="w-4 h-4" />
                           About Us
                         </div>
-                        <h2 className="text-4xl sm:text-5xl font-heading font-black text-black leading-tight tracking-tighter">
+                        <h2 className="text-3xl sm:text-5xl font-heading font-black text-black leading-tight tracking-tighter">
                           {t.aboutUsTitle}
                         </h2>
-                        <p className="text-xl text-slate-900 font-black italic">
+                        <p className="text-base sm:text-xl text-slate-900 font-black italic">
                           {t.aboutUsSub}
                         </p>
-                        <p className="text-lg text-slate-700 font-medium leading-relaxed">
+                        <p className="text-sm sm:text-lg text-slate-700 font-medium leading-relaxed">
                           {t.aboutUsDescription}
                         </p>
                       </div>
 
-                      <div className="relative aspect-square rounded-[40px] overflow-hidden shadow-2xl border-4 border-white rotate-2 group hover:rotate-0 transition-transform duration-700">
+                      <div className="hidden sm:block relative aspect-square rounded-[40px] overflow-hidden shadow-2xl border-4 border-white rotate-2 group hover:rotate-0 transition-transform duration-700">
                         <NextImage 
                           src="/main.gif" 
                           alt="About Us" 
