@@ -103,12 +103,14 @@ export default function EllavarkkumPage() {
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-   const [requestId, setRequestId] = useState<string | null>(null);
-   const [showResultModal, setShowResultModal] = useState(false);
-   const [showSocialModal, setShowSocialModal] = useState(false);
-   const [lang, setLang] = useState<Language>("en");
+  const [requestId, setRequestId] = useState<string | null>(null);
+  const [showResultModal, setShowResultModal] = useState(false);
+  const [showSocialModal, setShowSocialModal] = useState(false);
+  const [lang, setLang] = useState<Language>("en");
 
   // Load language preference
+  useEffect(() => {
+    const savedLang = localStorage.getItem("Ellavarkkum_lang") as Language;
     if (savedLang) setLang(savedLang);
   }, []);
 
@@ -144,7 +146,7 @@ export default function EllavarkkumPage() {
 
 
 
-  const t = translations[lang];
+  const t = translations[lang as Language];
 
   const normalizePhoneNumber = (rawPhone: string, code: string) => {
     // Remove all non-digits from rawPhone except +
