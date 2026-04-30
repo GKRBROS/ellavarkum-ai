@@ -114,6 +114,16 @@ export default function EllavarkkumPage() {
     if (savedLang) setLang(savedLang);
   }, []);
 
+  // Track Step Changes for Funnel Pathing
+  useEffect(() => {
+    if (mounted) {
+      trackEvent('app_step_view', { 
+        step_name: step,
+        language: lang 
+      });
+    }
+  }, [step, mounted, lang]);
+
   const trackEvent = (action: string, params?: any) => {
     if (typeof window !== "undefined" && (window as any).gtag) {
       (window as any).gtag("event", action, params);
@@ -501,6 +511,8 @@ export default function EllavarkkumPage() {
         }),
       );
     } catch (err: any) {
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      trackEvent('app_error', { context: 'otp_request', message: errorMsg });
       toast.error(
         err instanceof Error
           ? err.message
@@ -547,6 +559,8 @@ export default function EllavarkkumPage() {
 
       toast.success("Identity verified!");
     } catch (err: any) {
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      trackEvent('app_error', { context: 'otp_verify', message: errorMsg });
       toast.error("Verification failed");
     } finally {
       setIsLoading(false);
@@ -694,6 +708,8 @@ export default function EllavarkkumPage() {
         toast.success(`Generated! ${updatedTries} tries remaining.`);
       }, 2000);
     } catch (err: any) {
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      trackEvent('app_error', { context: 'generation', message: errorMsg });
       toast.error(
         err instanceof Error
           ? err.message
@@ -724,6 +740,8 @@ export default function EllavarkkumPage() {
       // Show social links modal after successful download click
       setTimeout(() => setShowSocialModal(true), 500);
     } catch (err: any) {
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      trackEvent('app_error', { context: 'download', message: errorMsg });
       console.error("Download failed:", err);
       // Fallback: open in new tab for manual save
       window.open(finalImageUrl, "_blank");
