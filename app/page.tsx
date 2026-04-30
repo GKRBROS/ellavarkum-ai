@@ -32,6 +32,7 @@ const CountryCodeDropdown = dynamic(
   { ssr: false },
 );
 import AnimatedLoader1 from "@/components/ui/animated-loader-1";
+import LumaSpin from "@/components/ui/luma-spin";
 
 // --- Types ---
 type Step = "otp-request" | "otp-verify" | "form" | "processing" | "result";
@@ -139,7 +140,7 @@ export default function EllavarkkumPage() {
   if (!mounted) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+        <LumaSpin />
       </div>
     );
   }
