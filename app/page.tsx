@@ -816,18 +816,28 @@ export default function EllavarkkumPage() {
               className="relative w-full min-h-screen flex flex-col items-center justify-start pt-16 pb-20 overflow-hidden"
             >
               <div className="w-full max-w-6xl mx-auto px-4 relative z-10 flex flex-col items-center">
-                <div className="text-center mb-6 space-y-2 max-w-4xl mx-auto -mt-6 sm:-mt-10">
-                  <h1 className="text-4xl sm:text-7xl lg:text-9xl font-heading font-black tracking-tighter leading-[0.85] text-slate-900 sm:whitespace-nowrap">
+                <div className="text-center mb-8 space-y-4 max-w-4xl mx-auto -mt-6 sm:-mt-10">
+                  <h1 className={cn(
+                    "font-heading font-black tracking-tighter leading-[1.1] text-black whitespace-nowrap",
+                    lang === "ml" ? "text-3xl sm:text-6xl lg:text-8xl" : "text-4xl sm:text-7xl lg:text-9xl"
+                  )}>
                     {lang === "ml" ? "എല്ലാവർക്കും" : "Ellavarkkum"} <span className="text-blue-600">AI</span>
                   </h1>
-                  <p className="text-xs sm:text-base text-slate-600 font-medium leading-relaxed max-w-xl mx-auto px-4">
+                  <p className={cn(
+                    "text-sm sm:text-lg text-slate-800 font-bold leading-relaxed mx-auto px-6 bg-white/40 backdrop-blur-sm py-3 rounded-2xl border border-white/60 shadow-sm",
+                    lang === "ml" ? "max-w-4xl" : "max-w-xl"
+                  )}>
                     {t.subtext}
                   </p>
                 </div>
 
-                {/* Single High-Impact Promo Card - 4:5 Aspect Ratio */}
-                <div className="w-full mb-0 relative px-4 transform scale-90 sm:scale-95 origin-top z-10">
-                  <div className="max-w-[320px] sm:max-w-[420px] mx-auto aspect-[4/5] rounded-[40px] sm:rounded-[48px] overflow-hidden shadow-[0_40px_100px_rgba(0,0,0,0.15)] border-[8px] sm:border-[12px] border-white bg-black relative ring-1 ring-slate-200">
+                {/* Combined Impact Card */}
+                <div 
+                  className="w-[95%] max-w-xl mx-auto glass-panel p-4 sm:p-8 rounded-[48px] sm:rounded-[64px] shadow-[0_60px_150px_rgba(0,0,0,0.12)] border border-white/80 bg-white/90 backdrop-blur-3xl relative z-30 mb-20"
+                  id="main-action"
+                >
+                  {/* GIF Section */}
+                  <div className="w-full aspect-[4/5] rounded-[32px] sm:rounded-[40px] overflow-hidden bg-black relative ring-1 ring-slate-100 shadow-inner">
                     <NextImage 
                       src="/main.gif" 
                       alt="Ellavarkkum AI Promo" 
@@ -837,89 +847,90 @@ export default function EllavarkkumPage() {
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none" />
                   </div>
-                </div>
 
-                {/* Login Card - Reduced overlap for better GIF visibility */}
-                <div
-                  className="w-full max-w-md mx-auto relative z-30 -mt-6 sm:-mt-10"
-                  id="main-action"
-                >
-                <div className="w-full glass-panel p-6 sm:p-10 rounded-[48px] shadow-[0_50px_120px_rgba(0,0,0,0.1)] border border-white/60 bg-white/95 backdrop-blur-3xl relative">
-                  <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-blue-600 via-[#e1007a] to-blue-600 rounded-t-full" />
+                  {/* Gradient Separator */}
+                  <div className="w-full h-1 bg-gradient-to-r from-blue-600 via-[#e1007a] to-blue-600 my-8 sm:my-10 rounded-full opacity-30 shadow-sm" />
 
-                  <div className="mb-8 text-center">
-                    <h2 className="text-2xl sm:text-3xl font-heading font-black mb-1 text-slate-900">
-                      {t.continueMobile}
-                    </h2>
-                    <p className="text-slate-500 font-medium text-xs">
-                      {lang === "en" ? "Enter your number to get started" : "തുടങ്ങാൻ നമ്പർ നൽകുക"}
-                    </p>
+                  {/* Login Form Section */}
+                  <div className="w-full px-2 sm:px-4">
+                    <div className="mb-8 text-center">
+                      <h2 className="text-3xl sm:text-4xl font-heading font-black mb-2 text-black leading-tight">
+                        {t.continueMobile}
+                      </h2>
+                      <p className="text-slate-600 font-bold text-xs sm:text-sm">
+                        {lang === "en" ? "Enter your number to get started" : "തുടങ്ങാൻ നമ്പർ നൽകുക"}
+                      </p>
+                    </div>
+
+                    <form onSubmit={handleRequestOtp} className="space-y-6">
+                      <div className="space-y-3">
+                        <label className="text-[10px] uppercase tracking-[0.2em] font-black text-slate-400 ml-4">
+                          Phone Number
+                        </label>
+                        <div className="flex gap-3 items-stretch">
+                          <CountryCodeDropdown
+                            value={countryCode}
+                            onSelect={(code) => setCountryCode(code)}
+                          />
+                          <input
+                            type="tel"
+                            required
+                            value={phone}
+                            onChange={(e) => setPhone(e.target.value)}
+                            placeholder="98765 43210"
+                            className="flex-1 min-w-0 px-6 py-5 rounded-[24px] border border-slate-200 bg-white focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all text-xl font-black shadow-sm placeholder:text-slate-300"
+                          />
+                        </div>
+                      </div>
+                      <button
+                        disabled={isLoading}
+                        className="group relative w-full py-6 bg-blue-600 text-white rounded-[24px] font-black text-xl hover:bg-blue-700 hover:shadow-2xl hover:shadow-blue-200 transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-4 shadow-xl shadow-blue-100 overflow-hidden"
+                      >
+                        <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                        {isLoading ? t.sendingOtp : t.getStarted}
+                        <Sparkles className="w-7 h-7" />
+                      </button>
+                    </form>
                   </div>
+                </div>
 
-                  <form onSubmit={handleRequestOtp} className="space-y-6">
-                    <div className="space-y-2">
-                      <label className="text-[9px] uppercase tracking-[0.2em] font-bold text-slate-400 ml-4">
-                        Phone Number
-                      </label>
-                      <div className="flex gap-3 items-stretch">
-                        <CountryCodeDropdown
-                          value={countryCode}
-                          onSelect={(code) => setCountryCode(code)}
+                {/* About Us Section */}
+                <div className="w-full mt-10 mb-10 px-4">
+                  <div 
+                    className="max-w-5xl mx-auto glass-panel p-8 sm:p-16 rounded-[48px] sm:rounded-[64px] border border-white/60 shadow-2xl relative overflow-hidden"
+                  >
+                    <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-[#e1007a] via-blue-600 to-[#e1007a] opacity-50" />
+                    
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                      <div className="space-y-6 text-center lg:text-left">
+                        <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-full text-xs font-black uppercase tracking-widest border border-blue-100">
+                          <Sparkles className="w-4 h-4" />
+                          About Us
+                        </div>
+                        <h2 className="text-4xl sm:text-5xl font-heading font-black text-black leading-tight tracking-tighter">
+                          {t.aboutUsTitle}
+                        </h2>
+                        <p className="text-xl text-slate-900 font-black italic">
+                          {t.aboutUsSub}
+                        </p>
+                        <p className="text-lg text-slate-700 font-medium leading-relaxed">
+                          {t.aboutUsDescription}
+                        </p>
+                      </div>
+
+                      <div className="relative aspect-square rounded-[40px] overflow-hidden shadow-2xl border-4 border-white rotate-2 group hover:rotate-0 transition-transform duration-700">
+                        <NextImage 
+                          src="/main.gif" 
+                          alt="About Us" 
+                          fill 
+                          className="object-cover" 
+                          unoptimized 
                         />
-                        <input
-                          type="tel"
-                          required
-                          value={phone}
-                          onChange={(e) => setPhone(e.target.value)}
-                          placeholder="98765 43210"
-                          className="flex-1 min-w-0 px-6 py-4.5 rounded-2xl border border-slate-200 bg-white focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all text-lg font-bold shadow-sm"
-                        />
+                        <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/20 to-transparent" />
                       </div>
                     </div>
-                    <button
-                      disabled={isLoading}
-                      className="w-full py-5 bg-blue-600 text-white rounded-2xl font-black text-lg hover:bg-blue-700 hover:shadow-2xl hover:shadow-blue-200 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3 shadow-xl shadow-blue-100"
-                    >
-                      {isLoading ? t.sendingOtp : t.getStarted}
-                      <Sparkles className="w-6 h-6" />
-                    </button>
-                  </form>
+                  </div>
                 </div>
-              </div>
-
-              {/* How it Works Section */}
-              <div className="w-full mt-20 mb-10">
-                <div className="text-center mb-10 space-y-2">
-                  <h2 className="text-3xl sm:text-4xl font-heading font-black text-slate-900">
-                    {t.howItWorksTitle}
-                  </h2>
-                  <p className="text-base text-slate-500 font-medium max-w-2xl mx-auto">
-                    {t.howItWorksSub}
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 px-4">
-                  {[
-                    { step: "01", text: t.signIn },
-                    { step: "02", text: t.fillDetails },
-                    { step: "03", text: t.photoLabel },
-                    { step: "04", text: t.generateBtn }
-                  ].map((item, idx) => (
-                    <div key={idx} className="glass-panel p-5 rounded-[28px] border border-white/40 shadow-lg flex flex-col gap-4 group hover:-translate-y-1 transition-all duration-500">
-                      <div className="relative aspect-video rounded-xl overflow-hidden bg-slate-100">
-                         <NextImage src="/main.gif" alt={`Step ${item.step}`} fill className="object-cover opacity-60 group-hover:scale-110 transition-transform duration-700" unoptimized />
-                         <div className="absolute top-2.5 left-2.5 w-7 h-7 bg-blue-600 text-white rounded-full flex items-center justify-center font-black text-[10px] shadow-lg shadow-blue-200">
-                           {item.step}
-                         </div>
-                      </div>
-                      <div className="space-y-2 flex flex-col items-center">
-                        <h4 className="font-bold text-slate-900 text-sm sm:text-base text-center leading-tight">{item.text}</h4>
-                        <div className="w-8 h-1 bg-gradient-to-r from-blue-600 to-[#e1007a] rounded-full shadow-sm" />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
             </div>
           </motion.div>
         )}
@@ -1428,6 +1439,18 @@ export default function EllavarkkumPage() {
                     <p className="text-slate-500 font-medium text-base leading-relaxed">{t.resultSub}</p>
                   </div>
 
+                  <div className="pt-4 border-t border-slate-50 px-2">
+                    <div className="flex items-start gap-3 p-4 bg-slate-50/80 rounded-2xl text-left border-2 border-slate-200 shadow-sm">
+                      <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-900">Important Disclaimer</p>
+                        <p className="text-[11px] text-slate-700 font-bold leading-relaxed italic">
+                          {t.aiDisclaimer}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="grid grid-cols-1 gap-3 px-2">
                     <button
                       onClick={() => {
@@ -1451,18 +1474,6 @@ export default function EllavarkkumPage() {
                       <RotateCcw className="w-4 h-4" />
                       {t.tryAgain}
                     </button>
-                  </div>
-
-                  <div className="pt-4 border-t border-slate-50 px-2">
-                    <div className="flex items-start gap-3 p-3 bg-slate-50/50 rounded-2xl text-left border border-slate-100/50">
-                      <AlertTriangle className="w-4 h-4 text-slate-300 shrink-0 mt-0.5" />
-                      <div className="space-y-0.5">
-                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Disclaimer</p>
-                        <p className="text-[10px] text-slate-400 font-medium leading-relaxed italic">
-                          {t.aiDisclaimer}
-                        </p>
-                      </div>
-                    </div>
                   </div>
                 </div>
               </div>

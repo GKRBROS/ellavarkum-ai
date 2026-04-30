@@ -54,8 +54,9 @@ export const translations = {
     finalizing: "Finalizing your portrait...",
     scrollDown: "Down",
     scrollTop: "Top",
-    howItWorksTitle: "How it Works",
-    howItWorksSub: "Create your AI portrait in 4 simple steps",
+    aboutUsTitle: "About Ellavarkkum AI",
+    aboutUsSub: "Empowering the community through AI creativity",
+    aboutUsDescription: "Ellavarkkum AI is a community-driven platform dedicated to making advanced AI technology accessible and fun for everyone. We believe in the power of creative expression and strive to provide tools that allow our community to share their unique digital personas proudly.",
   },
   ml: {
     title: "എല്ലാവർക്കും AI",
@@ -110,7 +111,8 @@ export const translations = {
     finalizing: "തയ്യാറാക്കുന്നു...",
     scrollDown: "താഴേക്ക്",
     scrollTop: "മുകളിലേക്ക്",
-    howItWorksTitle: "പ്രവർത്തനം",
-    howItWorksSub: "4 ഘട്ടങ്ങളിലൂടെ നിർമ്മിക്കാം",
+    aboutUsTitle: "എല്ലാവർക്കും AI-യെ കുറിച്ച്",
+    aboutUsSub: "AI ക്രിയേറ്റിവിറ്റിയിലൂടെ കമ്മ്യൂണിറ്റിയെ ശാക്തീകരിക്കുന്നു",
+    aboutUsDescription: "അഡ്വാൻസ്ഡ് AI സാങ്കേതികവിദ്യ എല്ലാവർക്കും ലഭ്യമാക്കാനും രസകരമാക്കാനും സമർപ്പിച്ചിരിക്കുന്ന ഒരു കമ്മ്യൂണിറ്റി പ്ലാറ്റ്‌ഫോമാണ് എല്ലാവർക്കും AI. ക്രിയേറ്റീവ് എക്‌സ്‌പ്രഷന്റെ കരുത്തിൽ ഞങ്ങൾ വിശ്വസിക്കുന്നു, കൂടാതെ ഞങ്ങളുടെ കമ്മ്യൂണിറ്റിക്ക് അവരുടെ തനതായ ഡിജിറ്റൽ വ്യക്തിത്വങ്ങൾ അഭിമാനത്തോടെ പങ്കിടാൻ അനുവദിക്കുന്ന ടൂളുകൾ നൽകാൻ ഞങ്ങൾ പരിശ്രമിക്കുന്നു.",
   }
 };
