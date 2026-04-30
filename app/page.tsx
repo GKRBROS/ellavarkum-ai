@@ -903,7 +903,7 @@ export default function EllavarkkumPage() {
                     <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-[#e1007a] via-blue-600 to-[#e1007a] opacity-50" />
                     
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-                      <div className="space-y-4 text-center lg:text-left">
+                      <div className="space-y-5 text-center lg:text-left">
                         <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-full text-xs font-black uppercase tracking-widest border border-blue-100">
                           <Sparkles className="w-4 h-4" />
                           About Us
@@ -911,12 +911,20 @@ export default function EllavarkkumPage() {
                         <h2 className="text-3xl sm:text-5xl font-heading font-black text-black leading-tight tracking-tighter">
                           {t.aboutUsTitle}
                         </h2>
-                        <p className="text-base sm:text-xl text-slate-900 font-black italic">
+                        <p className="text-sm sm:text-base text-blue-600 font-black italic leading-snug">
                           {t.aboutUsSub}
                         </p>
-                        <p className="text-sm sm:text-lg text-slate-700 font-medium leading-relaxed">
-                          {t.aboutUsDescription}
-                        </p>
+                        <div className="space-y-4 text-left">
+                          <p className="text-sm sm:text-base text-slate-700 font-medium leading-relaxed">
+                            {t.aboutUsP1}
+                          </p>
+                          <p className="text-sm sm:text-base text-slate-700 font-medium leading-relaxed">
+                            {t.aboutUsP2}
+                          </p>
+                          <p className="text-sm sm:text-base text-slate-700 font-medium leading-relaxed">
+                            {t.aboutUsP3}
+                          </p>
+                        </div>
                       </div>
 
                       <div className="hidden sm:flex flex-col items-center justify-center relative aspect-square rounded-[40px] overflow-hidden shadow-2xl border-4 border-white bg-gradient-to-br from-blue-50 via-white to-pink-50 rotate-2 group hover:rotate-0 transition-transform duration-700">

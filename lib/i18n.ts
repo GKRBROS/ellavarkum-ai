@@ -55,8 +55,10 @@ export const translations = {
     scrollDown: "Down",
     scrollTop: "Top",
     aboutUsTitle: "About Ellavarkkum AI",
-    aboutUsSub: "Empowering the community through AI creativity",
-    aboutUsDescription: "Ellavarkkum AI is a community-driven platform dedicated to making advanced AI technology accessible and fun for everyone. We believe in the power of creative expression and strive to provide tools that allow our community to share their unique digital personas proudly.",
+    aboutUsSub: "AI for Everyone — Making AI Simple, Practical & Accessible",
+    aboutUsP1: "Ellavarkkum AI, meaning AI for Everyone, is a community built around a simple idea. Making artificial intelligence easy to understand and useful for anyone. Even though AI is becoming a part of everyday life, many people still feel unsure about it or think it's too complex to learn. We aim to change that by breaking things down into simple, practical ideas that people can actually relate to and use.",
+    aboutUsP2: "Through sessions, workshops, and easy content, we introduce AI in a way that feels approachable and relevant — whether you're a student, a working professional, or just someone curious to learn something new. Instead of focusing on technical depth, we focus on helping people feel comfortable, informed, and confident enough to explore AI on their own.",
+    aboutUsP3: "At its core, Ellavarkkum AI is about making sure that everyone gets a chance to understand and use what's shaping the world today. It's not just about learning a technology, but about growing together as a community that is open, curious, and ready for what's next.",
   },
   ml: {
     title: "എല്ലാവർക്കും AI",
@@ -112,7 +114,9 @@ export const translations = {
     scrollDown: "താഴേക്ക്",
     scrollTop: "മുകളിലേക്ക്",
     aboutUsTitle: "എല്ലാവർക്കും AI-യെ കുറിച്ച്",
-    aboutUsSub: "AI ക്രിയേറ്റിവിറ്റിയിലൂടെ കമ്മ്യൂണിറ്റിയെ ശാക്തീകരിക്കുന്നു",
-    aboutUsDescription: "അഡ്വാൻസ്ഡ് AI സാങ്കേതികവിദ്യ എല്ലാവർക്കും ലഭ്യമാക്കാനും രസകരമാക്കാനും സമർപ്പിച്ചിരിക്കുന്ന ഒരു കമ്മ്യൂണിറ്റി പ്ലാറ്റ്‌ഫോമാണ് എല്ലാവർക്കും AI. ക്രിയേറ്റീവ് എക്‌സ്‌പ്രഷന്റെ കരുത്തിൽ ഞങ്ങൾ വിശ്വസിക്കുന്നു, കൂടാതെ ഞങ്ങളുടെ കമ്മ്യൂണിറ്റിക്ക് അവരുടെ തനതായ ഡിജിറ്റൽ വ്യക്തിത്വങ്ങൾ അഭിമാനത്തോടെ പങ്കിടാൻ അനുവദിക്കുന്ന ടൂളുകൾ നൽകാൻ ഞങ്ങൾ പരിശ്രമിക്കുന്നു.",
+    aboutUsSub: "AI for Everyone — AI ലളിതമായും പ്രായോഗികമായും എല്ലാവർക്കും",
+    aboutUsP1: "Ellavarkkum AI എന്നത് \"എല്ലാവർക്കും AI\" എന്ന ആശയത്തെ അടിസ്ഥാനമാക്കി രൂപം കൊണ്ട ഒരു കമ്മ്യൂണിറ്റിയാണ്. AI ഇന്ന് പല മേഖലകളിലും ഉപയോഗിക്കപ്പെടുന്നുണ്ടെങ്കിലും, പലർക്കും ഇത് ബുദ്ധിമുട്ടുള്ളതോ അല്ലെങ്കിൽ തങ്ങൾക്ക് വേണ്ടതല്ലെന്നോ തോന്നാറുണ്ട്. ആ ധാരണ മാറ്റി, എല്ലാവർക്കും എളുപ്പത്തിൽ മനസ്സിലാക്കാനും ഉപയോഗിക്കാനും കഴിയുന്ന രീതിയിൽ AI അവതരിപ്പിക്കുകയാണ് ഞങ്ങൾ ചെയ്യുന്നത്.",
+    aboutUsP2: "Sessions, workshops, ലളിതമായ content എന്നിവ വഴി വിദ്യാർത്ഥികൾക്കും, professionals-ക്കും, സാധാരണ ആളുകൾക്കും AI എന്താണെന്നും അത് ജീവിതത്തിൽ എങ്ങനെ ഉപയോഗിക്കാമെന്നും എളുപ്പത്തിൽ മനസ്സിലാക്കാൻ സഹായിക്കുന്നു. കൂടുതൽ technical ആയ കാര്യങ്ങളിൽ ശ്രദ്ധ ചെലവഴിക്കുന്നതിന് പകരം, ആളുകൾക്ക് ആത്മവിശ്വാസത്തോടെയും വ്യക്തതയോടെയും ഇത് സമീപിക്കാനാകുന്ന രീതിയിലാണ് ഞങ്ങൾ ശ്രമിക്കുന്നത്.",
+    aboutUsP3: "Ellavarkkum AI എന്നത് ഒരു learning initiative മാത്രമല്ല, ഒരുമിച്ച് പഠിക്കുകയും മുന്നോട്ട് പോകുകയും ചെയ്യുന്ന ഒരു കമ്മ്യൂണിറ്റിയാണ്. എല്ലാവർക്കും പഠിക്കാനും വളരാനും അവസരം ലഭിക്കണം എന്ന വിശ്വാസത്തോടെയാണ് ഞങ്ങൾ പ്രവർത്തിക്കുന്നത്.",
   }
 };
