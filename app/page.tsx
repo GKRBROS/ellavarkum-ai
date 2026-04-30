@@ -137,13 +137,7 @@ export default function EllavarkkumPage() {
     return triesLeft;
   };
 
-  if (!mounted) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <LumaSpin />
-      </div>
-    );
-  }
+
 
   const t = translations[lang];
 
@@ -737,6 +731,14 @@ export default function EllavarkkumPage() {
       toast.error("No tries left. Please contact support.");
     }
   };
+
+  if (!mounted) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <LumaSpin />
+      </div>
+    );
+  }
 
   // --- Render ---
 
@@ -1413,7 +1415,7 @@ export default function EllavarkkumPage() {
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="bg-white rounded-[40px] p-6 md:p-10 max-w-[480px] w-[95%] md:w-full shadow-2xl relative max-h-[92vh] flex flex-col"
+              className="bg-white rounded-[40px] p-4 md:p-10 max-w-[480px] w-full shadow-2xl relative max-h-[90dvh] flex flex-col mx-auto"
             >
               <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-blue-600 via-[#e1007a] to-blue-600 z-10" />
               
@@ -1427,7 +1429,7 @@ export default function EllavarkkumPage() {
               <div className="flex-1 overflow-y-auto custom-scrollbar pt-2 pr-1">
                 <div className="text-center space-y-6">
                   {/* Image Preview */}
-                  <div className="relative mx-auto w-full max-w-[240px] aspect-[4/5] rounded-[28px] overflow-hidden shadow-xl border-4 border-white ring-1 ring-slate-100">
+                  <div className="relative mx-auto w-full max-w-[180px] sm:max-w-[240px] aspect-[4/5] rounded-[24px] sm:rounded-[28px] overflow-hidden shadow-xl border-4 border-white ring-1 ring-slate-100">
                      {finalImageUrl ? (
                        <NextImage
                          src={finalImageUrl}
@@ -1450,12 +1452,12 @@ export default function EllavarkkumPage() {
                     <p className="text-slate-500 font-medium text-base leading-relaxed">{t.resultSub}</p>
                   </div>
 
-                  <div className="pt-4 border-t border-slate-50 px-2">
-                    <div className="flex items-start gap-3 p-4 bg-slate-50/80 rounded-2xl text-left border-2 border-slate-200 shadow-sm">
-                      <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-                      <div className="space-y-1">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-900">Important Disclaimer</p>
-                        <p className="text-[11px] text-slate-700 font-bold leading-relaxed italic">
+                  <div className="pt-2 border-t border-slate-50 px-2">
+                    <div className="flex items-start gap-2 p-3 bg-slate-50/80 rounded-xl text-left border-2 border-slate-200 shadow-sm">
+                      <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                      <div className="space-y-0.5">
+                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-900 leading-none">Important Disclaimer</p>
+                        <p className="text-[10px] text-slate-700 font-bold leading-tight italic">
                           {t.aiDisclaimer}
                         </p>
                       </div>
