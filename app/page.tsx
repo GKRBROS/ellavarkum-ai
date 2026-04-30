@@ -109,10 +109,14 @@ export default function EllavarkkumPage() {
    const [lang, setLang] = useState<Language>("en");
 
   // Load language preference
-  useEffect(() => {
-    const savedLang = localStorage.getItem("Ellavarkkum_lang") as Language;
     if (savedLang) setLang(savedLang);
   }, []);
+
+  const trackEvent = (action: string, params?: any) => {
+    if (typeof window !== "undefined" && (window as any).gtag) {
+      (window as any).gtag("event", action, params);
+    }
+  };
 
   const toggleLang = () => {
     const newLang = lang === "en" ? "ml" : "en";
@@ -479,6 +483,11 @@ export default function EllavarkkumPage() {
       setOtpTimestamp(now);
       setTriesLeft(resData.triesLeft ?? currentTries);
       
+      trackEvent('otp_requested', {
+        country_code: countryCode,
+        phone_suffix: phone.slice(-4)
+      });
+      
       // Save phone early to prevent redirect to start on refresh
       localStorage.setItem(
         "Ellavarkkum_session",
@@ -521,6 +530,7 @@ export default function EllavarkkumPage() {
       setTriesLeft(resData.triesLeft ?? 5);
       if (verifiedRequestId) setRequestId(verifiedRequestId);
       setStep("form");
+      trackEvent('otp_verified');
 
       // Save session with step
       localStorage.setItem(
@@ -542,6 +552,7 @@ export default function EllavarkkumPage() {
   };
 
   const handleLogout = () => {
+    trackEvent('logout_clicked');
     localStorage.removeItem("Ellavarkkum_session");
     setStep("otp-request");
     setPhone("");
@@ -600,6 +611,10 @@ export default function EllavarkkumPage() {
     }
 
     setStep("processing");
+    trackEvent('generation_started', {
+      user_name: name,
+      user_gender: gender
+    });
     localStorage.setItem(
       "Ellavarkkum_session",
       JSON.stringify({ phone, step: "processing" }),
@@ -672,6 +687,7 @@ export default function EllavarkkumPage() {
       // Wait for progress effect
       setTimeout(() => {
         setStep("result");
+        trackEvent('generation_completed');
         setShowResultModal(true);
         toast.success(`Generated! ${updatedTries} tries remaining.`);
       }, 2000);
@@ -701,6 +717,8 @@ export default function EllavarkkumPage() {
       link.click();
       document.body.removeChild(link);
       
+      trackEvent('image_downloaded');
+
       // Show social links modal after successful download click
       setTimeout(() => setShowSocialModal(true), 500);
     } catch (err: any) {
@@ -716,6 +734,7 @@ export default function EllavarkkumPage() {
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
+    trackEvent('photo_removed');
   };
 
   const handleTryAgain = () => {
@@ -725,6 +744,7 @@ export default function EllavarkkumPage() {
       setPreviewUrl(null);
       setFinalImageUrl(null);
       setName("");
+      trackEvent('try_again_clicked');
 
       // Update session to form state
       localStorage.setItem(
@@ -1535,6 +1555,7 @@ export default function EllavarkkumPage() {
                   href="https://chat.whatsapp.com/KvshP05KTTyLcmgj8FJlS0"
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={() => trackEvent('whatsapp_join_clicked')}
                   className="flex items-center justify-center gap-4 py-5 bg-[#25D366] text-white rounded-3xl font-black text-lg hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-green-100"
                 >
                   <svg className="w-7 h-7 fill-current" viewBox="0 0 24 24">
@@ -1546,6 +1567,7 @@ export default function EllavarkkumPage() {
                   href="https://www.instagram.com/ellavarkkum_ai"
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={() => trackEvent('instagram_follow_clicked')}
                   className="flex items-center justify-center gap-4 py-5 bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7] text-white rounded-3xl font-black text-lg hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-pink-100"
                 >
                   <svg className="w-7 h-7 fill-current" viewBox="0 0 24 24">

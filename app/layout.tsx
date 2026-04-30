@@ -29,7 +29,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${inter.variable} ${outfit.variable}`}>
-      <body suppressHydrationWarning>
+      <head>
         {/* Google Analytics */}
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-V866YSGGEN"
@@ -40,7 +40,10 @@ export default function RootLayout({
             window.dataLayer = window.dataLayer || [];
             window.gtag = function gtag(){window.dataLayer.push(arguments);}
             window.gtag('js', new Date());
-            window.gtag('config', 'G-V866YSGGEN');
+            window.gtag('config', 'G-V866YSGGEN', {
+              send_page_view: true,
+              cookie_flags: 'SameSite=None;Secure'
+            });
           `}
         </Script>
 
@@ -54,7 +57,8 @@ export default function RootLayout({
             })(window, document, "clarity", "script", "wjp2inv87x");
           `}
         </Script>
-
+      </head>
+      <body suppressHydrationWarning>
         {children}
       </body>
     </html>
